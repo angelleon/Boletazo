@@ -1,0 +1,71 @@
+			¿tener un formulario generado pre-conexion? y en caso de duplicidad, tomar los datos como existentes.
+			Despues de hacer una conexion exitosa con el servidor.
+
+1. Generar un login, que al crearse se almacenara en una base de datos.
+	o ingresar a uno existente dentro de la base de datos.
+2. Dar la opcion de almacenar un metodo de pago y guardarlo con la asociacion a la cuenta dentro de la DB
+	o cargar un metodo de pago existente.
+		-cubren configurable
+3. Uso de tramas para guardado de datos. 
+
+				Registro[DatosUsuario] - recupera o crea.
+*Nombre:
+	-Nombres
+	-Apellidos
+*Tarjeta Debito/Credito:
+	-No.Tarjeta
+	-Fecha Vencimiento
+	-Direccion de facturacion.
+	-CVV
+____________________________________
+4. Al momento de comprar, se cargara la trama de registro para realizar el cobro al usuario y limitar la cantidad de boletos.
+	los cuales pediran confirmacion una vez que cumplan los requisitos.
+				Compra[Registro[],DatosCompra[]] - Limpia y reusa la trama en cada compra
+Tipo de Evento:
+Ubicacion:
+Horario:
+Cantidad:
+	<Comprueba que existan la cantidad necesaria de lugares en el horario especificado, 4 maximo por persona>
+Elije Lugares: 
+	<revisar que esten libres>
+Costo:
+	<Revision de cobro realizado correctamente>
+Asignacion de lugares realizada.
+
+____________________________________
+
+
+	Como hacerlo.
+
+Manejo de tramas con encabezados para el cliente
+y traduccion de las tramas de parte del servidor.
+
+Cliente
+[ID_Loggin,USER,PASSWORD]
+
+ID_loggin = 0; se debe proporcionar cuenta y contraseña para crearla y almacenar en BD.
+ID_loggin = 1; se deben ingresar las credenciales para busqueda en BD.
+
+el servidor recibe la trama y lee el ID_loggin para saber como proceder, si el logeo o creacion es exitoso,
+genera una conexion con el servidor, si la cuenta esta duplicada al crearse, o las credenciales son erroneas, rechaza la conexion.
+
+
+el cliente espera confirmacion de conexion
+y envia una segunda trama
+[ID_operacion,...]
+
+ID_operacion = 0 - Compra de boletos.
+ID_operacion = 1 - Registro de metodo de pago.
+
+la operacion compra de boletos, enviara una segunda trama desde el cliente, cuando el servidor confirme la operacion a realizar.
+
+[Evento,Ubicacion,Horario,Cantidad,Metodo de pago(true or false)].
+y el servidor regresara el costo
+
+la operacion Registro de metodo de pago del servidor solicitara la siguiente trama que enviara el cliente. 
+[Tipo,Numero de tarjeta,Fecha vencimiento,Direccion,CVV]
+si los campos son llenados de forma correcta, se guardaran en la base de datos y el registro del cliente se agregara la consigna de 
+metodo de pago = true
+en caso contrario quedara en false.
+
+Los metodo seran programados tanto en server como en cliete
