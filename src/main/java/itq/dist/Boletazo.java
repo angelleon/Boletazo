@@ -28,6 +28,7 @@ public class Boletazo
         boolean alive = false;
         ServerSocket serverSocket;
         ArrayList<SocketThread> threads = new ArrayList<SocketThread>();
+        Db db = new Db();
         try
         {
             while (alive)
@@ -47,13 +48,20 @@ public class Boletazo
         }
     }
 
+    /**
+     * Connects to professor server to send IP and port of this service
+     * 
+     * @return true if succesful connection, flse otherwise
+     */
     private static boolean initialConnection()
     {
         try
         {
-            Socket socket = new Socket(PROF_HOST, PROF_PORT);
-            DataOutputStream dataOut = new DataOutputStream(socket.getOutputStream());
+            Socket socketProf = new Socket(PROF_HOST, PROF_PORT);
+            DataOutputStream dataOut = new DataOutputStream(socketProf.getOutputStream());
             dataOut.writeUTF("" + TEAM_NUM + "," + getIP());
+            socketProf.close();
+            return true;
         }
         catch (IOException e)
         {
