@@ -1,5 +1,9 @@
+package itq.dist;
+
 import java.net.ServerSocket;
+import Java.net.Socket;
 import java.lang.DataOutputStream;
+import Java.util.ArrayList;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -14,9 +18,23 @@ public class Boletazo
 	{
 		boolean alive = false;
 		ServerSocket serverSocket;
-		while (alive)
+		ArrayList<SocketThread> threads = new ArrayList<SocketThread>();
+		try
 		{
-			try
+			while (alive)
+			{
+				serverSocket = new ServerSocket(PORT);
+				Socket socket = serverSocket.accept();
+				SocketThread t = new SocketThread(socket);
+				t.start();
+				threads.add(t);
+			}
+			serverSocket.close();
+		}
+		catch (IOException e)
+		{
+			log.error("An I/O error occurred");
+			log.error(e.getMessage());
 		}
 	}
 	
