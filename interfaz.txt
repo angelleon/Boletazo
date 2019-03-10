@@ -1,3 +1,5 @@
+
+
 msj := "opcode,arguments"
 
 opcode
@@ -20,7 +22,8 @@ argumnts
     Client
         START_SESSION
 
-        GET_EVENT_LIST         
+        GET_EVENT_LIST
+            EVENTS_IDS,EVENTS_DESCRIPTIONS  
         GET_AVAILABLE_DATES    
             EVENT_ID
         GET_AVAILABLE_SEATS
@@ -37,7 +40,7 @@ argumnts
         POST_AVAILABLE_DATES
             DATES
         POST_AVAILABLE_SEATS   
-            SEATS_IDS
+            SEATS_IDS,SEAT_PRICES
         CONFIRM_RESERVE_TICKETS
             PUCHARASE_ID
         PUCHARASE_COMPLETED
