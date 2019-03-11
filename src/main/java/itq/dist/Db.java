@@ -11,10 +11,15 @@ import org.apache.logging.log4j.Logger;
 public class Db
 {
     private static final Logger log = LogManager.getLogger(Db.class);
+
+    // Informacion necesaria para conectarse a mysql
     private static final String USR = "boletazodev";
     private static final String PASSWD = "contrapass";
     private static final String URL = "jdbc:mysql://localhost:3306/Boletazo";
-    private static final String SELECT_EVENT_BETWEEN_DATES = "SELECT * FROM Events WHERE date BETWEEN ? AND ?";
+
+    // Lista de querys
+    private static final String SELECT_EVENT_BETWEEN_DATES = "SELECT * FROM Events WHERE date BETWEEN ? AND DATE_ADD(?, INTERVAL 1 DAY)";
+
     private static char mander = 'c';
 
     private Connection conn;
@@ -40,6 +45,7 @@ public class Db
     public Event[] getEventsAt(java.util.Date date)
     {
         Event[] events = null;
+        int nEvents = 0;
         ResultSet result = null;
 
         Calendar cal = Calendar.getInstance();
@@ -61,19 +67,25 @@ public class Db
         try
         {
             PreparedStatement ps = conn.prepareStatement(SELECT_EVENT_BETWEEN_DATES);
-            ps.setDate(1, new java.sql.Date(t0));
-            ps.setDate(2, new java.sql.Date(t1));
+            java.sql.Date d = new java.sql.Date(t0);
+            ps.setDate(1, d);
+            ps.setDate(2, d);
+            // ps.setDate(2, new java.sql.Date(t1));
             result = ps.executeQuery();
+
+            if (result.last())
+            {
+                nEvents = result.getRow();
+            }
         }
         catch (SQLException e)
         {
         }
-        
-        if (result != null)
+        events = new Event[nEvents];
+        for (int i = 0; i < nEvents; i++)
         {
-            result.
+            events[i] = new Event();
         }
-
         return events;
     }
 }
