@@ -11,8 +11,7 @@ import java.io.DataOutputStream;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.io.IOException;
-import java.util.Date;
-//import java.sql.ResultSet;
+import java.time.LocalDate;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -31,7 +30,7 @@ public class Boletazo
         ServerSocket serverSocket;
         ArrayList<SocketThread> threads = new ArrayList<SocketThread>();
         Db db = new Db();
-        Date d = new Date(2017, 12, 17);
+        LocalDate d = LocalDate.of(2017, 12, 16);
         Event[] evts = db.getEventsAt(d);
         for (Event ev : evts)
         {
