@@ -1,18 +1,19 @@
 package itq.dist;
 
-import java.sql.*;
-//import java.sql.Date;
-import java.util.Calendar;
-import java.util.Date;
+//import java.sql.*;
+import java.sql.DriverManager;
+import java.sql.ResultSet;
+import java.sql.PreparedStatement;
+import java.sql.Connection;
+import java.sql.Date;
 import java.time.LocalDate;
-import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
-import java.time.zone.*;
+import java.sql.SQLException;
+import java.lang.ClassNotFoundException;
+import java.lang.IllegalAccessException;
+import java.lang.InstantiationException;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-
-import com.mysql.cj.result.LocalDateTimeValueFactory;
 
 public class Db
 {
@@ -24,12 +25,7 @@ public class Db
     private static final String URL = "jdbc:mysql://127.0.0.1:3306/Boletazo";
 
     // Lista de querys
-    private static final String SELECT_EVENT_BETWEEN_DATES = "SELECT DATE_ADD(?, INTERVAL 1 YEAR)"; // "SELECT
-                                                                                                    // SYSDATE()"; //
-                                                                                                    // "SELECT * FROM
-                                                                                                    // Event WHERE date
-    // BETWEEN ? AND DATE_ADD(?, INTERVAL 1
-    // YEAR)";
+    private static final String SELECT_EVENT_AT_DATE = "SELECT * FROM Event WHERE date BETWEEN ? AND DATE_ADD(?, INTERVAL 1 DAY)";
 
     private static char mander = 'c';
 
@@ -67,9 +63,9 @@ public class Db
     /**
      * 
      * @param date:
-     * @return An array with all events that ocurr at certain date
+     * @return An array with all events that ocurr at certain date (day)
      */
-    public Event[] getEventsAt(java.util.Date date)
+    public Event[] getEventsAt(LocalDate date)
     {
         Event[] events = null;
         if (!connected)
@@ -81,38 +77,38 @@ public class Db
         int nEvents = 0;
         ResultSet result = null;
 
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy/MM/dd");
-        LocalDate ld = LocalDate.parse("2017/01/18", formatter);
-
-        Calendar cal = Calendar.getInstance();
-        cal.setTime(java.util.Date.from(ld.atStartOfDay(ZoneId.systemDefault()).toInstant()));
-        cal.set(Calendar.MILLISECOND, 0);
-        cal.set(Calendar.SECOND, 0);
-        cal.set(Calendar.MINUTE, 0);
-        cal.set(Calendar.HOUR, 0);
-        log.info(cal.getTime());
-
-        long t0 = cal.getTimeInMillis();
-
-        cal.add(Calendar.HOUR, 23);
-        cal.add(Calendar.MINUTE, 59);
-        cal.add(Calendar.SECOND, 59);
-        cal.add(Calendar.MILLISECOND, 999);
-
-        long t1 = cal.getTimeInMillis();
-
         try
         {
-            PreparedStatement ps = conn.prepareStatement(SELECT_EVENT_BETWEEN_DATES);
-            java.sql.Date d = new java.sql.Date(t0);
-            ps.setDate(1, d);
-            // ps.setDate(2, d);
-            // ps.setDate(2, new java.sql.Date(t1));
+            PreparedStatement ps = conn.prepareStatement(SELECT_EVENT_AT_DATE);
+            Date searchDate = Date.valueOf(date);
+            ps.setDate(1, searchDate);
+            ps.setDate(2, searchDate);
             result = ps.executeQuery();
+
+            // getting number of selected rows
+            nEvents = result.last() ? result.getRow() : 0;
+            int i = 0;
+            events = new Event[nEvents];
+            result.beforeFirst();
+
+            Event ev;
+            int idEvent = 0;
+            String name = "";
+            String description = "";
+            LocalDate evDate = LocalDate.now();
+            int idVenue = 0;
+
+            // Populating array
             while (result.next())
             {
-                log.debug(result.getDate(1));
-                nEvents++;
+                idEvent = result.getInt("idEvent");
+                name = result.getString("name");
+                description = result.getString("description");
+                evDate = result.getDate("date").toLocalDate();
+                idVenue = result.getInt("idVenue");
+                ev = new Event(idEvent, name, description, evDate, idVenue);
+                events[i] = ev;
+                i++;
             }
 
         }
@@ -120,12 +116,7 @@ public class Db
         {
             log.error(e.getMessage());
         }
-        events = new Event[nEvents];
         log.debug("Retrived [" + nEvents + "] events");
-        for (int i = 0; i < nEvents; i++)
-        {
-            events[i] = new Event();
-        }
         return events;
     }
 }
