@@ -4,9 +4,15 @@ import java.sql.*;
 //import java.sql.Date;
 import java.util.Calendar;
 import java.util.Date;
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import java.time.zone.*;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+
+import com.mysql.cj.result.LocalDateTimeValueFactory;
 
 public class Db
 {
@@ -15,21 +21,27 @@ public class Db
     // Informacion necesaria para conectarse a mysql
     private static final String USR = "boletazodev";
     private static final String PASSWD = "contrapass";
-    private static final String URL = "jdbc:mysql://localhost:3306/Boletazo";
+    private static final String URL = "jdbc:mysql://127.0.0.1:3306/Boletazo";
 
     // Lista de querys
-    private static final String SELECT_EVENT_BETWEEN_DATES = "SELECT * FROM Events WHERE date BETWEEN ? AND DATE_ADD(?, INTERVAL 1 DAY)";
+    private static final String SELECT_EVENT_BETWEEN_DATES = "SELECT DATE_ADD(?, INTERVAL 1 YEAR)"; // "SELECT
+                                                                                                    // SYSDATE()"; //
+                                                                                                    // "SELECT * FROM
+                                                                                                    // Event WHERE date
+    // BETWEEN ? AND DATE_ADD(?, INTERVAL 1
+    // YEAR)";
 
     private static char mander = 'c';
 
     private Connection conn;
-    private boolean connected = false;
+    private boolean connected;
 
     Db()
     {
+        connected = false;
         try
         {
-            Class.forName("com.mysql.jdbc.Driver");
+            Class.forName("com.mysql.cj.jdbc.Driver").newInstance();
             conn = DriverManager.getConnection(URL, USR, PASSWD);
             connected = true;
         }
@@ -39,6 +51,14 @@ public class Db
             log.error(e.getMessage());
         }
         catch (ClassNotFoundException e)
+        {
+            log.error(e.getMessage());
+        }
+        catch (IllegalAccessException e)
+        {
+            log.error(e.getMessage());
+        }
+        catch (InstantiationException e)
         {
             log.error(e.getMessage());
         }
@@ -61,12 +81,16 @@ public class Db
         int nEvents = 0;
         ResultSet result = null;
 
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy/MM/dd");
+        LocalDate ld = LocalDate.parse("2017/01/18", formatter);
+
         Calendar cal = Calendar.getInstance();
-        cal.setTime(date);
+        cal.setTime(java.util.Date.from(ld.atStartOfDay(ZoneId.systemDefault()).toInstant()));
         cal.set(Calendar.MILLISECOND, 0);
         cal.set(Calendar.SECOND, 0);
         cal.set(Calendar.MINUTE, 0);
         cal.set(Calendar.HOUR, 0);
+        log.info(cal.getTime());
 
         long t0 = cal.getTimeInMillis();
 
@@ -82,19 +106,22 @@ public class Db
             PreparedStatement ps = conn.prepareStatement(SELECT_EVENT_BETWEEN_DATES);
             java.sql.Date d = new java.sql.Date(t0);
             ps.setDate(1, d);
-            ps.setDate(2, d);
+            // ps.setDate(2, d);
             // ps.setDate(2, new java.sql.Date(t1));
             result = ps.executeQuery();
-
-            if (result.last())
+            while (result.next())
             {
-                nEvents = result.getRow();
+                log.debug(result.getDate(1));
+                nEvents++;
             }
+
         }
         catch (SQLException e)
         {
+            log.error(e.getMessage());
         }
         events = new Event[nEvents];
+        log.debug("Retrived [" + nEvents + "] events");
         for (int i = 0; i < nEvents; i++)
         {
             events[i] = new Event();
