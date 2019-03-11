@@ -36,6 +36,7 @@ public class Boletazo
         {
             System.out.println(ev);
         }
+        initialConnection();
         return;
         /*
          * try { serverSocket = new ServerSocket(PORT); while (alive) { Socket socket =
