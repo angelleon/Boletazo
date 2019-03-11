@@ -23,16 +23,23 @@ public class Db
     private static char mander = 'c';
 
     private Connection conn;
+    private boolean connected = false;
 
     Db()
     {
         try
         {
+            Class.forName("com.mysql.jdbc.Driver");
             conn = DriverManager.getConnection(URL, USR, PASSWD);
+            connected = true;
         }
         catch (SQLException e)
         {
             log.error("An error occurred when trying to connect to DB");
+            log.error(e.getMessage());
+        }
+        catch (ClassNotFoundException e)
+        {
             log.error(e.getMessage());
         }
     }
@@ -45,6 +52,12 @@ public class Db
     public Event[] getEventsAt(java.util.Date date)
     {
         Event[] events = null;
+        if (!connected)
+        {
+            events = new Event[1];
+            events[0] = new Event();
+            return events;
+        }
         int nEvents = 0;
         ResultSet result = null;
 
