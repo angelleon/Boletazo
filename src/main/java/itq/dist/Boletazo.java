@@ -11,6 +11,8 @@ import java.io.DataOutputStream;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.io.IOException;
+import java.util.Date;
+//import java.sql.ResultSet;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -29,11 +31,18 @@ public class Boletazo
         ServerSocket serverSocket;
         ArrayList<SocketThread> threads = new ArrayList<SocketThread>();
         Db db = new Db();
+        Date d = new Date(2017, 12, 17);
+        Event[] evts = db.getEventsAt(d);
+        for (Event ev : evts)
+        {
+            System.out.println(ev);
+        }
+        return;
         try
         {
+            serverSocket = new ServerSocket(PORT);
             while (alive)
             {
-                serverSocket = new ServerSocket(PORT);
                 Socket socket = serverSocket.accept();
                 SocketThread t = new SocketThread(socket);
                 t.start();
@@ -62,6 +71,10 @@ public class Boletazo
             dataOut.writeUTF("" + TEAM_NUM + "," + getIP());
             socketProf.close();
             return true;
+        }
+        catch (UnknownHostException e)
+        {
+            log.error(e.getMessage());
         }
         catch (IOException e)
         {
