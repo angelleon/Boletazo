@@ -38,23 +38,12 @@ public class Boletazo
             System.out.println(ev);
         }
         return;
-        try
-        {
-            serverSocket = new ServerSocket(PORT);
-            while (alive)
-            {
-                Socket socket = serverSocket.accept();
-                SocketThread t = new SocketThread(socket);
-                t.start();
-                threads.add(t);
-            }
-            serverSocket.close();
-        }
-        catch (IOException e)
-        {
-            log.error("An I/O error occurred");
-            log.error(e.getMessage());
-        }
+        /*
+         * try { serverSocket = new ServerSocket(PORT); while (alive) { Socket socket =
+         * serverSocket.accept(); SocketThread t = new SocketThread(socket); t.start();
+         * threads.add(t); } serverSocket.close(); } catch (IOException e) {
+         * log.error("An I/O error occurred"); log.error(e.getMessage()); }
+         */
     }
 
     /**
