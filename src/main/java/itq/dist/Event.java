@@ -12,6 +12,7 @@ public class Event
 
     Event()
     {
+    	
     }
 
     Event(int idEvent, String name, String description, LocalDate date, int idVenue)
