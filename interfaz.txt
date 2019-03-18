@@ -1,48 +1,402 @@
+﻿¿Tener un formulario generado pre-conexión? y en caso de duplicidad, tomar los datos como existentes.[a][b]
+                    Después de hacer una conexión exitosa con el servidor.
 
 
-msj := "opcode,arguments"
 
-opcode
-    Client
-        0 START_SESSION             // solicita el inicio de una nueva sesion
-        1 GET_EVENT_LIST            // solicita la lista de eventos disponibles
-        2 GET_AVAILABLE_DATES       // solicita las fechas disponibles
-        3 GET_AVAILABLE_SEATS       // solicita la lista de asientos disponibles
-        4 REQUEST_RESERVE_TICKETS   // Solicita que se reserven los boletos temporalmente hata la confirmación de la compra
-        5 POST_PAYMENT_INFO         // Envia la información de pago confirmando que el cliente quiere los boletos
-    Server
-        0 SESSION_STARTED           // confirma que la sesion ha sido iniciada
-        1 POST_EVENT_LIST           // envia la informacion de los eventos
-        2 POST_AVAILABLE_DATES      // envia las fechas y lugares 
-        3 POST_AVAILABLE_SEATS      // envia los asientos disponibles para un evento en una fecha especifica
-        4 CONFIRM_RESERVE_TICKETS   // confirma la reservación temporal de los boletos
-        5 PUCHARASE_COMPLETED       // informa que la transacción ha finalizado
- 
-argumnts
-    Client
-        START_SESSION
 
-        GET_EVENT_LIST
-            EVENTS_IDS,EVENTS_DESCRIPTIONS  
-        GET_AVAILABLE_DATES    
-            EVENT_ID
-        GET_AVAILABLE_SEATS
-            EVENT_ID,DATE
-        REQUEST_RESERVE_TICKETS
-            EVENT_ID,DATE,SEATS_IDS
-        POST_PAYMENT_INFO      
-            PUCHARASE_ID,NAME,EMAIL,CREDIT_CARD_INFO
-    Server
-        SESSION_STARTED
-            SESSION_ID
-        POST_EVENT_LIST
-            EVENTS_IDS
-        POST_AVAILABLE_DATES
-            DATES
-        POST_AVAILABLE_SEATS   
-            SEATS_IDS,SEAT_PRICES
-        CONFIRM_RESERVE_TICKETS
-            PUCHARASE_ID
-        PUCHARASE_COMPLETED
-            PUCHARASE_ID
+Propuesta 1
+Conexión inicial
+1. Generar un login hasta el momento de la compra, que al crearse se almacenará en una base de datos.
+    o ingresar a uno existente dentro de la base de datos.
+2. Dar la opción de almacenar un método de pago y guardarlo con la asociación a la cuenta dentro de la DB
+    o cargar un metodo de pago existente.[c][d]
+            -cubren configurable
+3. Uso de tramas para guardado de datos.
 
+
+
+
+
+
+                            Registro[DatosUsuario] - recupera o crea.
+*Nombre:
+    -Nombres
+    -Apellidos
+*Tarjeta Débito/Crédito:
+    -No.Tarjeta
+    -Fecha Vencimiento
+    -Direccion de facturacion.
+    -CVV
+____________________________________
+4. Al momento de comprar, se cargará la trama de registro para realizar el cobro al usuario y limitar la cantidad de boletos.
+    los cuales pediran confirmacion una vez que cumplan los requisitos.
+                            Compra[Registro[],DatosCompra[]] - Limpia y reusa la trama en cada compra
+Tipo de Evento:
+Ubicacion:
+Horario:
+Cantidad:
+    <Comprueba que existan la cantidad necesaria de lugares en el horario especificado, 4 maximo por persona>
+Elije Lugares:
+    <revisar que esten libres>
+Costo:
+    <Revision de cobro realizado correctamente>
+Asignacion de lugares realizada.
+
+
+____________________________________
+
+
+
+
+    Como hacerlo.
+
+
+Manejo de tramas con encabezados para el cliente
+y traduccion de las tramas de parte del servidor.
+
+
+Cliente
+[ID_Loggin,USER,PASSWORD]
+
+
+ID_loggin = 0; se debe proporcionar cuenta y contraseña para crearla y almacenar en BD.
+ID_loggin = 1; se deben ingresar las credenciales para busqueda en BD.
+
+
+el servidor recibe la trama y lee el ID_loggin para saber como proceder, si el logeo o creacion es exitoso,
+genera una conexion con el servidor, si la cuenta esta duplicada al crearse, o las credenciales son erroneas, rechaza la conexion.
+
+
+
+
+el cliente espera confirmacion de conexion
+y envia una segunda trama
+[ID_operacion,...]
+
+
+ID_operacion = 0 - Compra de boletos.
+ID_operacion = 1 - Registro de metodo de pago.
+
+
+la operacion compra de boletos, enviara una segunda trama desde el cliente, cuando el servidor confirme la operacion a realizar.
+
+
+[Evento,Ubicacion,Horario,Cantidad,Metodo de pago(true or false)].
+y el servidor regresara el costo
+
+
+la operacion Registro de metodo de pago del servidor solicitara la siguiente trama que enviara el cliente.
+[Tipo,Numero de tarjeta,Fecha vencimiento,Direccion,CVV]
+si los campos son llenados de forma correcta, se guardaran en la base de datos y el registro del cliente se agregara la consigna de
+metodo de pago = true
+en caso contrario quedara en false.
+
+
+Los metodo seran programados tanto en server como en cliente
+
+
+Propuesta 2
+Interfaz Cliente-Servidor Boletazo
+Fuentes Venegas Amaury
+Guitierrez Mendoza Jennifer Stacie
+Ibarra Gutierrez Rodrigo
+Trejo León Luis Ángel <luianglenlop at gmail dot com>
+
+
+El cliente y el servidor se comunican con mensajes con el formato
+msj := "int opcode,T[] arguments”
+donde opcode es un entero que identifica un tipo de operación y para cada opcode hay argumentos específicos que lo deben acompañar para que el mensaje sea válido.
+Conversación cliente servidor
+Los nombres en mayúsculas indican constantes mientras los nombres en camelCase indican variables
+Cliente
+	Servidor
+	int opcode: {
+    name: C_START_SESSION
+    value: 0
+}
+T[] arguments: {
+    null
+}
+ejemplo de mensaje valido:
+msj := “0,null”
+	
+
+	
+
+	int opcode: {
+    name: S_START_SESSION
+    value: 1
+}
+T[] arguments {
+     int sessionId
+}
+ejemplo de mensaje valido
+msj := “1,2020”
+	int opcode: {
+    name: GET_EVENT_LIST
+    value: 2
+}
+T[] arguments: {
+   int sessionId
+} 
+msj := “2,1020”
+	
+
+	
+
+	int opcode: {
+    name: POST_EVENT_LIST
+    value: 3
+}
+T[] arguments: {
+    int sessionId
+    int nEvents
+    Event[]: {
+        int idEvent
+        String name
+    }
+[e]
+}
+msj := “3,2020,5,0,Concierto0,...,5,Concierto5”
+msj := “3,1020,0|1|2|3|4|5,Concierto0 |...| Concierto5”[f][g]
+
+
+	int opcode: {
+    name: GET_EVENT_INFO
+    value: 4
+}
+T[] arguments: {
+    int sessionId
+    int idEvent
+}
+msj := “4,1020,1”
+	
+
+	
+
+	int opcode: {
+    name: POST_EVENT_INFO
+    value: 5
+}
+T[] arguments: {
+    int sessionId
+    EventInfo : {
+        int idEvent
+        String name
+        int nDates
+        String[] dates
+        int idVenue
+        int nParticipants
+       Participant[] : {
+          String name
+          String description
+       }
+   }
+}
+msj := “5,2020,2,Festival de Musica,5, 04/03/2019  10:00PM | 05/03/2019 10:00PM | …,4”
+	int opcode: {
+    name: GET_AVAILABLE_SEATS
+    value: 6
+}
+T[] arguments: {
+    int sessionId
+    int idEvent
+}
+msj := “6,1020,1”
+	
+
+	
+
+	int opcode: {
+    name: POST_EVENT_INFO
+    value: 7
+}
+T[] arguments: {
+    int sessionId
+    int nSection
+    SectionInfo[]: {
+        int idSection
+        String name        
+        float cost
+    }
+}
+msj := “7,1020,A1|VIP|200_ A2|VIP|200_..._D2,STANDAR,90_D3,STANDAR,90”
+	int opcode: {
+    name: REQUEST_RESERVE_TICKETS
+    value: 8
+}
+T[] arguments: {
+    int sessionId
+    int idEvent
+}
+msj := “8,1020,1”
+	
+
+	
+
+	Synchronized
+int opcode: {
+    name: CONFIRM_RESERVE_TICKETS
+    value: 9
+}
+T[] arguments {
+     int sessionId
+     int nTickets
+     Ticket[]: {
+       int ticketId
+     }
+}
+msg := “9,1020,4,31,32,33,34”
+	(Opcional)
+int opcode: {
+    name: SINGUP
+    value: 10
+}
+T[] arguments: {
+    String user
+    String password
+    String Email
+    String EstadoResidencia
+}
+msj := “10,1020,juanitoPerez,contrapassword,Juanito@gmail.com,Queretaro”
+	
+
+	
+
+	int opcode: {
+    name: SINGUP_STATUS 
+    value: 12
+}
+T[] arguments: {
+    int sessionId
+    int status: {
+        name: SUCCESSFUL | FAILED
+        value: 0 | 1
+    }
+}
+msj := “12,1020,0”
+Falla si existe una cuenta ya creada
+	int opcode: {
+    name: LOGIN_CHECK
+    value: 12
+}
+T[] arguments: {
+    int sessionId
+    String user
+    String password
+}
+msj := “10,1020,juanitoPerez,contrapassword”
+	
+
+	
+
+	int opcode: {
+    name: LOGIN_STATUS
+    value: 13
+}
+T[] arguments: {
+    int newSessionId
+    int status: {
+        name: SUCCESSFUL | FAILED
+        value: 0 | 1
+    }
+}
+msj := “11,2020,0”
+	int opcode: {
+    name: POST_PAYMENT_INFO
+    value: 14
+}
+T[] arguments: {
+    int sessionId
+    int status
+    String NumberCard
+    String expirationDate
+    String CVV
+    String TypeCard : {
+       value: VISA | MASTERCARD[h][i][j]
+    }
+}
+msj := “12,2020,123-123-123-123,04/22,333, VISA|MASTERCARD”
+	
+
+	
+
+	int opcode: {
+    name: PUCHARASE_COMPLETED :   CONFIRM_RESERVE_TICKETS
+    value: 15
+}
+T[] arguments: {
+    int sessionId
+    int nTickets
+    Ticket[]: {
+       int ticketId
+     }
+    int status: {
+        name: SUCCESSFUL | FAILED
+        value: 0 | 1
+    }
+}
+msj := “13,2020,4,31,32,33,34,0”
+si es FAILED
+msj := “13,2020,0,0,0,0,0,1”[k][l]
+	
+
+
+
+Definiciones de las constantes
+opcode[m]
+        Client
+            0 C_START_SESSION
+            solicita el inicio de una nueva sesion
+            2 GET_EVENT_LIST
+            solicita la lista de eventos disponibles
+            4 GET_EVENT_INFO
+            solicita las información del evento en el que el usuario está interesado
+            6 GET_AVAILABLE_SEATS
+            solicita la lista de asientos disponibles
+            8 REQUEST_RESERVE_TICKETS
+            Solicita que se reserven los boletos temporalmente hasta la confirmación de la compra
+      10 SINGUP (opcional)
+           Solicita la creación de un nuevo usuario
+        12 LOGIN_CHECK
+                Solicita una creación de cuenta o ingreso de datos para acceso
+            14 POST_PAYMENT_INFO
+            Envía la información de pago confirmando que el cliente quiere los boletos
+         
+
+
+
+
+        Server
+            1 S_START_SESSION[n]
+           confirma que la sesión ha sido iniciada
+            3 POST_EVENT_LIST
+           envia la informacion de los eventos
+            5 POST_AVAILABLE_DATES
+           envia las fechas y lugares
+            7 POST_AVAILABLE_SEATS
+           envia los asientos disponibles para un evento en una fecha          especifica
+            9 CONFIRM_RESERVE_TICKETS
+           confirma la reservación temporal de los boletos
+      11 SINGUP_STATUS (opcional)
+         confirma o rechaza la solicitud de creación de usuario nuevo
+      13 LOGIN_STATUS
+         confirma o rechaza las credenciales introducidas
+            15 PUCHARASE_COMPLETED
+           informa que la transacción ha finalizado
+
+
+[a]mmm, explicate
+[b]Es muy abstracto, pero basicamente refiere a la creacion del string o vector que mandaremos con la operación, con lo de duplicidad me refiero a la creacion de la cuenta, para no tener varias cuentas con los mismos datos, solamente hacer una recuperacion.
+[c]Hay que modificar el esquema de la DB para eso? En caso de que sí, podemos hacer eso?
+[d]Quiero pensar que haremos algo simple, comenzando por guardar un numero de tarjeta, tipo (debito, credito) y si es visa o asi.., esos datos los ligamos a la BD de usuarios y login con su llave..
+[e]Esto es tal vez demasiadoa información
+[f]Otra sugerencia
+[g]pues está buena eh
+[h]no, no aceptamos american express
+[i]Nadie la acepta :,v
+[j]Pero esas monjas no tienen limite de credito
+[k]y si lo dejamos igual, sólo cambiar el 0 por 1 ?
+[l]mm.. si,tambien es una opcion, con que no se registren compras todo bien
+[m]Recordar poner esto entes que la tabla
+[n]Hasta qué hora tenemos para enviar esto?
