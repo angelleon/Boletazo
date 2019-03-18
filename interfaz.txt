@@ -208,7 +208,7 @@ msj := “6,1020,1”
 	
 
 	int opcode: {
-    name: POST_EVENT_INFO
+    name: POST_AVAILABLE_SEATS
     value: 7
 }
 T[] arguments: {
