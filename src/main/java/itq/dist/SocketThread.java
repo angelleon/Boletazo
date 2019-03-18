@@ -1,10 +1,20 @@
 package itq.dist;
 
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
 import java.net.Socket;
+
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 public class SocketThread extends Thread
 {
+    private static final Logger log = LogManager.getLogger(SocketThread.class);
+
     private Socket socket;
+    private DataInputStream dataIn;
+    private DataOutputStream dataOut;
 
     private static enum STATE
     {
@@ -22,89 +32,119 @@ public class SocketThread extends Thread
     @Override
     public void run()
     {
+        try
+        {
+            cStartSession();
+            sStartSession();
+            getEventList();
+            postEventList();
+            getEventInfo();
+            postEventInfo();
+            getAvailableSeats();
+            postAvailableSeats();
+            requestReserveTickets();
+            confirmReserveTickets();
+            if (currentState == STATE.SINGUP.ordinal())
+            {
+                singup();
+                singupStatus();
+            }
+            loginCheck();
+            loginStatus();
+            postPaymentInfo();
+            pucharaseCompleted();
 
+        }
+        catch (ConversationException e)
+        {
+
+        }
+        catch (IOException e)
+        {
+
+        }
     }
 
     // ToDo: implementar un metodo por cada constante del enum STATE
     // ToDo: considerar lanzar excepciones para manejar todos los errores de la
     // conversacion dentro de un bloque catch
 
-    private boolean cStartSession()
+    private boolean cStartSession() throws ConversationException, IOException
     {
         return false;
     }
 
-    private boolean sStartSession()
+    private boolean sStartSession() throws ConversationException, IOException
     {
         return false;
     }
 
-    private boolean getEventList()
+    private boolean getEventList() throws ConversationException, IOException
     {
         return false;
     }
 
-    private boolean postEventList()
+    private boolean postEventList() throws ConversationException, IOException
     {
         return false;
     }
 
-    private boolean getEventInfo()
+    private boolean getEventInfo() throws ConversationException, IOException
     {
         return false;
     }
 
-    private boolean postEventInfo()
+    private boolean postEventInfo() throws ConversationException, IOException
     {
         return false;
     }
 
-    private boolean getAvailableSeats()
+    private boolean getAvailableSeats() throws ConversationException, IOException
     {
         return false;
     }
 
-    private boolean postAvailableSeats()
+    private boolean postAvailableSeats() throws ConversationException, IOException
     {
         return false;
     }
 
-    private boolean requestReserveTickets()
+    private boolean requestReserveTickets() throws ConversationException, IOException
     {
         return false;
     }
 
-    private boolean confirmReserveTickets()
+    private boolean confirmReserveTickets() throws ConversationException, IOException
     {
         return false;
     }
 
-    private boolean singup()
+    private boolean singup() throws ConversationException, IOException
     {
         return false;
     }
 
-    private boolean singupStatus()
+    private boolean singupStatus() throws ConversationException, IOException
     {
         return false;
     }
 
-    private boolean loginCheck()
+    private boolean loginCheck() throws ConversationException, IOException
     {
         return false;
     }
 
-    private boolean loginStatus()
+    private boolean loginStatus() throws ConversationException, IOException
     {
         return false;
     }
 
-    private boolean postPaymentInfo()
+    private boolean postPaymentInfo() throws ConversationException, IOException
     {
         return false;
     }
 
-    private boolean pucharaseCompleted()
+    private boolean pucharaseCompleted() throws ConversationException, IOException
     {
         return false;
     }
