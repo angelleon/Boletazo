@@ -22,6 +22,7 @@ public class BoletazoException extends Exception
 
     BoletazoException(int errorCode)
     {
+        this();
         this.errorCode = errorCode;
     }
 
