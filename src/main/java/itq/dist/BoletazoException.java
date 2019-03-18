@@ -12,7 +12,7 @@ public class BoletazoException extends Exception
         GENERIC_ERROR
     }
 
-    private int errorCode;
+    protected int errorCode;
 
     BoletazoException()
     {
@@ -22,6 +22,7 @@ public class BoletazoException extends Exception
 
     BoletazoException(int errorCode)
     {
+        this();
         this.errorCode = errorCode;
     }
 
