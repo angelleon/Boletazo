@@ -20,8 +20,8 @@ public class Db
     private static final Logger log = LogManager.getLogger(Db.class);
 
     // Informacion necesaria para conectarse a mysql
-    private static final String USR = "boletazodev";
-    private static final String PASSWD = "contrapass";
+    private static final String USR = "root";
+    private static final String PASSWD = "epifanio11";
     private static final String URL = "jdbc:mysql://127.0.0.1:3306/Boletazo";
 
     // Lista de querys
