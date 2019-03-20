@@ -20,15 +20,28 @@ public class Boleto
 	 * @param status the status to set
 	 */
 	public void setStatus(boolean status) {
+		
 		this.status = status;
 	}
 	
-	public synchronized void TicketPurchase() {
+	public synchronized boolean TicketPurchase() {
 		Timer.start();
-		if(Timer.isAlive() && !Timer.isInterrupted()) {
-			setStatus(true);	//Se concreto la compra en el tiempo de apartado
-		}else {
-			setStatus(false);	//no se concreto la compra en el tiempo de apartado
-		}	
+		try {
+			Timer.join();
+			if(Timer.isInterrupted()) {
+				setStatus(true);	//Se concreto la compra en el tiempo de apartado
+				return true;
+			}else {
+				setStatus(false);	//no se concreto la compra en el tiempo de apartado
+				return false;
+			}	
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			return false;
+		}
+	}
+	public void ConfirmationTicketPurchase() {
+		Timer.interrupt();
 	}
 }

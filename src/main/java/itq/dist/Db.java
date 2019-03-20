@@ -20,9 +20,9 @@ public class Db
     private static final Logger log = LogManager.getLogger(Db.class);
 
     // Informacion necesaria para conectarse a mysql
-    private static final String USR = "boletazodev";
-    private static final String PASSWD = "contrapass";
-    private static final String URL = "jdbc:mysql://127.0.0.1:3306/Boletazo";
+    private static final String USR = "root";
+    private static final String PASSWD = "epifanio11";
+    private static final String URL = "jdbc:mysql://127.0.0.1:3306/Boletazo?useLegacyDatetimeCode=false&serverTimezone=UTC";
 
     // Lista de querys
     private static final String SELECT_EVENT_AT_DATE = "SELECT * FROM Event WHERE date BETWEEN ? AND DATE_ADD(?, INTERVAL 1 DAY)";
