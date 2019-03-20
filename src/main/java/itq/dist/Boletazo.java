@@ -49,7 +49,7 @@ public class Boletazo
     /**
      * Connects to professor server to send IP and port of this service
      * 
-     * @return true if succesful connection, flse otherwise
+     * @return true if succesful connection, else otherwise
      */
     private static boolean initialConnection()
     {
@@ -77,10 +77,17 @@ public class Boletazo
      * 
      * @return ethernet's assigned ip
      */
-    private static String getIP()
+    private static String getIP() throws UnknownHostException
     {
         // ToDo: modificar para obtener la ip en windows
-        String interfaceName = "eno1";
+    	//Para windows...
+    	/**
+    	 * return InetAddress.getLocalHost().getHostAddress().toString();
+    	 * si tienes interfaces activas de vmware hay veces que las toma #desactivalas!
+    	 */
+    	
+    
+    	String interfaceName = "eno1";
         try
         {
             NetworkInterface netInt = NetworkInterface.getByName(interfaceName);
@@ -90,7 +97,8 @@ public class Boletazo
             {
                 address = addresses.nextElement();
                 if (address instanceof Inet4Address
-                        && !address.isLoopbackAddress()) { return address.getHostAddress(); }
+                        && !address.isLoopbackAddress()) 
+                { return address.getHostAddress(); }
             }
         }
         catch (SocketException e)
