@@ -30,20 +30,26 @@ public class Boletazo
         ServerSocket serverSocket;
         ArrayList<SocketThread> threads = new ArrayList<SocketThread>();
         Db db = new Db();
-        LocalDate d = LocalDate.of(2017, 12, 16);
-        Event[] evts = db.getEventsAt(d);
-        for (Event ev : evts)
-        {
-            System.out.println(ev);
-        }
+        db.preload();
+
         initialConnection();
-        return;
-        /*
-         * try { serverSocket = new ServerSocket(PORT); while (alive) { Socket socket =
-         * serverSocket.accept(); SocketThread t = new SocketThread(socket); t.start();
-         * threads.add(t); } serverSocket.close(); } catch (IOException e) {
-         * log.error("An I/O error occurred"); log.error(e.getMessage()); }
-         */
+        try
+        {
+            serverSocket = new ServerSocket(PORT);
+            while (alive)
+            {
+                Socket socket = serverSocket.accept();
+                SocketThread t = new SocketThread(socket);
+                t.start();
+                threads.add(t);
+            }
+            serverSocket.close();
+        }
+        catch (IOException e)
+        {
+            log.error("An I/O error occurred");
+            log.error(e.getMessage());
+        }
     }
 
     /**
