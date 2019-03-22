@@ -4,8 +4,13 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.Socket;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 
 import org.apache.logging.log4j.Logger;
+import org.w3c.dom.events.EventException;
 import org.apache.logging.log4j.LogManager;
 
 public class SocketThread extends Thread
@@ -17,7 +22,9 @@ public class SocketThread extends Thread
     private DataOutputStream dataOut;
     private Db db;
     private SessionControl sc;
+    
 
+    
     private static enum STATE {
         C_START_SESSION,
         S_START_SESSION,
@@ -89,8 +96,9 @@ public class SocketThread extends Thread
 
     private boolean cStartSession() throws ConversationException, IOException
     {
-        String rawMsg = dataIn.readUTF();
-        String[] valuesIn = 
+    
+    	String rawMsg = dataIn.readUTF();
+        String[] valuesIn;
         return false;
     }
 
@@ -106,6 +114,25 @@ public class SocketThread extends Thread
 
     private boolean postEventList() throws ConversationException, IOException
     {
+    	String msg = dataIn.readUTF();
+    	String[] dataMSG = msg.split(",");
+    	Event[] event;
+    	//msj := “2,1020(,EN,VN,ED,H,C,SN)” 3 = VENUE NAME 
+    	event = db.getEventsWhere(dataMSG[3]);
+    	msg = STATE.POST_EVENT_LIST + "," + "USER_ID";
+    	for(int i = 0; i < event.length; i++) {
+    		if(i == event.length - 1)
+    			msg += event[i].getIdEvent() + "|";
+    		else
+    			msg += event[i].getIdEvent() + ",";
+    	}
+    	for(int i = 0; i < event.length; i++) {    		
+    		if(i == event.length - 1)
+    			msg += event[i].getName() + "|";
+    		else
+    			msg += event[i].getName();
+    	}
+    	dataOut.writeUTF(msg);
         return false;
     }
 
@@ -134,12 +161,18 @@ public class SocketThread extends Thread
     private boolean requestReserveTickets()
             throws ConversationException, IOException
     {
-        return false;
+    	String msg = dataIn.readUTF();
+    	String[] dataMSG = msg.split(",");
+    	
+    	return false;
     }
 
     private boolean confirmReserveTickets()
             throws ConversationException, IOException
     {
+    	String msg = dataIn.readUTF();
+    	String[] dataMSG = msg.split(",");
+    	
         return false;
     }
 

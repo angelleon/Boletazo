@@ -44,6 +44,13 @@ public class Db
             + "FROM Status "
             + "WHERE status = 'DISPONIBLE'); ";
 
+    private static final String SELECT_EVENT_IN_AVENUE = "SELECT * "
+			+ "FROM Venue V "
+			+ "WHERE V.name = (SELECT name "
+			+ "FROM Venue "
+			+ "WHERE name = ?);";    
+	
+    
     private static char mander = 'c';
 
     private Connection conn;
@@ -51,7 +58,7 @@ public class Db
 
     // Estructuras para almacenamiento temporal de información
     private HashMap<Integer, Boleto> availableTickets;
-
+    
     Db()
     {
         connected = false;
@@ -178,6 +185,65 @@ public class Db
                 i++;
             }
 
+        }
+        catch (SQLException e)
+        {
+            log.error(e.getMessage());
+        }
+        log.debug("Retrived [" + nEvents + "] events");
+        return events;
+    }
+    /**
+     * 
+     * @param Avenue
+     * @return An array with all events that ocurr on an Avenue
+     */
+    public Event[] getEventsWhere(String Avenue)
+    {
+        Event[] events = null;
+        if (!connected)
+        {
+            events = new Event[1];
+            events[0] = new Event();
+            return events;
+        }
+        int nEvents = 0;
+        ResultSet result = null;
+
+        try
+        {
+            PreparedStatement ps = conn.prepareStatement(SELECT_EVENT_IN_AVENUE);
+            ps.setString(1, Avenue);
+            
+            result = ps.executeQuery();
+            // getting number of selected rows
+            nEvents = result.last() ? result.getRow() : 0;
+            int i = 0;
+            events = new Event[nEvents];
+            result.beforeFirst();
+
+            Event ev;
+            int idEvent = 0;
+            int idVenue = 0;
+            String name = "";
+            String Address = "";
+            String city = "";
+            LocalDate evDate = LocalDate.now();
+
+            // Iterate over rows returned by the query
+            // Populating array
+            while (result.next())
+            {
+            	idEvent = result.getInt("idEvent");
+                idVenue = result.getInt("idAvenue");
+                name = result.getString("name");
+                Address= result.getString("address");
+                city = result.getString("city");
+                idVenue = result.getInt("idVenue");
+                ev = new Event(idEvent, idVenue, name, Address, city);
+                events[i] = ev;
+                i++;
+            }
         }
         catch (SQLException e)
         {
