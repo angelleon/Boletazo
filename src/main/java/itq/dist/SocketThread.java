@@ -17,6 +17,7 @@ public class SocketThread extends Thread
     private DataOutputStream dataOut;
     private Db db;
     private SessionControl sc;
+    private int sessionId;
 
     private static enum STATE {
         C_START_SESSION,
@@ -37,7 +38,7 @@ public class SocketThread extends Thread
         PUCHARASE_COMPLETED
     }
 
-    private int currentState;
+    private STATE currentState;
 
     SocketThread(Socket socket, Db db, SessionControl sc)
     {
@@ -132,6 +133,7 @@ public class SocketThread extends Thread
         return false;
     }
 
+    //
     private boolean requestReserveTickets()
             throws ConversationException, IOException
     {
@@ -166,6 +168,11 @@ public class SocketThread extends Thread
 
     private boolean postPaymentInfo() throws ConversationException, IOException
     {
+    	currentState = STATE.POST_PAYMENT_INFO;
+    	
+    	String rawMsg = dataIn.readUTF();
+    	String[] valuesIn = rawMsg.split(",");
+    	int sessionId = Integer.parseInt(valuesIn[1]);
         return false;
     }
 

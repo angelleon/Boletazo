@@ -41,13 +41,14 @@ public class Db
    
     private static final String SELECT_EVENT_AT_HOUR = "SELECT id,name "
 			+ "from Event "
-			+ "WHERE date_format(date,'%H:%i') = ?";
+			+ "WHERE date_format(date,'%H:%i') = ? ";
     
     private static final String SELECT_AVAILABLE_TICKETS = "SELECT T.* "
             + "FROM Ticket T, Status S "
             + "WHERE T.idStatus = (SELECT idStatus "
             + "FROM Status "
             + "WHERE status = 'DISPONIBLE'); ";
+           
 
     private static char mander = 'c';
 
@@ -182,7 +183,7 @@ public class Db
                 events[i] = ev;
                 i++;
             }
-
+            ps.close();
         }
         catch (SQLException e)
         {
@@ -205,9 +206,40 @@ public class Db
         }
         int nEvents = 0;
         ResultSet result = null;
-        try {
-        	
-        } catch (SQLException e)
+        try
+        {
+            PreparedStatement ps = conn.prepareStatement(SELECT_EVENT_AT_DATE);
+            Date searchDate = Date.valueOf(date);
+            ps.setDate(1, searchDate);
+            
+            result = ps.executeQuery();
+
+            // getting number of selected rows
+            nEvents = result.last() ? result.getRow() : 0;
+            int i = 0;
+            events = new Event[nEvents];
+            result.beforeFirst();
+
+            Event ev;
+            int idEvent = 0;
+            String name = "";
+            String description = "";
+            LocalDate evDate = LocalDate.now();
+            int idVenue = 0;
+
+            // Iterate over rows returned by the query
+            // Populating array
+            while (result.next())
+            {
+                idEvent = result.getInt("idEvent");
+                name = result.getString("name");
+                ev = new Event(idEvent, name);
+                events[i] = ev;
+                i++;
+            }
+            ps.close();
+        }
+        catch (SQLException e)
         {
             log.error(e.getMessage());
         }
