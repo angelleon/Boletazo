@@ -28,22 +28,36 @@ public class Boletazo
     {
         boolean alive = false;
         ServerSocket serverSocket;
-        ArrayList<SocketThread> threads = new ArrayList<SocketThread>();
+        SessionControl sc = new SessionControl(0, 10);
+        // ArrayList<SocketThread> threads = new ArrayList<SocketThread>();
         Db db = new Db();
-        LocalDate d = LocalDate.of(2017, 12, 16);
-        Event[] evts = db.getEventsAt(d);
-        for (Event ev : evts)
+        if (db.getConnected())
         {
-            System.out.println(ev);
+            db.preload();
+            initialConnection();
+            try
+            {
+                serverSocket = new ServerSocket(PORT);
+                while (alive)
+                {
+                    Socket socket = serverSocket.accept();
+                    SocketThread t = new SocketThread(socket, db, sc);
+                    t.start();
+                    // threads.add(t);
+                }
+                serverSocket.close();
+            }
+            catch (IOException e)
+            {
+                log.error("An I/O error occurred");
+                log.error(e.getMessage());
+            }
         }
-        initialConnection();
-        return;
-        /*
-         * try { serverSocket = new ServerSocket(PORT); while (alive) { Socket socket =
-         * serverSocket.accept(); SocketThread t = new SocketThread(socket); t.start();
-         * threads.add(t); } serverSocket.close(); } catch (IOException e) {
-         * log.error("An I/O error occurred"); log.error(e.getMessage()); }
-         */
+        else
+        {
+            log.error("Can not connect to DataBase");
+        }
+        log.info("Exiting...");
     }
 
     /**
@@ -56,7 +70,8 @@ public class Boletazo
         try
         {
             Socket socketProf = new Socket(PROF_HOST, PROF_PORT);
-            DataOutputStream dataOut = new DataOutputStream(socketProf.getOutputStream());
+            DataOutputStream dataOut = new DataOutputStream(
+                    socketProf.getOutputStream());
             dataOut.writeUTF("" + TEAM_NUM + "," + getIP());
             socketProf.close();
             return true;
@@ -80,14 +95,13 @@ public class Boletazo
     private static String getIP() throws UnknownHostException
     {
         // ToDo: modificar para obtener la ip en windows
-    	//Para windows...
-    	/**
-    	 * return InetAddress.getLocalHost().getHostAddress().toString();
-    	 * si tienes interfaces activas de vmware hay veces que las toma #desactivalas!
-    	 */
-    	
-    
-    	String interfaceName = "eno1";
+        // Para windows...
+        /**
+         * return InetAddress.getLocalHost().getHostAddress().toString(); si tienes
+         * interfaces activas de vmware hay veces que las toma #desactivalas!
+         */
+
+        String interfaceName = "eno1";
         try
         {
             NetworkInterface netInt = NetworkInterface.getByName(interfaceName);
@@ -97,8 +111,8 @@ public class Boletazo
             {
                 address = addresses.nextElement();
                 if (address instanceof Inet4Address
-                        && !address.isLoopbackAddress()) 
-                { return address.getHostAddress(); }
+                        && !address.isLoopbackAddress()) { return address
+                                .getHostAddress(); }
             }
         }
         catch (SocketException e)

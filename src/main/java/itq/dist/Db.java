@@ -11,6 +11,7 @@ import java.sql.SQLException;
 import java.lang.ClassNotFoundException;
 import java.lang.IllegalAccessException;
 import java.lang.InstantiationException;
+import java.util.HashMap;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -25,16 +26,36 @@ public class Db
     private static final String URL = "jdbc:mysql://127.0.0.1:3306/Boletazo?useLegacyDatetimeCode=false&serverTimezone=UTC";
 
     // Lista de querys
-    private static final String SELECT_EVENT_AT_DATE = "SELECT * FROM Event WHERE date BETWEEN ? AND DATE_ADD(?, INTERVAL 1 DAY)";
+
+    /**
+     * En un PreparedStatement se pueden reemplazar valores en el query usando el
+     * metodo setTIPO(int position, TIPO valor) donde position es la posicion del
+     * (?) dentro del query iniciando con 1, TIPO depende de lo que se va a
+     * reemplazar, y valor es..... supongo que el valor que se va a poner ahi
+     */
+    private static final String SELECT_EVENT_AT_DATE = "SELECT *"
+            + "FROM Event"
+            + "WHERE date BETWEEN ?" // aqui se reemplaza el (?) con una fecha usando setDate(1, date)
+            + "AND DATE_ADD(?, INTERVAL 1 DAY)"; // lo mismo de arriba setDate(2, date)
+
+    private static final String SELECT_AVAILABLE_TICKETS = "SELECT T.* "
+            + "FROM Ticket T, Status S "
+            + "WHERE T.idStatus = (SELECT idStatus "
+            + "FROM Status "
+            + "WHERE status = 'DISPONIBLE'); ";
 
     private static char mander = 'c';
 
     private Connection conn;
     private boolean connected;
 
+    // Estructuras para almacenamiento temporal de información
+    private HashMap<Integer, Boleto> availableTickets;
+
     Db()
     {
         connected = false;
+        availableTickets = new HashMap<Integer, Boleto>();
         try
         {
             Class.forName("com.mysql.cj.jdbc.Driver").newInstance();
@@ -56,6 +77,51 @@ public class Db
         }
         catch (InstantiationException e)
         {
+            log.error(e.getMessage());
+        }
+    }
+
+    public boolean getConnected()
+    {
+        return connected;
+    }
+
+    /**
+     * Metodo que precarga a memoria los eventos y boletos disponibles
+     */
+    public void preload()
+    {
+        try
+        {
+            PreparedStatement ps = conn
+                    .prepareStatement(SELECT_AVAILABLE_TICKETS);
+            ResultSet result = ps.executeQuery();
+
+            Integer idTicket;
+            String seatNumber;
+            int idStatus;
+            int idSection;
+            int idEvent;
+
+            while (result.next())
+            {
+                idTicket = result.getInt("idTicket");
+                idStatus = result.getInt("idStatus");
+                idSection = result.getInt("idSection");
+                idEvent = result.getInt("idEvent");
+                if (!availableTickets.containsKey(idTicket))
+                {
+                    seatNumber = result.getString("seatNumber");
+                    availableTickets.put(idTicket,
+                            new Boleto(idTicket.intValue(), seatNumber,
+                                    idStatus, idSection, idEvent));
+                }
+            }
+            ps.close();
+        }
+        catch (SQLException e)
+        {
+            log.error("");
             log.error(e.getMessage());
         }
     }
@@ -98,12 +164,13 @@ public class Db
             LocalDate evDate = LocalDate.now();
             int idVenue = 0;
 
+            // Iterate over rows returned by the query
             // Populating array
             while (result.next())
             {
                 idEvent = result.getInt("idEvent");
                 name = result.getString("name");
-                 description = result.getString("description");
+                description = result.getString("description");
                 evDate = result.getDate("date").toLocalDate();
                 idVenue = result.getInt("idVenue");
                 ev = new Event(idEvent, name, description, evDate, idVenue);
@@ -119,11 +186,4 @@ public class Db
         log.debug("Retrived [" + nEvents + "] events");
         return events;
     }
-    /**
-     *Consulta los eventos por hora  
-     *
-     *
-     */
-    
-    
 }

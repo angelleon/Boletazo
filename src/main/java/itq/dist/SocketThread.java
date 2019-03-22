@@ -15,32 +15,35 @@ public class SocketThread extends Thread
     private Socket socket;
     private DataInputStream dataIn;
     private DataOutputStream dataOut;
+    private Db db;
+    private SessionControl sc;
 
-    private static enum STATE
-    {
-        C_START_SESSION,	// 0
-        S_START_SESSION, 	// 1
-        GET_EVENT_LIST,		// 2
-        POST_EVENT_LIST,	// 3
-        GET_EVENT_INFO,		// 4
-        POST_EVENT_INFO,	// 5
-        GET_AVAILABLE_SEATS,// 6
-        POST_AVAILABLE_SEATS,	// 7
-        REQUEST_RESERVE_TICKETS,// 8
-        CONFIRM_RESERVE_TICKETS,// 9
-        SINGUP,					// 10
-        SINGUP_STATUS,			// 11
-        LOGIN_CHECK,			// 12
-        LOGIN_STATUS,			// 13
-        POST_PAYMENT_INFO,		// 14
-        PUCHARASE_COMPLETED		// 15
+    private static enum STATE {
+        C_START_SESSION,
+        S_START_SESSION,
+        GET_EVENT_LIST,
+        POST_EVENT_LIST,
+        GET_EVENT_INFO,
+        POST_EVENT_INFO,
+        GET_AVAILABLE_SEATS,
+        POST_AVAILABLE_SEATS,
+        REQUEST_RESERVE_TICKETS,
+        CONFIRM_RESERVE_TICKETS,
+        SINGUP,
+        SINGUP_STATUS,
+        LOGIN_CHECK,
+        LOGIN_STATUS,
+        POST_PAYMENT_INFO,
+        PUCHARASE_COMPLETED
     }
 
     private int currentState;
 
-    SocketThread(Socket socket)
+    SocketThread(Socket socket, Db db, SessionControl sc)
     {
         this.socket = socket;
+        this.db = db;
+        this.sc = sc;
         this.currentState = STATE.C_START_SESSION.ordinal();
     }
 
@@ -87,6 +90,8 @@ public class SocketThread extends Thread
     // La tablita .....si hay sesion tabla.. ok no..
     private boolean cStartSession() throws ConversationException, IOException
     {
+        String rawMsg = dataIn.readUTF();
+        String[] valuesIn = 
         return false;
     }
 
@@ -115,22 +120,26 @@ public class SocketThread extends Thread
         return false;
     }
 
-    private boolean getAvailableSeats() throws ConversationException, IOException
+    private boolean getAvailableSeats()
+            throws ConversationException, IOException
     {
         return false;
     }
 
-    private boolean postAvailableSeats() throws ConversationException, IOException
+    private boolean postAvailableSeats()
+            throws ConversationException, IOException
     {
         return false;
     }
 
-    private boolean requestReserveTickets() throws ConversationException, IOException
+    private boolean requestReserveTickets()
+            throws ConversationException, IOException
     {
         return false;
     }
 
-    private boolean confirmReserveTickets() throws ConversationException, IOException
+    private boolean confirmReserveTickets()
+            throws ConversationException, IOException
     {
         return false;
     }
@@ -160,8 +169,20 @@ public class SocketThread extends Thread
         return false;
     }
 
-    private boolean pucharaseCompleted() throws ConversationException, IOException
+    private boolean pucharaseCompleted()
+            throws ConversationException, IOException
     {
         return false;
+    }
+
+    private String[] spliceMsgTokens(String rawMsg, int nTokens, int[] arrayLengthPositions)
+    {
+
+        return new String[0];
+    }
+
+    private void checkMsgIntegrity(String rawMsg)
+    {
+
     }
 }
