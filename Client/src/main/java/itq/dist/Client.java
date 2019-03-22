@@ -24,7 +24,7 @@ public class Client extends Thread{
 		// TODO Auto-generated method stub
 		//numero de peticiones al banco 
 		for(int i = 0 ;i<10;i++) {
-			MyThread t_client = new MyThread();
+			MyThread t_client = new MyThread(HOST, PORT, i);
 			t_client.start();
 		}
 		
