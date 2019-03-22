@@ -4,6 +4,7 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.Socket;
+import java.lang.StringBuilder;
 
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
@@ -11,12 +12,14 @@ import org.apache.logging.log4j.LogManager;
 public class SocketThread extends Thread
 {
     private static final Logger log = LogManager.getLogger(SocketThread.class);
+    private static final int MAX_MSG_LENGTH = 1024;
 
     private Socket socket;
     private DataInputStream dataIn;
     private DataOutputStream dataOut;
     private Db db;
     private SessionControl sc;
+    private StringBuilder msgOut;
 
     private static enum STATE {
         C_START_SESSION,
@@ -37,14 +40,15 @@ public class SocketThread extends Thread
         PUCHARASE_COMPLETED
     }
 
-    private int currentState;
+    private STATE currentState;
 
     SocketThread(Socket socket, Db db, SessionControl sc)
     {
         this.socket = socket;
         this.db = db;
         this.sc = sc;
-        this.currentState = STATE.C_START_SESSION.ordinal();
+        this.msgOut = new StringBuilder(MAX_MSG_LENGTH);
+        this.currentState = STATE.C_START_SESSION;
     }
 
     @Override
@@ -62,7 +66,7 @@ public class SocketThread extends Thread
             postAvailableSeats();
             requestReserveTickets();
             confirmReserveTickets();
-            if (currentState == STATE.SINGUP.ordinal())
+            if (currentState == STATE.SINGUP)
             {
                 singup();
                 singupStatus();
@@ -90,12 +94,22 @@ public class SocketThread extends Thread
     private boolean cStartSession() throws ConversationException, IOException
     {
         String rawMsg = dataIn.readUTF();
-        String[] valuesIn = 
+        String[] valuesIn = spliceMsgTokens(rawMsg, getTokenNumber(), getArrayLengthPositions());
         return false;
     }
 
     private boolean sStartSession() throws ConversationException, IOException
     {
+        currentState = STATE.S_START_SESSION;
+        msgOut.setLength(0);
+        int sessionId = sc.getNewSessionId();
+        if (sessionId > 0)
+        {
+            msgOut.append(STATE.S_START_SESSION.ordinal());
+            msgOut.append(sessionId);
+            dataOut.writeUTF(msgOut.toString());
+            return true;
+        }
         return false;
     }
 
@@ -183,5 +197,88 @@ public class SocketThread extends Thread
     private void checkMsgIntegrity(String rawMsg)
     {
 
+    }
+
+    private int getTokenNumber() throws ConversationException
+    {
+        switch (currentState)
+        {
+        case C_START_SESSION:
+            return 2;
+        case S_START_SESSION:
+            return 2;
+        case GET_EVENT_LIST:
+            return 7;
+        case POST_EVENT_LIST:
+            return 4;
+        case GET_EVENT_INFO:
+            return 3;
+        case POST_EVENT_INFO:
+            return 3;
+        case GET_AVAILABLE_SEATS:
+            return 3;
+        case POST_AVAILABLE_SEATS:
+            return 4;
+        case REQUEST_RESERVE_TICKETS:
+            return 3;
+        case CONFIRM_RESERVE_TICKETS:
+            return 4;
+        case SINGUP:
+            return 5;
+        case SINGUP_STATUS:
+            return 3;
+        case LOGIN_CHECK:
+            return 4;
+        case LOGIN_STATUS:
+            return 3;
+        case POST_PAYMENT_INFO:
+            return 7;
+        case PUCHARASE_COMPLETED:
+            return 5;
+        default:
+            throw new ConversationException();
+        }
+    }
+
+    private int[] getArrayLengthPositions() throws ConversationException
+    {
+        switch (currentState)
+        {
+        case C_START_SESSION:
+            return new int[0];
+        case S_START_SESSION:
+            return new int[0];
+        case GET_EVENT_LIST:
+            return new int[] {}
+        case POST_EVENT_LIST:
+            break;
+        case GET_EVENT_INFO:
+            break;
+        case POST_EVENT_INFO:
+            break;
+        case GET_AVAILABLE_SEATS:
+            break;
+        case POST_AVAILABLE_SEATS:
+            break;
+        case REQUEST_RESERVE_TICKETS:
+            break;
+        case CONFIRM_RESERVE_TICKETS:
+            break;
+        case SINGUP:
+            break;
+        case SINGUP_STATUS:
+            break;
+        case LOGIN_CHECK:
+            break;
+        case LOGIN_STATUS:
+            break;
+        case POST_PAYMENT_INFO:
+            break;
+        case PUCHARASE_COMPLETED:
+            break;
+        default:
+            throw new ConversationException();
+        }
+        return new int[0];
     }
 }
