@@ -38,11 +38,11 @@ public class Db
             + "WHERE date BETWEEN ?" // aqui se reemplaza el (?) con una fecha usando setDate(1, date)
             + "AND DATE_ADD(?, INTERVAL 1 DAY)"; // lo mismo de arriba setDate(2, date)
 
-    private static final String SELECT_AVAILABLE_TICKETS = "SELECT T.*"
-            + "FROM Ticket T, Status S"
-            + "WHERE T.idStatus = (SELECT idStatus"
-            + "FROM Status"
-            + "WHERE status = 'DISPONIBLE')";
+    private static final String SELECT_AVAILABLE_TICKETS = "SELECT T.* "
+            + "FROM Ticket T, Status S "
+            + "WHERE T.idStatus = (SELECT idStatus "
+            + "FROM Status "
+            + "WHERE status = 'DISPONIBLE'); ";
 
     private static char mander = 'c';
 
