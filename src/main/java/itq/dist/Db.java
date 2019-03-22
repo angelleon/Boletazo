@@ -55,6 +55,7 @@ public class Db
     Db()
     {
         connected = false;
+        availableTickets = new HashMap<Integer, Boleto>();
         try
         {
             Class.forName("com.mysql.cj.jdbc.Driver").newInstance();
