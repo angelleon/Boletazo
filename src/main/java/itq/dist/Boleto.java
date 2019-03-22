@@ -7,11 +7,19 @@ public class Boleto
     private int idStatus;
     private int idSection;
     private int idEvent;
-  
-    private int PurchaseTime = 6000; //tiempo configurable para la espera de compra
-	  private Thread Timer = new TimerThread(PurchaseTime);
 
-    Boleto(int idTicket, String seatNumber, int idStatus, int idSection, int idEvent)
+    public static enum STATUS {
+        NULL, // DB does not define an id with value 0
+        AVAILABLE,
+        RESERVED,
+        SOLD
+    }
+
+    private int purchaseTime = 6000; // tiempo configurable para la espera de compra
+    private TimerThread timer;
+
+    Boleto(int idTicket, String seatNumber, int idStatus, int idSection,
+            int idEvent)
     {
         this.idTicket = idTicket;
         this.seatNumber = seatNumber;
@@ -20,9 +28,26 @@ public class Boleto
         this.idEvent = idEvent;
     }
 
+    Boleto(int idTicket, String seatNumber, int idStatus, int idSection,
+            int idEvent, TimerThread timer)
+    {
+        this(idTicket, seatNumber, idStatus, idSection, idEvent);
+        this.timer = timer;
+    }
+
     Boleto()
     {
         this(0, "a0", 0, 0, 0);
+    }
+
+    public TimerThread getTimer()
+    {
+        return timer;
+    }
+
+    public void setTimer(TimerThread timer)
+    {
+        this.timer = timer;
     }
 
     public int getIdTicket()
@@ -49,31 +74,38 @@ public class Boleto
     {
         return idEvent;
     }
-	  public synchronized boolean TicketPurchase()
+
+    public synchronized boolean TicketPurchase()
     {
-		    Timer.start();
-		    try
+        timer.setTime(purchaseTime);
+        timer.start();
+        try
         {
-			      Timer.join();
-			      if(Timer.isInterrupted())
+            timer.join();
+            if (timer.isInterrupted())
             {
-				        setStatus(true);	//Se concreto la compra en el tiempo de apartado
-				        return true;
-			      }
+                idStatus = STATUS.SOLD.ordinal(); // Se concreto la compra en el
+                                                  // tiempo de apartado
+                return true;
+            }
             else
             {
-				        setStatus(false);	//no se concreto la compra en el tiempo de apartado
-				        return false;
-			      }	
-		    }
+                idStatus = STATUS.AVAILABLE.ordinal(); // no se concreto la
+                                                       // compra en el tiempo de
+                                                       // apartado
+                return false;
+            }
+        }
         catch (InterruptedException e)
         {
-			  // TODO Auto-generated catch block
-			      e.printStackTrace();
-			      return false;
-		    }
-	   }
-	public void ConfirmationTicketPurchase() {
-		Timer.interrupt();
-	}
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    public void ConfirmationTicketPurchase()
+    {
+        timer.interrupt();
+    }
 }

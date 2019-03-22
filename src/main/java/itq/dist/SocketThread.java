@@ -15,17 +15,33 @@ public class SocketThread extends Thread
     private Socket socket;
     private DataInputStream dataIn;
     private DataOutputStream dataOut;
+    private Db db;
 
-    private static enum STATE
-    {
-        C_START_SESSION, S_START_SESSION, GET_EVENT_LIST, POST_EVENT_LIST, GET_EVENT_INFO, POST_EVENT_INFO, GET_AVAILABLE_SEATS, POST_AVAILABLE_SEATS, REQUEST_RESERVE_TICKETS, CONFIRM_RESERVE_TICKETS, SINGUP, SINGUP_STATUS, LOGIN_CHECK, LOGIN_STATUS, POST_PAYMENT_INFO, PUCHARASE_COMPLETED
+    private static enum STATE {
+        C_START_SESSION,
+        S_START_SESSION,
+        GET_EVENT_LIST,
+        POST_EVENT_LIST,
+        GET_EVENT_INFO,
+        POST_EVENT_INFO,
+        GET_AVAILABLE_SEATS,
+        POST_AVAILABLE_SEATS,
+        REQUEST_RESERVE_TICKETS,
+        CONFIRM_RESERVE_TICKETS,
+        SINGUP,
+        SINGUP_STATUS,
+        LOGIN_CHECK,
+        LOGIN_STATUS,
+        POST_PAYMENT_INFO,
+        PUCHARASE_COMPLETED
     }
 
     private int currentState;
 
-    SocketThread(Socket socket)
+    SocketThread(Socket socket, Db db)
     {
         this.socket = socket;
+        this.db = db;
         this.currentState = STATE.C_START_SESSION.ordinal();
     }
 
@@ -99,22 +115,26 @@ public class SocketThread extends Thread
         return false;
     }
 
-    private boolean getAvailableSeats() throws ConversationException, IOException
+    private boolean getAvailableSeats()
+            throws ConversationException, IOException
     {
         return false;
     }
 
-    private boolean postAvailableSeats() throws ConversationException, IOException
+    private boolean postAvailableSeats()
+            throws ConversationException, IOException
     {
         return false;
     }
 
-    private boolean requestReserveTickets() throws ConversationException, IOException
+    private boolean requestReserveTickets()
+            throws ConversationException, IOException
     {
         return false;
     }
 
-    private boolean confirmReserveTickets() throws ConversationException, IOException
+    private boolean confirmReserveTickets()
+            throws ConversationException, IOException
     {
         return false;
     }
@@ -144,7 +164,8 @@ public class SocketThread extends Thread
         return false;
     }
 
-    private boolean pucharaseCompleted() throws ConversationException, IOException
+    private boolean pucharaseCompleted()
+            throws ConversationException, IOException
     {
         return false;
     }

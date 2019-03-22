@@ -26,11 +26,23 @@ public class Db
     private static final String URL = "jdbc:mysql://127.0.0.1:3306/Boletazo?useLegacyDatetimeCode=false&serverTimezone=UTC";
 
     // Lista de querys
-    private static final String SELECT_EVENT_AT_DATE = "SELECT *" + "FROM Event" + "WHERE date BETWEEN ?"
-            + "AND DATE_ADD(?, INTERVAL 1 DAY)";
-    // private static final String SELECT_EVENTS = "SELECT E.";
-    private static final String SELECT_AVAILABLE_TICKETS = "SELECT T.*" + "FROM Ticket T, Status S"
-            + "WHERE T.idStatus = (SELECT idStatus" + "FROM Status" + "WHERE status = 'DISPONIBLE')";
+
+    /**
+     * En un PreparedStatement se pueden reemplazar valores en el query usando el
+     * metodo setTIPO(int position, TIPO valor) donde position es la posicion del
+     * (?) dentro del query iniciando con 1, TIPO depende de lo que se va a
+     * reemplazar, y valor es..... supongo que el valor que se va a poner ahi
+     */
+    private static final String SELECT_EVENT_AT_DATE = "SELECT *"
+            + "FROM Event"
+            + "WHERE date BETWEEN ?" // aqui se reemplaza el (?) con una fecha usando setDate(1, date)
+            + "AND DATE_ADD(?, INTERVAL 1 DAY)"; // lo mismo de arriba setDate(2, date)
+
+    private static final String SELECT_AVAILABLE_TICKETS = "SELECT T.*"
+            + "FROM Ticket T, Status S"
+            + "WHERE T.idStatus = (SELECT idStatus"
+            + "FROM Status"
+            + "WHERE status = 'DISPONIBLE')";
 
     private static char mander = 'c';
 
@@ -40,7 +52,6 @@ public class Db
     // Estructuras para almacenamiento temporal de información
     private HashMap<Integer, Boleto> availableTickets;
 
-    // ToDo: decidir qué hacer cuando el programa no puede acceder a la DB
     Db()
     {
         connected = false;
@@ -69,6 +80,11 @@ public class Db
         }
     }
 
+    public boolean getConnected()
+    {
+        return connected;
+    }
+
     /**
      * Metodo que precarga a memoria los eventos y boletos disponibles
      */
@@ -76,7 +92,8 @@ public class Db
     {
         try
         {
-            PreparedStatement ps = conn.prepareStatement(SELECT_AVAILABLE_TICKETS);
+            PreparedStatement ps = conn
+                    .prepareStatement(SELECT_AVAILABLE_TICKETS);
             ResultSet result = ps.executeQuery();
 
             Integer idTicket;
@@ -95,7 +112,8 @@ public class Db
                 {
                     seatNumber = result.getString("seatNumber");
                     availableTickets.put(idTicket,
-                            new Boleto(idTicket.intValue(), seatNumber, idStatus, idSection, idEvent));
+                            new Boleto(idTicket.intValue(), seatNumber,
+                                    idStatus, idSection, idEvent));
                 }
             }
             ps.close();
