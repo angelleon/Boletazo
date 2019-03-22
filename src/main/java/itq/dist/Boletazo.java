@@ -28,6 +28,7 @@ public class Boletazo
     {
         boolean alive = false;
         ServerSocket serverSocket;
+        SessionControl sc = new SessionControl(0, 10);
         // ArrayList<SocketThread> threads = new ArrayList<SocketThread>();
         Db db = new Db();
         if (db.getConnected())
@@ -40,7 +41,7 @@ public class Boletazo
                 while (alive)
                 {
                     Socket socket = serverSocket.accept();
-                    SocketThread t = new SocketThread(socket, db);
+                    SocketThread t = new SocketThread(socket, db, sc);
                     t.start();
                     // threads.add(t);
                 }

@@ -16,6 +16,7 @@ public class SocketThread extends Thread
     private DataInputStream dataIn;
     private DataOutputStream dataOut;
     private Db db;
+    private SessionControl sc;
 
     private static enum STATE {
         C_START_SESSION,
@@ -38,10 +39,11 @@ public class SocketThread extends Thread
 
     private int currentState;
 
-    SocketThread(Socket socket, Db db)
+    SocketThread(Socket socket, Db db, SessionControl sc)
     {
         this.socket = socket;
         this.db = db;
+        this.sc = sc;
         this.currentState = STATE.C_START_SESSION.ordinal();
     }
 
@@ -87,6 +89,8 @@ public class SocketThread extends Thread
 
     private boolean cStartSession() throws ConversationException, IOException
     {
+        String rawMsg = dataIn.readUTF();
+        String[] valuesIn = 
         return false;
     }
 
@@ -168,5 +172,16 @@ public class SocketThread extends Thread
             throws ConversationException, IOException
     {
         return false;
+    }
+
+    private String[] spliceMsgTokens(String rawMsg, int nTokens, int[] arrayLengthPositions)
+    {
+
+        return new String[0];
+    }
+
+    private void checkMsgIntegrity(String rawMsg)
+    {
+
     }
 }
