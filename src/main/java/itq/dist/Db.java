@@ -24,7 +24,8 @@ public class Db
     private static final String USR = "boletazodev";
     private static final String PASSWD = "contrapass";
     private static final String URL = "jdbc:mysql://127.0.0.1:3306/Boletazo?useLegacyDatetimeCode=false&serverTimezone=UTC";
-
+    private static final LocalDate Today = LocalDate.now();
+	
     // Lista de querys
 
     /**
@@ -37,7 +38,11 @@ public class Db
             + "FROM Event"
             + "WHERE date BETWEEN ?" // aqui se reemplaza el (?) con una fecha usando setDate(1, date)
             + "AND DATE_ADD(?, INTERVAL 1 DAY)"; // lo mismo de arriba setDate(2, date)
-
+   
+    private static final String SELECT_EVENT_AT_HOUR = "SELECT id,name "
+			+ "from Event "
+			+ "WHERE date_format(date,'%H:%i') = ?";
+    
     private static final String SELECT_AVAILABLE_TICKETS = "SELECT T.* "
             + "FROM Ticket T, Status S "
             + "WHERE T.idStatus = (SELECT idStatus "
@@ -131,7 +136,7 @@ public class Db
      * @param date:
      * @return An array with all events that ocurr at certain date (day)
      */
-    public Event[] getEventsAt(LocalDate date)
+    public Event[] getEventsAtDay(LocalDate date)
     {
         Event[] events = null;
         if (!connected)
@@ -180,6 +185,29 @@ public class Db
 
         }
         catch (SQLException e)
+        {
+            log.error(e.getMessage());
+        }
+        log.debug("Retrived [" + nEvents + "] events");
+        return events;
+    }
+    /**
+     * Busqueda de boletos por hora
+     */
+    public Event[] getEventsAtHour(LocalDate date)
+    {
+        Event[] events = null;
+        if (!connected)
+        {
+            events = new Event[1];
+            events[0] = new Event();
+            return events;
+        }
+        int nEvents = 0;
+        ResultSet result = null;
+        try {
+        	
+        } catch (SQLException e)
         {
             log.error(e.getMessage());
         }
