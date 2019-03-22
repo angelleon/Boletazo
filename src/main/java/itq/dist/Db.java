@@ -103,7 +103,7 @@ public class Db
             {
                 idEvent = result.getInt("idEvent");
                 name = result.getString("name");
-                description = result.getString("description");
+                 description = result.getString("description");
                 evDate = result.getDate("date").toLocalDate();
                 idVenue = result.getInt("idVenue");
                 ev = new Event(idEvent, name, description, evDate, idVenue);
@@ -119,4 +119,11 @@ public class Db
         log.debug("Retrived [" + nEvents + "] events");
         return events;
     }
+    /**
+     *Consulta los eventos por hora  
+     *
+     *
+     */
+    
+    
 }
