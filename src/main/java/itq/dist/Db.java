@@ -57,7 +57,7 @@ public class Db
     private boolean connected;
 
     // Estructuras para almacenamiento temporal de información
-    private HashMap<Integer, Boleto> availableTickets;
+    protected HashMap<Integer, Boleto> availableTickets;
     
     Db()
     {

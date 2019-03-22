@@ -119,7 +119,7 @@ public class SocketThread extends Thread
     	Event[] event;
     	//msj := “2,1020(,EN,VN,ED,H,C,SN)” 3 = VENUE NAME 
     	event = db.getEventsWhere(dataMSG[3]);
-    	msg = STATE.POST_EVENT_LIST + "," + "USER_ID";
+    	msg = STATE.POST_EVENT_LIST + "," + dataMSG[1];
     	for(int i = 0; i < event.length; i++) {
     		if(i == event.length - 1)
     			msg += event[i].getIdEvent() + "|";
@@ -163,7 +163,27 @@ public class SocketThread extends Thread
     {
     	String msg = dataIn.readUTF();
     	String[] dataMSG = msg.split(",");
+    	msg = STATE.CONFIRM_RESERVE_TICKETS + ",";
+    	for(int i = 0; i < dataMSG.length - 1; i++) {
+    		if(i == dataMSG.length - 2)
+    			msg += dataMSG[i+1];		
+    		else
+    			msg += dataMSG[i+1] + ",";
+    	}
+    	//msj := “8,1020,1,4,31,32,33,34”
+    	int[] idTicket = new int[dataMSG.length - 4];
+    	for(int i = 0; i < idTicket.length; i++) {
+    		idTicket[i] = Integer.parseInt(dataMSG[4+i]);
+    	}
     	
+    	for(Boleto ticket : db.availableTickets.values()) {
+    		for(int i = 0; i < idTicket.length; i++) {
+    			if(ticket.getIdTicket() == idTicket[i] && ticket.getIdStatus() == 1) {
+    				dataOut.writeUTF(msg);	//envio de respuesta al cliente
+    				ticket.TicketPurchase();//espera por confirmacion.
+    			}
+    		}
+    	}	
     	return false;
     }
 
@@ -172,8 +192,22 @@ public class SocketThread extends Thread
     {
     	String msg = dataIn.readUTF();
     	String[] dataMSG = msg.split(",");
+    	//msj := “12,2020,123-123-123-123,04/22,333,VISA|MASTERCARD”
     	
-        return false;
+    	int[] idTicket = new int[dataMSG.length - 4];
+    	for(int i = 0; i < idTicket.length; i++) {
+    		idTicket[i] = Integer.parseInt(dataMSG[4+i]);
+    	}
+    	
+    	for(Boleto ticket : db.availableTickets.values()) {
+    		for(int i = 0; i < idTicket.length; i++) {
+    			if(ticket.getIdTicket() == idTicket[i] && ticket.getIdStatus() == 1) {
+    				dataOut.writeUTF(msg);
+    				ticket.TicketPurchase();
+    			}
+    		}
+    	}
+    	return false;
     }
 
     private boolean singup() throws ConversationException, IOException

@@ -103,7 +103,6 @@ public class Boleto
             return false;
         }
     }
-
     public void ConfirmationTicketPurchase()
     {
         timer.interrupt();
