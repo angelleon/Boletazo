@@ -34,9 +34,9 @@ public class SessionControl
     public synchronized int getNewSessionId()
     {
         if (availableCount > 0)
+        {
             // Algoritmo que asigna los ids de forma circular
-            for (int i = (lastAssignedIndex == maxSessions - 1 ? 0
-                    : lastAssignedIndex); i < avalilableSessionIDs.length; i++)
+            for (int i = lastAssignedIndex + 1; i <= lastId; i++)
             {
                 if (avalilableSessionIDs[i])
                 {
@@ -46,12 +46,23 @@ public class SessionControl
                     return startId + i;
                 }
             }
+            for (int i = 0; i < lastAssignedIndex; i++)
+            {
+                if (avalilableSessionIDs[i])
+                {
+                    avalilableSessionIDs[i] = false;
+                    availableCount--;
+                    lastAssignedIndex = i;
+                    return startId + i;
+                }
+            }
+        }
         return -1;
     }
 
     public synchronized void releaseSessionId(int sessionId) throws SessionException
     {
-        if (isValid(sessionId) || !isActive(sessionId))
+        if (!isValid(sessionId) || !isActive(sessionId))
             throw new SessionException();
         avalilableSessionIDs[sessionId] = true;
         availableCount++;
