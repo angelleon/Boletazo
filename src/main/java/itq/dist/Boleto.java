@@ -7,6 +7,12 @@ public class Boleto
     private int idStatus;
     private int idSection;
     private int idEvent;
+<<<<<<< HEAD
+=======
+  
+    private int PurchaseTime = 6000; //tiempo configurable para la espera de compra
+	  private Thread Timer = new TimerThread(PurchaseTime);
+>>>>>>> 0578daf0caa4062622fb2e365acca033b17a47ca
 
     Boleto(int idTicket, String seatNumber, int idStatus, int idSection, int idEvent)
     {
@@ -46,4 +52,35 @@ public class Boleto
     {
         return idEvent;
     }
+<<<<<<< HEAD
 }
+=======
+	  public synchronized boolean TicketPurchase()
+    {
+		    Timer.start();
+		    try
+        {
+			      Timer.join();
+			      if(Timer.isInterrupted())
+            {
+				        setStatus(true);	//Se concreto la compra en el tiempo de apartado
+				        return true;
+			      }
+            else
+            {
+				        setStatus(false);	//no se concreto la compra en el tiempo de apartado
+				        return false;
+			      }	
+		    }
+        catch (InterruptedException e)
+        {
+			  // TODO Auto-generated catch block
+			      e.printStackTrace();
+			      return false;
+		    }
+	   }
+	public void ConfirmationTicketPurchase() {
+		Timer.interrupt();
+	}
+}
+>>>>>>> 0578daf0caa4062622fb2e365acca033b17a47ca

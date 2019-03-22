@@ -8,8 +8,7 @@ repositories {
 }
 
 dependencies {
-	compile "org.apache.logging.log4j:log4j-core:2.11.2"
-	compile 'mysql:mysql-connector-java:8.0.15'	
+	compile "org.apache.logging.log4j:log4j-core:2.8.2"			
 }
 
 
