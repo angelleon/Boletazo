@@ -23,7 +23,7 @@ public class SocketThread extends Thread
     private Db db;
     private SessionControl sc;
     
-
+    private int[] ReserverdTickets;
     
     private static enum STATE {
         C_START_SESSION,
@@ -171,14 +171,14 @@ public class SocketThread extends Thread
     			msg += dataMSG[i+1] + ",";
     	}
     	//msj := “8,1020,1,4,31,32,33,34”
-    	int[] idTicket = new int[dataMSG.length - 4];
-    	for(int i = 0; i < idTicket.length; i++) {
-    		idTicket[i] = Integer.parseInt(dataMSG[4+i]);
+    	ReserverdTickets = new int[dataMSG.length - 4];
+    	for(int i = 0; i < ReserverdTickets.length; i++) {
+    		ReserverdTickets[i] = Integer.parseInt(dataMSG[4+i]);
     	}
     	
     	for(Boleto ticket : db.availableTickets.values()) {
-    		for(int i = 0; i < idTicket.length; i++) {
-    			if(ticket.getIdTicket() == idTicket[i] && ticket.getIdStatus() == 1) {
+    		for(int i = 0; i < ReserverdTickets.length; i++) {
+    			if(ticket.getIdTicket() == ReserverdTickets[i] && ticket.getIdStatus() == 1) {
     				dataOut.writeUTF(msg);	//envio de respuesta al cliente
     				ticket.TicketPurchase();//espera por confirmacion.
     			}
@@ -190,23 +190,30 @@ public class SocketThread extends Thread
     private boolean confirmReserveTickets()
             throws ConversationException, IOException
     {
+    	boolean complete = false;
     	String msg = dataIn.readUTF();
     	String[] dataMSG = msg.split(",");
-    	//msj := “12,2020,123-123-123-123,04/22,333,VISA|MASTERCARD”
-    	
-    	int[] idTicket = new int[dataMSG.length - 4];
-    	for(int i = 0; i < idTicket.length; i++) {
-    		idTicket[i] = Integer.parseInt(dataMSG[4+i]);
-    	}
-    	
+    															//msj := “12,2020,123-123-123-123,04/22,333,VISA|MASTERCARD”
+    															//agregar proceso de confirmacion en datos de compra
     	for(Boleto ticket : db.availableTickets.values()) {
-    		for(int i = 0; i < idTicket.length; i++) {
-    			if(ticket.getIdTicket() == idTicket[i] && ticket.getIdStatus() == 1) {
-    				dataOut.writeUTF(msg);
-    				ticket.TicketPurchase();
+    		for(int i = 0; i < ReserverdTickets.length; i++) {
+    			if(ticket.getIdTicket() == ReserverdTickets[i] && ticket.getIdStatus() == 1) {
+    				ticket.ConfirmationTicketPurchase();
+    				if(ticket.getIdStatus() == 3) {
+    					complete = true;
+    				}
     			}
     		}
     	}
+    	msg = STATE.CONFIRM_RESERVE_TICKETS + ",";
+    	for(int i = 0; i < dataMSG.length - 1; i++) {
+    			msg += dataMSG[i+1] + ",";
+    	}
+    	if(complete)
+    		msg += "0"; //exito de compra
+    	else
+    		msg += "1"; //error de comprar
+    	dataOut.writeUTF(msg); 
     	return false;
     }
 
