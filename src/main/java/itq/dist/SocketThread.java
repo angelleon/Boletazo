@@ -249,23 +249,23 @@ public class SocketThread extends Thread
         case S_START_SESSION:
             return new int[0];
         case GET_EVENT_LIST:
-            return new int[] {}
+            return new int[0];
         case POST_EVENT_LIST:
-            break;
+            return new int[] { 3 };
         case GET_EVENT_INFO:
-            break;
+            return new int[0];
         case POST_EVENT_INFO:
-            break;
+            return new int[] { 7 };
         case GET_AVAILABLE_SEATS:
-            break;
+            return new int[0];
         case POST_AVAILABLE_SEATS:
-            break;
+            return new int[] { 3 };
         case REQUEST_RESERVE_TICKETS:
-            break;
+            return new int[0];
         case CONFIRM_RESERVE_TICKETS:
-            break;
+            return new int[] { 2 };
         case SINGUP:
-            break;
+            return new int[0];
         case SINGUP_STATUS:
             break;
         case LOGIN_CHECK:
