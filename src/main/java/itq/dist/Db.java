@@ -39,7 +39,7 @@ public class Db
             + "WHERE date BETWEEN ?" // aqui se reemplaza el (?) con una fecha usando setDate(1, date)
             + "AND DATE_ADD(?, INTERVAL 1 DAY)"; // lo mismo de arriba setDate(2, date)
    
-    private static final String SELECT_EVENT_AT_HOUR = "SELECT id,name "
+    private static final String SELECT_EVENT_AT_HOUR = "SELECT * "
 			+ "from Event "
 			+ "WHERE date_format(date,'%H:%i') = ? ";
     
@@ -208,7 +208,7 @@ public class Db
         ResultSet result = null;
         try
         {
-            PreparedStatement ps = conn.prepareStatement(SELECT_EVENT_AT_DATE);
+            PreparedStatement ps = conn.prepareStatement(SELECT_EVENT_AT_HOUR);
             Date searchDate = Date.valueOf(date);
             ps.setDate(1, searchDate);
             
@@ -233,7 +233,7 @@ public class Db
             {
                 idEvent = result.getInt("idEvent");
                 name = result.getString("name");
-                ev = new Event(idEvent, name);
+                ev = new Event(idEvent, name, description, evDate, idVenue);
                 events[i] = ev;
                 i++;
             }

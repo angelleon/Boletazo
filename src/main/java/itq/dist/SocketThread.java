@@ -45,7 +45,7 @@ public class SocketThread extends Thread
         this.socket = socket;
         this.db = db;
         this.sc = sc;
-        this.currentState = STATE.C_START_SESSION.ordinal();
+        this.currentState = STATE.C_START_SESSION;
     }
 
     @Override
