@@ -19,6 +19,7 @@ public class SocketThread extends Thread
     private DataOutputStream dataOut;
     private Db db;
     private SessionControl sc;
+    private int sessionId;
     private StringBuilder msgOut;
 
     private static enum STATE {
@@ -91,6 +92,7 @@ public class SocketThread extends Thread
     // ToDo: considerar lanzar excepciones para manejar todos los errores de la
     // conversacion dentro de un bloque catch
 
+    // La tablita .....si hay sesion tabla.. ok no..
     private boolean cStartSession() throws ConversationException, IOException
     {
         String rawMsg = dataIn.readUTF();
@@ -145,6 +147,7 @@ public class SocketThread extends Thread
         return false;
     }
 
+    //
     private boolean requestReserveTickets()
             throws ConversationException, IOException
     {
@@ -179,6 +182,11 @@ public class SocketThread extends Thread
 
     private boolean postPaymentInfo() throws ConversationException, IOException
     {
+    	currentState = STATE.POST_PAYMENT_INFO;
+    	
+    	String rawMsg = dataIn.readUTF();
+    	String[] valuesIn = rawMsg.split(",");
+    	int sessionId = Integer.parseInt(valuesIn[1]);
         return false;
     }
 
