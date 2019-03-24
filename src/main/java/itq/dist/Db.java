@@ -331,6 +331,7 @@ public class Db
     public Event[] search(String eventName, String venueName, LocalDate eventDate, int hour, float cost,
             String sectionName)
     {
+        HashMap<Integer, Event> events = new HashMap<Integer, Event>();
         return new Event[0];
     }
 

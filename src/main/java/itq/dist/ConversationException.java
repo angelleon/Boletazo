@@ -13,7 +13,8 @@ public class ConversationException extends BoletazoException
         INCORRECT_NUMBER_FORMAT,
         TO_MANY_ARGUMENTS,
         NOT_ENOUGH_ARGUMENTS,
-        INCORRECT_CONVERSATION_STATE
+        INCORRECT_CONVERSATION_STATE,
+        VALUE_OUT_OF_RANGE
     }
 
     private ERROR error;
