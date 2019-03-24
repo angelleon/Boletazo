@@ -2,18 +2,20 @@ package itq.dist;
 
 public class Boleto
 {
-    private int idTicket;
-    private String seatNumber;
-    private int idStatus;
-    private int idSection;
-    private int idEvent;
-
     public static enum STATUS {
         NULL, // DB does not define an id with value 0
         AVAILABLE,
         RESERVED,
         SOLD
     }
+
+    private int idTicket;
+    private String seatNumber;
+    private int idStatus;
+    private int idSection;
+    private int idEvent;
+
+    private STATUS ticketStatus;
 
     private int purchaseTime = 6000; // tiempo configurable para la espera de compra
     private TimerThread timer;
@@ -26,6 +28,7 @@ public class Boleto
         this.idStatus = idStatus;
         this.idSection = idSection;
         this.idEvent = idEvent;
+        setStatus(idStatus);
     }
 
     Boleto(int idTicket, String seatNumber, int idStatus, int idSection,
@@ -98,7 +101,6 @@ public class Boleto
         }
         catch (InterruptedException e)
         {
-            // TODO Auto-generated catch block
             e.printStackTrace();
             return false;
         }
@@ -106,5 +108,29 @@ public class Boleto
     public void ConfirmationTicketPurchase()
     {
         timer.interrupt();
+    }
+
+    private void setStatus(int idStatus)
+    {
+        if (idStatus == STATUS.NULL.ordinal())
+        {
+            ticketStatus = STATUS.NULL;
+        }
+        else if (idStatus == STATUS.AVAILABLE.ordinal())
+        {
+            ticketStatus = STATUS.AVAILABLE;
+        }
+        else if (idStatus == STATUS.RESERVED.ordinal())
+        {
+            ticketStatus = STATUS.RESERVED;
+        }
+        else if (idStatus == STATUS.SOLD.ordinal())
+        {
+            ticketStatus = STATUS.SOLD;
+        }
+        else
+        {
+
+        }
     }
 }

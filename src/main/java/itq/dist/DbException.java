@@ -1,6 +1,6 @@
 package itq.dist;
 
-public class SessionException extends BoletazoException
+public class DbException extends BoletazoException
 {
     /**
      * 
@@ -9,20 +9,19 @@ public class SessionException extends BoletazoException
 
     public static enum ERROR {
         GENERIC_ERROR,
-        INVALID_SESSION_ID
+        INCONSCISTENT_INFO
     }
 
     private ERROR error;
 
-    SessionException(ERROR error)
+    DbException()
     {
-        super();
-        this.error = error;
+
     }
 
-    SessionException()
+    DbException(ERROR error)
     {
-        this(ERROR.GENERIC_ERROR);
+        this.error = error;
     }
 
     @Override
@@ -31,12 +30,14 @@ public class SessionException extends BoletazoException
         return super.getMessage() + "\n" + errorToStr(error);
     }
 
-    private String errorToStr(ERROR error)
+    private static String errorToStr(ERROR error)
     {
         switch (error)
         {
         case GENERIC_ERROR:
-            return "Session exception for Boletazo software";
+            return "DataBase exception for Boletazo software";
+        case INCONSCISTENT_INFO:
+            return "Provided information is inconsisten with database";
         default:
             return "";
         }
