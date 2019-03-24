@@ -8,7 +8,8 @@ public class SessionException extends BoletazoException
     private static final long serialVersionUID = 1L;
 
     public static enum ERROR {
-        GENERIC_ERROR
+        GENERIC_ERROR,
+        INVALID_SESSION_ID
     }
 
     private ERROR error;

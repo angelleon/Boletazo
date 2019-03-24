@@ -47,7 +47,28 @@ public class Db
             + "FROM Ticket T, Status S "
             + "WHERE T.idStatus = (SELECT idStatus "
             + "FROM Status "
-            + "WHERE status = 'DISPONIBLE'); ";
+            + "WHERE status = 'DISPONIBLE')";
+
+    private static final String SEARCH_EVENT_BY_NAME = "SELECT * "
+            + "FROM Event "
+            + "WHERE LOWER(name) LIKE LOWER('%?%')";
+
+    private static final String SEARCH_EVENT_BY_VENUE_NAME = "SELECT E.* "
+            + "FROM Event E, Venue V "
+            + "WHERE E.idVenue = V.idVenue "
+            + "AND LOWER(V.name) LIKE LOWER('%?%')";
+
+    private static final String SEARCH_EVENT_BY_COST = "SELECT E.*, S.name, S.cost"
+            + "FROM Event E, Section S, Section_has_Event ShE"
+            + "WHERE E.idEvent = ShE.idEvent "
+            + "AND ShE.idSection = S.idSection"
+            + "AND S.cost <= ?";
+
+    private static final String SEARCH_EVENT_BY_SECTION_NAME = "SELECT E.* "
+            + "FROM Event E, Section S, Section_has_Event ShE "
+            + "WHERE E.idEvent = ShE.idEvent "
+            + "AND S.idSection = ShE.idSection "
+            + "AND S.name = '?'";
 
     @SuppressWarnings("unused")
     private static char mander = 'c';
@@ -246,6 +267,12 @@ public class Db
         }
         log.debug("Retrived [" + nEvents + "] events");
         return events;
+    }
+
+    public Event[] search(String eventName, String venueName, LocalDate eventDate, int hour, float cost,
+            String sectionName)
+    {
+        return new Event[0];
     }
 
     public boolean singup()
