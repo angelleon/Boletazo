@@ -13,6 +13,7 @@ public class ConversationException extends BoletazoException
         INCORRECT_NUMBER_FORMAT,
         TO_MANY_ARGUMENTS,
         NOT_ENOUGH_ARGUMENTS,
+        INCORRECT_CONVERSATION_STATE
     }
 
     private ERROR error;
@@ -46,6 +47,8 @@ public class ConversationException extends BoletazoException
             return "there are not enough arguments to complete the petition";
         case TO_MANY_ARGUMENTS:
             return "there are more argumets than expected";
+        case INCORRECT_CONVERSATION_STATE:
+            return "actual conversation state is incorrect";
         default:
             return "";
         }

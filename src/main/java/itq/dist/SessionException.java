@@ -7,13 +7,37 @@ public class SessionException extends BoletazoException
      */
     private static final long serialVersionUID = 1L;
 
-    SessionException()
-    {
-
+    public static enum ERROR {
+        GENERIC_ERROR
     }
 
-    SessionException(int erroCode)
+    private ERROR error;
+
+    SessionException(ERROR error)
     {
-        super(erroCode);
+        super();
+        this.error = error;
+    }
+
+    SessionException()
+    {
+        this(ERROR.GENERIC_ERROR);
+    }
+
+    @Override
+    public String getMessage()
+    {
+        return super.getMessage() + "\n" + errorToStr(error);
+    }
+
+    private String errorToStr(ERROR error)
+    {
+        switch (error)
+        {
+        case GENERIC_ERROR:
+            return "Session exception for Boletazo software";
+        default:
+            return "";
+        }
     }
 }
