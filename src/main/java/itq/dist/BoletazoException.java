@@ -7,11 +7,11 @@ public class BoletazoException extends Exception
      */
     private static final long serialVersionUID = 1L;
 
+    private ERROR error;
+
     public static enum ERROR {
         GENERIC_ERROR
-    }
-
-    private ERROR error;
+    };
 
     BoletazoException()
     {
@@ -24,4 +24,20 @@ public class BoletazoException extends Exception
         this.error = error;
     }
 
+    @Override
+    public String getMessage()
+    {
+        return super.getMessage() + "\n" + errorToStr(error);
+    }
+
+    private static String errorToStr(ERROR error)
+    {
+        switch (error)
+        {
+        case GENERIC_ERROR:
+            return "Top-level exception for Boletazo software";
+        default:
+            return "";
+        }
+    }
 }
