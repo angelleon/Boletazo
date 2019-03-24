@@ -7,23 +7,21 @@ public class BoletazoException extends Exception
      */
     private static final long serialVersionUID = 1L;
 
-    public static enum ERROR
-    {
+    public static enum ERROR {
         GENERIC_ERROR
     }
 
-    protected int errorCode;
+    private ERROR error;
 
     BoletazoException()
     {
-        super();
-        errorCode = ERROR.GENERIC_ERROR.ordinal();
+        this(ERROR.GENERIC_ERROR);
     }
 
-    BoletazoException(int errorCode)
+    BoletazoException(ERROR error)
     {
-        this();
-        this.errorCode = errorCode;
+        super();
+        this.error = error;
     }
 
 }
