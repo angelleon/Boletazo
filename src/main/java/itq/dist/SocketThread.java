@@ -7,6 +7,9 @@ import java.net.Socket;
 import java.lang.StringBuilder;
 
 import org.apache.logging.log4j.Logger;
+
+import itq.dist.ConversationException.ERROR;
+
 import org.apache.logging.log4j.LogManager;
 
 public class SocketThread extends Thread
@@ -113,7 +116,9 @@ public class SocketThread extends Thread
     private boolean cStartSession() throws ConversationException, IOException
     {
         String rawMsg = dataIn.readUTF();
-        String[] valuesIn = spliceMsgTokens(rawMsg, getTokenNumber(), getArrayLengthPositions());
+        if (checkMsgIntegrity(rawMsg))
+        {
+        }
         return false;
     }
 
@@ -125,6 +130,7 @@ public class SocketThread extends Thread
         if (sessionId > 0)
         {
             msgOut.append(STATE.S_START_SESSION.ordinal());
+            msgOut.append(",");
             msgOut.append(sessionId);
             dataOut.writeUTF(msgOut.toString());
             return true;
@@ -226,50 +232,84 @@ public class SocketThread extends Thread
 
     private boolean checkMsgIntegrity(String rawMsg) throws ConversationException
     {
+        boolean correct = false;
         String[] valuesIn = rawMsg.split(",");
         int nTokens = getTokenNumber();
-        int[] arrayLength = getArrayLengthPositions();
+        int[] arrayLengths = getArrayLengthPositions();
         int n = valuesIn.length;
+        TYPES[] types = getArgumentTypes();
         if (n < nTokens)
         {
-            throw new ConversationException(ConversationException.ERROR.NOT_ENOUGH_ARGUMENTS);
+            throw new ConversationException(ERROR.NOT_ENOUGH_ARGUMENTS);
         }
         else
         {
-            switch (currentState)
+            try
             {
-            case C_START_SESSION:
-                break;
-            case GET_AVAILABLE_SEATS:
-                break;
-            case GET_EVENT_INFO:
-                break;
-            case GET_EVENT_LIST:
-                break;
-            case LOGIN_CHECK:
-                break;
-            case LOGIN_STATUS:
-                break;
-            case POST_EVENT_INFO:
-                break;
-            case POST_EVENT_LIST:
-                break;
-            case POST_PAYMENT_INFO:
-                break;
-            case PUCHARASE_COMPLETED:
-                break;
-            case REQUEST_RESERVE_TICKETS:
-                break;
-            case SINGUP:
-                break;
-            case S_START_SESSION:
-                break;
-            default:
-                break;
-
+                switch (currentState)
+                {
+                case C_START_SESSION:
+                case GET_EVENT_LIST:
+                case GET_EVENT_INFO:
+                case GET_AVAILABLE_SEATS:
+                case SINGUP:
+                case LOGIN_CHECK:
+                case POST_PAYMENT_INFO:
+                    for (int i = 0; i < nTokens; i++)
+                    {
+                        correct = correct && checkArgument(valuesIn[i], types[i]);
+                    }
+                    break;
+                case REQUEST_RESERVE_TICKETS:
+                    int i = 0;
+                    for (; i < nTokens; i++)
+                    {
+                        if (types[i] == TYPES.ARRAY)
+                            break;
+                        correct = correct && checkArgument(valuesIn[i], types[i]);
+                    }
+                    int arrayLength = Integer.parseInt(valuesIn[i]);
+                    for (int j = 0; j < arrayLength; j++)
+                    {
+                        correct = correct && checkArgument(valuesIn[i], TYPES.INT);
+                        i++;
+                        correct = correct && checkArgument(valuesIn[i], TYPES.INT);
+                        i++;
+                    }
+                    if (i < n) { throw new ConversationException(ERROR.TO_MANY_ARGUMENTS); }
+                    break;
+                default:
+                    throw new ConversationException(ERROR.INCORRECT_CONVERSATION_STATE);
+                }
+            }
+            catch (NumberFormatException e)
+            {
+                throw new ConversationException(ERROR.INCORRECT_NUMBER_FORMAT);
             }
         }
-        return false;
+        return correct;
+    }
+
+    // ToDo: terminar la definicion del metodo
+    private boolean checkArgument(String token, TYPES t) throws NumberFormatException
+    {
+        switch (t)
+        {
+        case ARRAY:
+            return false;
+        case FLOAT:
+            Float.parseFloat(token);
+            return true;
+        case INT:
+            Integer.parseInt(token);
+            return true;
+        case NULL:
+            return token.equals("null");
+        case STRING:
+            return token.length() > 0;
+        default:
+            return false;
+        }
     }
 
     private int getTokenNumber()
@@ -297,49 +337,35 @@ public class SocketThread extends Thread
         }
     }
 
+    // ToDo: evaluar la utilidad real de este metodo
+    // tal vez se pueden usar constantes en su lugar
     private int[] getArrayLengthPositions() throws ConversationException
     {
         switch (currentState)
         {
         case C_START_SESSION:
             return new int[0];
-        case S_START_SESSION:
-            return new int[0];
         case GET_EVENT_LIST:
             return new int[0];
-        case POST_EVENT_LIST:
-            return new int[] {3};
         case GET_EVENT_INFO:
             return new int[0];
-        case POST_EVENT_INFO:
-            return new int[] {7};
         case GET_AVAILABLE_SEATS:
             return new int[0];
-        case POST_AVAILABLE_SEATS:
-            return new int[] {3};
         case REQUEST_RESERVE_TICKETS:
-            return new int[0];
-        case CONFIRM_RESERVE_TICKETS:
-            return new int[] {2};
+            return new int[] {3};
         case SINGUP:
-            return new int[0];
-        case SINGUP_STATUS:
             return new int[0];
         case LOGIN_CHECK:
             return new int[0];
-        case LOGIN_STATUS:
-            return new int[0];
         case POST_PAYMENT_INFO:
             return new int[0];
-        case PUCHARASE_COMPLETED:
-            return new int[0];
         default:
-            throw new ConversationException();
+            throw new ConversationException(ERROR.INCORRECT_CONVERSATION_STATE);
         }
     }
 
     @SuppressWarnings("incomplete-switch")
-    private TYPES[] getArgumentTypes()
+    private TYPES[] getArgumentTypes() throws ConversationException
     {
         TYPES[] t = new TYPES[getTokenNumber()];
         switch (currentState)
@@ -393,6 +419,8 @@ public class SocketThread extends Thread
             t[5] = TYPES.STRING;
             t[6] = TYPES.STRING;
             break;
+        default:
+            throw new ConversationException(ERROR.INCORRECT_CONVERSATION_STATE);
         }
         return t;
     }
