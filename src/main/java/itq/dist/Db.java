@@ -24,7 +24,7 @@ public class Db
     private static final String USR = "boletazodev";
     private static final String PASSWD = "contrapass";
     private static final String URL = "jdbc:mysql://127.0.0.1:3306/Boletazo?useLegacyDatetimeCode=false&serverTimezone=UTC";
-    private static final LocalDate Today = LocalDate.now();
+    private static final LocalDate today = LocalDate.now();
 
     // Lista de querys
 
@@ -49,6 +49,7 @@ public class Db
             + "FROM Status "
             + "WHERE status = 'DISPONIBLE'); ";
 
+    @SuppressWarnings("unused")
     private static char mander = 'c';
 
     private Connection conn;
