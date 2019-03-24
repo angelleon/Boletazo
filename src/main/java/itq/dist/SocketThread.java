@@ -46,6 +46,7 @@ public class SocketThread extends Thread
     private enum TYPES {
         NULL,
         INT,
+        FLOAT,
         STRING,
         ARRAY
     }
@@ -278,13 +279,13 @@ public class SocketThread extends Thread
         case C_START_SESSION:
             return 2;
         case GET_EVENT_LIST:
-            return 7;
+            return 8;
         case GET_EVENT_INFO:
             return 3;
         case GET_AVAILABLE_SEATS:
             return 3;
         case REQUEST_RESERVE_TICKETS:
-            return 3;
+            return 5;
         case SINGUP:
             return 5;
         case LOGIN_CHECK:
@@ -337,6 +338,7 @@ public class SocketThread extends Thread
         }
     }
 
+    @SuppressWarnings("incomplete-switch")
     private TYPES[] getArgumentTypes()
     {
         TYPES[] t = new TYPES[getTokenNumber()];
@@ -345,6 +347,7 @@ public class SocketThread extends Thread
         case C_START_SESSION:
             t[0] = TYPES.INT;
             t[1] = TYPES.NULL;
+            break;
         case GET_EVENT_LIST:
             t[0] = TYPES.INT;
             t[1] = TYPES.INT;
@@ -352,21 +355,44 @@ public class SocketThread extends Thread
             t[3] = TYPES.STRING;
             t[4] = TYPES.STRING;
             t[5] = TYPES.INT;
-            t[6] = TYPES.INT;
+            t[6] = TYPES.FLOAT;
             t[7] = TYPES.STRING;
+            break;
         case GET_EVENT_INFO:
         case GET_AVAILABLE_SEATS:
             t[0] = TYPES.INT;
             t[1] = TYPES.INT;
             t[2] = TYPES.INT;
+            break;
         case REQUEST_RESERVE_TICKETS:
-
+            t[0] = TYPES.INT;
+            t[1] = TYPES.INT;
+            t[2] = TYPES.INT;
+            t[3] = TYPES.INT;
+            t[4] = TYPES.ARRAY;
+            break;
         case SINGUP:
-
+            t[0] = TYPES.INT;
+            t[1] = TYPES.STRING;
+            t[2] = TYPES.STRING;
+            t[3] = TYPES.STRING;
+            t[4] = TYPES.STRING;
+            break;
         case LOGIN_CHECK:
-
+            t[0] = TYPES.INT;
+            t[1] = TYPES.INT;
+            t[2] = TYPES.STRING;
+            t[3] = TYPES.STRING;
+            break;
         case POST_PAYMENT_INFO:
-
+            t[0] = TYPES.INT;
+            t[1] = TYPES.INT;
+            t[2] = TYPES.INT;
+            t[3] = TYPES.STRING;
+            t[4] = TYPES.STRING;
+            t[5] = TYPES.STRING;
+            t[6] = TYPES.STRING;
+            break;
         }
         return t;
     }
