@@ -4,6 +4,9 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.Socket;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.lang.StringBuilder;
 
 import org.apache.logging.log4j.Logger;
@@ -157,6 +160,14 @@ public class SocketThread extends Thread
                 throw new ConversationException(ERROR.INCORRECT_CONVERSATION_STATE);
             if (Integer.parseInt(valuesIn[1]) != sessionId)
                 throw new SessionException(SessionException.ERROR.INVALID_SESSION_ID);
+            String eventName = valuesIn[2];
+            String venueName = valuesIn[3];
+            String rawDate = valuesIn[4];
+            DateTimeFormatter format = DateTimeFormatter.ofPattern("dd-MM-YYYY");
+            LocalDate eventDate = LocalDate.parse(rawDate, format);
+            int hour = Integer.parseInt(valuesIn[5]);
+            if (hour < 0 || hour > 23)
+                throw new ConversationException(ERROR.VALUE_OUT_OF_RANGE);
         }
         return false;
     }
