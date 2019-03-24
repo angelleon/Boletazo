@@ -44,7 +44,10 @@ public class SocketThread extends Thread
     private STATE currentState;
 
     private enum TYPES {
-
+        NULL,
+        INT,
+        STRING,
+        ARRAY
     }
 
     SocketThread(Socket socket, Db db, SessionControl sc)
@@ -226,86 +229,70 @@ public class SocketThread extends Thread
         int nTokens = getTokenNumber();
         int[] arrayLength = getArrayLengthPositions();
         int n = valuesIn.length;
-        if (n < nTokens) { throw new ConversationException(); }
-        switch (currentState)
+        if (n < nTokens)
         {
-        case CONFIRM_RESERVE_TICKETS:
-            break;
-        case C_START_SESSION:
-            break;
-        case GET_AVAILABLE_SEATS:
-            break;
-        case GET_EVENT_INFO:
-            break;
-        case GET_EVENT_LIST:
-            break;
-        case LOGIN_CHECK:
-            break;
-        case LOGIN_STATUS:
-            break;
-        case POST_AVAILABLE_SEATS:
-            break;
-        case POST_EVENT_INFO:
-            break;
-        case POST_EVENT_LIST:
-            break;
-        case POST_PAYMENT_INFO:
-            break;
-        case PUCHARASE_COMPLETED:
-            break;
-        case REQUEST_RESERVE_TICKETS:
-            break;
-        case SINGUP:
-            break;
-        case SINGUP_STATUS:
-            break;
-        case S_START_SESSION:
-            break;
-        default:
-            break;
+            throw new ConversationException(ConversationException.ERROR.NOT_ENOUGH_ARGUMENTS);
+        }
+        else
+        {
+            switch (currentState)
+            {
+            case C_START_SESSION:
+                break;
+            case GET_AVAILABLE_SEATS:
+                break;
+            case GET_EVENT_INFO:
+                break;
+            case GET_EVENT_LIST:
+                break;
+            case LOGIN_CHECK:
+                break;
+            case LOGIN_STATUS:
+                break;
+            case POST_EVENT_INFO:
+                break;
+            case POST_EVENT_LIST:
+                break;
+            case POST_PAYMENT_INFO:
+                break;
+            case PUCHARASE_COMPLETED:
+                break;
+            case REQUEST_RESERVE_TICKETS:
+                break;
+            case SINGUP:
+                break;
+            case S_START_SESSION:
+                break;
+            default:
+                break;
 
+            }
         }
         return false;
     }
 
-    private int getTokenNumber() throws ConversationException
+    private int getTokenNumber()
     {
         switch (currentState)
         {
         case C_START_SESSION:
             return 2;
-        case S_START_SESSION:
-            return 2;
         case GET_EVENT_LIST:
             return 7;
-        case POST_EVENT_LIST:
-            return 4;
         case GET_EVENT_INFO:
-            return 3;
-        case POST_EVENT_INFO:
             return 3;
         case GET_AVAILABLE_SEATS:
             return 3;
-        case POST_AVAILABLE_SEATS:
-            return 4;
         case REQUEST_RESERVE_TICKETS:
             return 3;
-        case CONFIRM_RESERVE_TICKETS:
-            return 4;
         case SINGUP:
             return 5;
-        case SINGUP_STATUS:
-            return 3;
         case LOGIN_CHECK:
             return 4;
-        case LOGIN_STATUS:
-            return 3;
         case POST_PAYMENT_INFO:
             return 7;
-        case PUCHARASE_COMPLETED:
-            return 5;
         default:
-            throw new ConversationException();
+            return -1;
         }
     }
 
@@ -350,8 +337,37 @@ public class SocketThread extends Thread
         }
     }
 
-    private int[] getArgumentTypes()
+    private TYPES[] getArgumentTypes()
     {
+        TYPES[] t = new TYPES[getTokenNumber()];
+        switch (currentState)
+        {
+        case C_START_SESSION:
+            t[0] = TYPES.INT;
+            t[1] = TYPES.NULL;
+        case GET_EVENT_LIST:
+            t[0] = TYPES.INT;
+            t[1] = TYPES.INT;
+            t[2] = TYPES.STRING;
+            t[3] = TYPES.STRING;
+            t[4] = TYPES.STRING;
+            t[5] = TYPES.INT;
+            t[6] = TYPES.INT;
+            t[7] = TYPES.STRING;
+        case GET_EVENT_INFO:
+        case GET_AVAILABLE_SEATS:
+            t[0] = TYPES.INT;
+            t[1] = TYPES.INT;
+            t[2] = TYPES.INT;
+        case REQUEST_RESERVE_TICKETS:
 
+        case SINGUP:
+
+        case LOGIN_CHECK:
+
+        case POST_PAYMENT_INFO:
+
+        }
+        return t;
     }
 }
