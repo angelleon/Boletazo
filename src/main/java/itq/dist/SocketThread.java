@@ -33,7 +33,7 @@ public class SocketThread extends Thread
     private int nRequestedTickets;
     private int idEvent;
     private int[] tickets_array;
-    private Ticketinfo[]; // i needed one of these!!!!!!
+    //private Ticketinfo[]; // i needed one of these!!!!!!
     private String usr;
     private String pass;
     private String email;
