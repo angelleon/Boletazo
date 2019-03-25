@@ -33,13 +33,13 @@ public class SocketThread extends Thread
     private int nRequestedTickets;
     private int idEvent;
     private int[] tickets_array;
-    private Ticketinfo[]; // i needed one of these!!!!!!
+    private TicketInfo[] ticketInfo; // i needed one of these!!!!!!
     private String usr;
     private String pass;
     private String email;
     private String stateResidence;
     private Event[] searchResult;
-    private Event selectedEvent;
+    private EventInfo selectedEvent;
     private TimerThread timer;
 
     private static enum STATE {
@@ -230,23 +230,62 @@ public class SocketThread extends Thread
         return false;
     }
 
-    private boolean postEventInfo() throws ConversationException, IOException
+    private boolean postEventInfo() throws ConversationException, SessionException, IOException
     {
         currentState = STATE.POST_EVENT_INFO;
-
-        return false;
+        msgOut.setLength(0);
+        msgOut.append(currentState.ordinal());
+        msgOut.append(",");
+        msgOut.append(sessionId);
+        msgOut.append(",");
+        msgOut.append(selectedEvent.getIdEvent());
+        msgOut.append(",");
+        msgOut.append(selectedEvent.getName());
+        msgOut.append(",");
+        LocalDate[] dates = selectedEvent.getDates();
+        msgOut.append(dates.length);
+        for (LocalDate d : dates)
+        {
+            msgOut.append(",");
+            msgOut.append(d.getDayOfMonth());
+            msgOut.append("-");
+            msgOut.append(d.getMonthValue());
+            msgOut.append("-");
+            msgOut.append(d.getYear());
+        }
+        Participant[] participants = selectedEvent.getParticipants();
+        msgOut.append(participants.length);
+        for (Participant p : participants)
+        {
+            msgOut.append(",");
+            msgOut.append(p.getName());
+            msgOut.append(",");
+            msgOut.append(p.getDescription());
+        }
+        dataOut.writeUTF(msgOut.toString());
+        return true;
     }
 
     private boolean getAvailableSeats()
             throws ConversationException, SessionException, IOException
     {
         currentState = STATE.GET_AVAILABLE_SEATS;
+        String rawMsg = dataIn.readUTF();
+        if (checkMsgIntegrity(rawMsg))
+        {
+            String[] valuesIn = rawMsg.split(",");
+            checkConversationState(valuesIn[0]);
+            checkSessionId(valuesIn[1]);
+            idEvent = Integer.parseInt(valuesIn[2]);
+        }
         return false;
     }
 
     private boolean postAvailableSeats() throws ConversationException, IOException
     {
         currentState = STATE.POST_AVAILABLE_SEATS;
+        msgOut.setLength(0);
+        msgOut.append(currentState.ordinal());
         return false;
     }
 
@@ -254,74 +293,83 @@ public class SocketThread extends Thread
     private boolean requestReserveTickets()
             throws ConversationException, SessionException, IOException
     {
-    	currentState =STATE.REQUEST_RESERVE_TICKETS;
-    	String rawMsg = dataIn.readUTF();
-    	
-    	if(checkMsgIntegrity(rawMsg) && sessionId >0){
-    		String[] parts = rawMsg.split(",");
-    		//int opcode = Integer.parseInt(parts[0]);
-    		sessionId = Integer.parseInt(parts[1]);
-    		idEvent = Integer.parseInt(parts[2]);
-    		nRequestedTickets = Integer.parseInt(parts[3]);
-    		// see if the nRequestedTickets is equal or less than permit_Ticket
-    		if(nRequestedTickets <= PERMIT_TICKETS) {
-    			tickets_array = new int[nRequestedTickets];
-    			//desde la posicion de nRequestedTicked + nRequestTicked
-    			int numPart = 4;
-    			
-        		//array with the request idtickets
-        		for(int i = 0;i<nRequestedTickets;i++) {
-        			log.debug(" posicion en mensaje "+numPart+" posicion-numero de ticket "+i);
-        			tickets_array[i] = Integer.parseInt(parts[numPart]);
-        			numPart++;
-        			
-        		}
-    		}
-    			log.error("Los tickets solicitados exceden el limite permitido ");
-    		return true;
-    	}
+        currentState = STATE.REQUEST_RESERVE_TICKETS;
+        String rawMsg = dataIn.readUTF();
+
+        if (checkMsgIntegrity(rawMsg) && sessionId > 0)
+        {
+            String[] parts = rawMsg.split(",");
+            // int opcode = Integer.parseInt(parts[0]);
+            sessionId = Integer.parseInt(parts[1]);
+            idEvent = Integer.parseInt(parts[2]);
+            nRequestedTickets = Integer.parseInt(parts[3]);
+            // see if the nRequestedTickets is equal or less than permit_Ticket
+            if (nRequestedTickets <= PERMIT_TICKETS)
+            {
+                tickets_array = new int[nRequestedTickets];
+                // desde la posicion de nRequestedTicked + nRequestTicked
+                int numPart = 4;
+
+                // array with the request idtickets
+                for (int i = 0; i < nRequestedTickets; i++)
+                {
+                    log.debug(" posicion en mensaje " + numPart + " posicion-numero de ticket " + i);
+                    tickets_array[i] = Integer.parseInt(parts[numPart]);
+                    numPart++;
+
+                }
+            }
+            log.error("Los tickets solicitados exceden el limite permitido ");
+            return true;
+        }
         return false;
     }
+
     /**
-     * !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! requiere el tiempo de espera y no entendi como hacer ese pedo 
-     * @return true; all tickets were reserved 
+     * !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! requiere el tiempo de espera y no
+     * entendi como hacer ese pedo
+     * 
+     * @return true; all tickets were reserved
      * @throws ConversationException
      * @throws IOException
      */
     private boolean confirmReserveTickets()
             throws ConversationException, IOException
     {
-    	currentState =STATE.CONFIRM_RESERVE_TICKETS;
-    	msgOut.setLength(0);
-    	float cost = 0;
-    	
-    	 if (sessionId > 0) // #ArmaTuMensaje !!(revisar esta wean en todos)
-         {
-             msgOut.append(currentState);
-             msgOut.append(",");
-             msgOut.append(sessionId);
+        currentState = STATE.CONFIRM_RESERVE_TICKETS;
+        msgOut.setLength(0);
+        float cost = 0;
+
+        if (sessionId > 0) // #ArmaTuMensaje !!(revisar esta wean en todos)
+        {
+            msgOut.append(currentState);
+            msgOut.append(",");
+            msgOut.append(sessionId);
             // todo los tickets fueron rerservados
-             msgOut.append(",");
-             for(int i =0;i<tickets_array.length;i++) {
-            	 /*
-            	 if() { //ver si puede ser reservado ....y reservarlo :V
-            		 
-            	 }
-            	 */
-            	 cost = cost + db.getTicketById(tickets_array[i]);
-             }
-             msgOut.append(cost);
-             msgOut.append(",");
-             msgOut.append(nRequestedTickets);
-             //details of each ticket
-             for(int i =0;i<tickets_array.length;i++) {
-            	 msgOut.append(",");
-            	msgOut.append(tickets_array[i]);
-            	//sacar por aca un arreglo de cada ticket con su detalle?, #nunca se usa despues
-             }
-             dataOut.writeUTF(msgOut.toString());
-             return true;
-         }
+            msgOut.append(",");
+            for (int i = 0; i < tickets_array.length; i++)
+            {
+                /*
+                 * if() { //ver si puede ser reservado ....y reservarlo :V
+                 * 
+                 * }
+                 */
+                cost = cost + db.getTicketById(tickets_array[i]);
+            }
+            msgOut.append(cost);
+            msgOut.append(",");
+            msgOut.append(nRequestedTickets);
+            // details of each ticket
+            for (int i = 0; i < tickets_array.length; i++)
+            {
+                msgOut.append(",");
+                msgOut.append(tickets_array[i]);
+                // sacar por aca un arreglo de cada ticket con su detalle?, #nunca se usa
+                // despues
+            }
+            dataOut.writeUTF(msgOut.toString());
+            return true;
+        }
         return false;
     }
 
@@ -353,23 +401,24 @@ public class SocketThread extends Thread
      */
     private boolean singupStatus() throws ConversationException, IOException
     {
-    	currentState = STATE.SINGUP_STATUS;
-    	msgOut.setLength(0);
-    	
-    	msgOut.append(currentState);
+        currentState = STATE.SINGUP_STATUS;
+        msgOut.setLength(0);
+
+        msgOut.append(currentState);
         msgOut.append(",");
-		msgOut.append(sessionId);      
-		msgOut.append(",");
-		
-    	if(db.toRegister(usr, pass,email,stateResidence)) {
-    		msgOut.append(0);
-    		dataOut.writeUTF(msgOut.toString());
-    		
-    		return true;
-    	}
-    	msgOut.append(1);
-    	dataOut.writeUTF(msgOut.toString());
-    	log.info("usuario equivocado o falta registrar "+usr+" - " +email);	
+        msgOut.append(sessionId);
+        msgOut.append(",");
+
+        if (db.toRegister(usr, pass, email, stateResidence))
+        {
+            msgOut.append(0);
+            dataOut.writeUTF(msgOut.toString());
+
+            return true;
+        }
+        msgOut.append(1);
+        dataOut.writeUTF(msgOut.toString());
+        log.info("usuario equivocado o falta registrar " + usr + " - " + email);
         return false;
     }
 
@@ -394,20 +443,21 @@ public class SocketThread extends Thread
 
     private boolean loginStatus() throws ConversationException, IOException
     {
-    	currentState =STATE.LOGIN_STATUS;
-    	msgOut.setLength(0);
-    	msgOut.append(currentState);
+        currentState = STATE.LOGIN_STATUS;
+        msgOut.setLength(0);
+        msgOut.append(currentState);
         msgOut.append(",");
-		msgOut.append(sessionId);
-	      msgOut.append(",");
-	      
-		if(db.login(usr, pass)) {
-			msgOut.append("0");
-			dataOut.writeUTF(msgOut.toString());
-			return true;
-		}
-		msgOut.append("1");
-		dataOut.writeUTF(msgOut.toString());
+        msgOut.append(sessionId);
+        msgOut.append(",");
+
+        if (db.login(usr, pass))
+        {
+            msgOut.append("0");
+            dataOut.writeUTF(msgOut.toString());
+            return true;
+        }
+        msgOut.append("1");
+        dataOut.writeUTF(msgOut.toString());
         return false;
     }
 
@@ -450,28 +500,24 @@ public class SocketThread extends Thread
     private boolean pucharaseCompleted()
             throws ConversationException, IOException
     {
-    	
-    	currentState =STATE.PUCHARASE_COMPLETED;
-    	msgOut.setLength(0);
-    	
-    	msgOut.append(currentState);
+        currentState = STATE.PUCHARASE_COMPLETED;
+        msgOut.setLength(0);
+
+        msgOut.append(currentState);
         msgOut.append(",");
-		msgOut.append(sessionId);
-	      msgOut.append(",");
-		msgOut.append(nRequestedTickets);
-	      msgOut.append(",");
-	      
-		msgOut.append("el arreglo de los tickets....");
-		if (timer.isAlive())
-		{
-		if(db.update_ticket_status(tickets_array)) {
-			msgOut.append("0");
-			return true;
-		}
-		}
-		else
-			msgOut.append("1");
-		dataOut.writeUTF(msgOut.toString());
+        msgOut.append(sessionId);
+        msgOut.append(",");
+        msgOut.append(nRequestedTickets);
+        msgOut.append(",");
+
+        msgOut.append("el arreglo de los tickets....");
+        if (db.update_ticket_status(tickets_array))
+        {
+            msgOut.append("0");
+            return true;
+        }
+        msgOut.append("1");
+        dataOut.writeUTF(msgOut.toString());
         return false;
     }
 
