@@ -345,7 +345,7 @@ public class Db
 
         try
         {
-            PreparedStatement ps = conn.prepareStatement(SELECT_EVENT_IN_VENUE);
+            PreparedStatement ps = conn.prepareStatement("");
             ps.setString(1, Avenue);
 
             result = ps.executeQuery();
