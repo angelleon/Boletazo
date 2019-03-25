@@ -40,6 +40,7 @@ public class SocketThread extends Thread
     private String stateResidence;
     private Event[] searchResult;
     private Event selectedEvent;
+    private TimerThread timer;
 
     private static enum STATE {
         C_START_SESSION,
@@ -449,6 +450,7 @@ public class SocketThread extends Thread
     private boolean pucharaseCompleted()
             throws ConversationException, IOException
     {
+    	
     	currentState =STATE.PUCHARASE_COMPLETED;
     	msgOut.setLength(0);
     	
@@ -460,11 +462,15 @@ public class SocketThread extends Thread
 	      msgOut.append(",");
 	      
 		msgOut.append("el arreglo de los tickets....");
+		if (timer.isAlive())
+		{
 		if(db.update_ticket_status(tickets_array)) {
 			msgOut.append("0");
 			return true;
 		}
-		msgOut.append("1");
+		}
+		else
+			msgOut.append("1");
 		dataOut.writeUTF(msgOut.toString());
         return false;
     }
