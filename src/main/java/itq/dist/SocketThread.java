@@ -38,8 +38,8 @@ public class SocketThread extends Thread
     private String email;
     private String stateResidence;
     private Event[] searchResult;
-    private Event selectedEvent;
-    private Boleto[] reserv;
+    private EventInfo selectedEvent;
+    private TimerThread timer;
 
     private static enum STATE {
         C_START_SESSION,
@@ -229,23 +229,62 @@ public class SocketThread extends Thread
         return false;
     }
 
-    private boolean postEventInfo() throws ConversationException, IOException
+    private boolean postEventInfo() throws ConversationException, SessionException, IOException
     {
         currentState = STATE.POST_EVENT_INFO;
-
-        return false;
+        msgOut.setLength(0);
+        msgOut.append(currentState.ordinal());
+        msgOut.append(",");
+        msgOut.append(sessionId);
+        msgOut.append(",");
+        msgOut.append(selectedEvent.getIdEvent());
+        msgOut.append(",");
+        msgOut.append(selectedEvent.getName());
+        msgOut.append(",");
+        LocalDate[] dates = selectedEvent.getDates();
+        msgOut.append(dates.length);
+        for (LocalDate d : dates)
+        {
+            msgOut.append(",");
+            msgOut.append(d.getDayOfMonth());
+            msgOut.append("-");
+            msgOut.append(d.getMonthValue());
+            msgOut.append("-");
+            msgOut.append(d.getYear());
+        }
+        Participant[] participants = selectedEvent.getParticipants();
+        msgOut.append(participants.length);
+        for (Participant p : participants)
+        {
+            msgOut.append(",");
+            msgOut.append(p.getName());
+            msgOut.append(",");
+            msgOut.append(p.getDescription());
+        }
+        dataOut.writeUTF(msgOut.toString());
+        return true;
     }
 
     private boolean getAvailableSeats()
             throws ConversationException, SessionException, IOException
     {
         currentState = STATE.GET_AVAILABLE_SEATS;
+        String rawMsg = dataIn.readUTF();
+        if (checkMsgIntegrity(rawMsg))
+        {
+            String[] valuesIn = rawMsg.split(",");
+            checkConversationState(valuesIn[0]);
+            checkSessionId(valuesIn[1]);
+            idEvent = Integer.parseInt(valuesIn[2]);
+        }
         return false;
     }
 
     private boolean postAvailableSeats() throws ConversationException, IOException
     {
         currentState = STATE.POST_AVAILABLE_SEATS;
+        msgOut.setLength(0);
+        msgOut.append(currentState.ordinal());
         return false;
     }
 
@@ -266,12 +305,12 @@ public class SocketThread extends Thread
             // see if the nRequestedTickets is equal or less than permit_Ticket
             if (nRequestedTickets <= PERMIT_TICKETS)
             {
-                tickets_Array = new int[nRequestedTickets];
+
+                ticketsArray = new int[nRequestedTickets];
                 // desde la posicion de nRequestedTicked + nRequestTicked
                 int numPart = 4;
 
                 // array with the request idtickets
-
                 TimerThread wait = null;
                 for (int i = 0; i < nRequestedTickets; i++)
                 {
@@ -370,12 +409,10 @@ public class SocketThread extends Thread
     {
         currentState = STATE.SINGUP_STATUS;
         msgOut.setLength(0);
-
-        msgOut.append(currentState);
+        msgOut.append(currentState.ordinal());
         msgOut.append(",");
         msgOut.append(sessionId);
         msgOut.append(",");
-
         if (db.toRegister(usr, pass, email, stateResidence))
         {
             msgOut.append(0);
@@ -416,7 +453,6 @@ public class SocketThread extends Thread
         msgOut.append(",");
         msgOut.append(sessionId);
         msgOut.append(",");
-
         if (db.login(usr, pass))
         {
             msgOut.append("0");
@@ -471,6 +507,7 @@ public class SocketThread extends Thread
         msgOut.setLength(0);
 
         msgOut.append(currentState);
+
         msgOut.append(",");
         msgOut.append(sessionId);
         msgOut.append(",");
@@ -478,7 +515,7 @@ public class SocketThread extends Thread
         msgOut.append(",");
 
         msgOut.append("el arreglo de los tickets....");
-        if (db.update_Ticket_Status(tickets_Array[i], 3) && reserv[i])
+        if (db.update_Ticket_Status(ticketsArray[i], 3) && reserv[i])
         {
             msgOut.append("0");
             return true;

@@ -70,6 +70,12 @@ public class Db
             + "AND S.idSection = ShE.idSection "
             + "AND S.name = '?'";
 
+    private static final String SELECT_AVAILABLE_SECTIONS_BY_IDEVENT = "SELECT S.* "
+            + "FROM Section S, Event E, Section_has_Event ShE "
+            + "WHERE ShE.idSection = S.idSection "
+            + "AND E.idEvent = ShE.idEvent "
+            + "AND E.idEvent = ?";
+
     @SuppressWarnings("unused")
     private static char mander = 'c';
 
@@ -278,16 +284,17 @@ public class Db
     }
 
     /**
-     * Search ticket by idticket to know the cost of the ticket
+     * Look ticket by idticket :V, know the cost of the ticket
      * 
      * @param idticket
-     * @return float cost
+     * @return float cost......
      */
     public float getTicketById(int idticket)
     {
         float cost = 0f;
+        String ticket = "";
+        if (!connected) { return cost; }
         ResultSet result = null;
-
         LOG.debug("Retrived [" + idticket + "] ");
         try
         {
@@ -502,6 +509,7 @@ public class Db
         try
         {
             ResultSet result = null;
+
             // for(int i =0;i<tickets.length;i++) {
             PreparedStatement ps = conn.prepareStatement(updateTicket);
             // int idticket = tickets[i];
@@ -527,7 +535,6 @@ public class Db
      * @param idTicket
      * @return value of status
      */
-
     public int consultStatusTicket(int idTicket)
     {
         String updateTicket = "select idstatus "
@@ -612,9 +619,42 @@ public class Db
      * @param eventId
      * @return Event
      */
-    public Event getEventInfo(int eventId)
+    public EventInfo getEventInfo(int eventId)
     {
-        return new Event();
+        return new EventInfo();
+    }
+
+    public Section[] getAvailabeSections()
+    {
+        Section[] sections = new Section[0];
+        try
+        {
+            PreparedStatement ps = conn.prepareStatement(SELECT_AVAILABLE_SECTIONS_BY_IDEVENT);
+            ResultSet result = ps.executeQuery();
+
+            int nSections = result.last() ? result.getRow() : 0;
+            result.beforeFirst();
+            sections = new Section[nSections];
+
+            int idSection;
+            String name;
+            float cost;
+
+            int i = 0;
+            while (result.next())
+            {
+                idSection = result.getInt("idSection");
+                name = result.getString("name");
+                cost = result.getFloat("cost");
+                sections[i] = new Section(idSection, name, cost);
+                i++;
+            }
+
+        }
+        catch (SQLException e)
+        {
+        }
+        return sections;
     }
 
     /**

@@ -88,7 +88,7 @@ public class Boleto
      * 
      * @return IdStatus
      */
-    public int getIdStatus()
+    public synchronized int getIdStatus()
     {
         return idStatus;
     }
@@ -130,6 +130,7 @@ public class Boleto
             {
                 idStatus = STATUS.SOLD.ordinal(); // Se concreto la compra en el
                                                   // tiempo de apartado
+                setStatus(idStatus);
                 return true;
             }
             else
@@ -137,6 +138,7 @@ public class Boleto
                 idStatus = STATUS.AVAILABLE.ordinal(); // no se concreto la
                                                        // compra en el tiempo de
                                                        // apartado
+                setStatus(idStatus);
                 return false;
             }
         }
