@@ -27,6 +27,16 @@ public class SocketThread extends Thread
     private int[] ReserverdTickets;
     private int sessionId;
     private StringBuilder msgOut;
+
+    //  TODO: declarar esto dentro de los metodos correspondientes
+    //  la informacion del login debe estar el menor tiempo posible en memoria
+    private int nRequestedTickets;
+    private int idEvent;
+    private int[] tickets_array;
+    private String usr;
+	private String pass;
+	private String email;
+	private String stateResidence;
     private Event[] searchResult;
     private Event selectedEvent;
 
@@ -238,99 +248,191 @@ public class SocketThread extends Thread
         return false;
     }
 
-    //
+    //opCode = 8 
     private boolean requestReserveTickets()
             throws ConversationException, SessionException, IOException
     {
-    	String msg = dataIn.readUTF();
-    	String[] dataMSG = msg.split(",");
-    	msg = STATE.CONFIRM_RESERVE_TICKETS + ",";
-    	for(int i = 0; i < dataMSG.length - 1; i++) {
-    		if(i == dataMSG.length - 2)
-    			msg += dataMSG[i+1];		
-    		else
-    			msg += dataMSG[i+1] + ",";
-    	}
-    	//msj := �8,1020,1,4,31,32,33,34�
-    	ReserverdTickets = new int[dataMSG.length - 4];
-    	for(int i = 0; i < ReserverdTickets.length; i++) {
-    		ReserverdTickets[i] = Integer.parseInt(dataMSG[4+i]);
-    	}
+    	currentState =STATE.REQUEST_RESERVE_TICKETS;
+    	//msgOut.setLength(0);   
+    	String rawMsg = dataIn.readUTF();
     	
-    	for(Boleto ticket : db.availableTickets.values()) {
-    		for(int i = 0; i < ReserverdTickets.length; i++) {
-    			if(ticket.getIdTicket() == ReserverdTickets[i] && ticket.getIdStatus() == 1) {
-    				dataOut.writeUTF(msg);	//envio de respuesta al cliente
-    				ticket.TicketPurchase();//espera por confirmacion.
-    			}
+    	if(checkMsgIntegrity(rawMsg) && sessionId >0){
+    		String[] parts = rawMsg.split(",");
+    		int opcode = Integer.parseInt(parts[0]);
+    		sessionId = Integer.parseInt(parts[1]);
+    		idEvent = Integer.parseInt(parts[2]);
+    		// ver que el nRequestedTickets sea menor o igual que el numero de tickets permitidos a comprar
+    		nRequestedTickets = Integer.parseInt(parts[3]);
+    		
+    		tickets_array = new int[nRequestedTickets];
+    		//desde la posicion de nRequestedTicked + nRequestTicked
+    		
+    		int numPart = 2;
+    		//array con los tickets solicitados
+    		for(int i = 0;i<nRequestedTickets;i++) {
+    			numPart++;
+    			tickets_array[i] = Integer.parseInt(parts[numPart]);
+    			
     		}
-    	}	
-    	return false;
+    		//debe comenzar aca el contador del tiempo?
+    		//consultar cada ticket 
+    		
+    		return true;
+    	}
+        return false;
     }
 
     private boolean confirmReserveTickets()
             throws ConversationException, IOException
     {
-    	boolean complete = false;
-    	String msg = dataIn.readUTF();
-    	String[] dataMSG = msg.split(",");
-    															//msj := �12,2020,123-123-123-123,04/22,333,VISA|MASTERCARD�
-    															//agregar proceso de confirmacion en datos de compra
-    	for(Boleto ticket : db.availableTickets.values()) {
-    		for(int i = 0; i < ReserverdTickets.length; i++) {
-    			if(ticket.getIdTicket() == ReserverdTickets[i] && ticket.getIdStatus() == 1) {
-    				ticket.ConfirmationTicketPurchase();
-    				if(ticket.getIdStatus() == 3) {
-    					complete = true;
-    				}
-    			}
-    		}
-    	}
-    	msg = STATE.CONFIRM_RESERVE_TICKETS + ",";
-    	for(int i = 0; i < dataMSG.length - 1; i++) {
-    			msg += dataMSG[i+1] + ",";
-    	}
-    	if(complete)
-    		msg += "0"; //exito de compra
-    	else
-    		msg += "1"; //error de comprar
-    	dataOut.writeUTF(msg); 
-    	return false;
+    	currentState =STATE.CONFIRM_RESERVE_TICKETS;
+    	msgOut.setLength(0);
+    	 if (sessionId > 0) // #ArmaTuMensaje
+         {
+             msgOut.append(currentState);
+             msgOut.append(sessionId);
+             float cost = 0;
+             ///.............Calcular el  costo...e_�
+             
+             
+             msgOut.append(cost);
+             msgOut.append(nRequestedTickets);
+             
+             
+             dataOut.writeUTF(msgOut.toString());
+             return true;
+         }
+    	
+        return false;
     }
-
+   
+    
     private boolean singup() throws ConversationException, SessionException, IOException
     {
+    	currentState =STATE.SINGUP;
+    	String rawMsg = dataIn.readUTF();
+    	if(checkMsgIntegrity(rawMsg)){
+    		String[] parts = rawMsg.split(",");
+    		//int opcode = Integer.parseInt(parts[0]);
+    		sessionId = Integer.parseInt(parts[1]);
+    		 usr = parts[2];
+    		 pass = parts[3];
+    		 email = parts[4];
+    		 stateResidence = parts[5];
+    		 if(db.singup(email)){
+    			 log.info("usuario registrado: "+usr+" - "+email);
+    			return true;
+    		 }
+    		 log.error("no se puede registrar "+rawMsg);
+    	}
         return false;
     }
 
+    /**
+     * Create a new user for Boletazo	 
+     */
     private boolean singupStatus() throws ConversationException, IOException
     {
+    	currentState = STATE.SINGUP_STATUS;
+    	msgOut.setLength(0);
+    	
+    	msgOut.append(currentState);
+		msgOut.append(sessionId);
+    	if(db.toRegister(usr, pass,email,stateResidence)) {
+    		msgOut.append(0);
+    		dataOut.writeUTF(msgOut.toString());
+    		
+    		return true;
+    	}
+    	msgOut.append(1);
+    	dataOut.writeUTF(msgOut.toString());
+    	log.info("usuario equivocado o falta registrar "+usr+" - " +email);	
         return false;
     }
 
     private boolean loginCheck() throws ConversationException, SessionException, IOException
     {
+    	currentState =STATE.LOGIN_CHECK;
+    	//msgOut.setLength(0);
+    	String rawMsg = dataIn.readUTF();
+    	
+    	if(checkMsgIntegrity(rawMsg) && sessionId >0){
+    		String[] parts = rawMsg.split(",");
+    		int opCode = Integer.parseInt(parts[0]);
+    		sessionId = Integer.parseInt(parts[1]);
+    		usr = parts[2];
+    		pass = parts[3];
+    		if(db.login(usr,pass)) {
+    			return true;
+    		}
+    	}
+    	log.debug(" algo esta mal escrito U_U "+rawMsg);
         return false;
     }
 
     private boolean loginStatus() throws ConversationException, IOException
     {
+    	currentState =STATE.LOGIN_STATUS;
+    	msgOut.setLength(0);
+    	msgOut.append(currentState);
+		msgOut.append(sessionId);
+		if(db.login(usr, pass)) {
+			msgOut.append("0");
+			dataOut.writeUTF(msgOut.toString());
+			return true;
+		}
+		msgOut.append("1");
+		dataOut.writeUTF(msgOut.toString());
         return false;
     }
+    /** 14)
+     * Client confirm that he wants the tickets
+     * @return 
+     * @throws ConversationException
+     * @throws IOException
+     */
 
     private boolean postPaymentInfo() throws ConversationException, SessionException, IOException
     {
         currentState = STATE.POST_PAYMENT_INFO;
-
         String rawMsg = dataIn.readUTF();
-        String[] valuesIn = rawMsg.split(",");
-        int sessionId = Integer.parseInt(valuesIn[1]);
+    	
+    	if(checkMsgIntegrity(rawMsg) && sessionId >0){
+    		String[] parts = rawMsg.split(",");
+    		int opcode = Integer.parseInt(parts[0]);
+    		sessionId = Integer.parseInt(parts[1]);
+    		String numberCard = parts[2];
+    		if(numberCard.length()==20) {
+    			String date = parts[3];
+    			String cvv = parts[4];
+    			String type = parts[5];
+    			if(type.equals("VISA")||type.equals("MASTERCARD")) {
+    				log.info("Compra por :"+numberCard+","+date+","+cvv+","+type);
+    				return true;
+    			}
+    			log.error("tipo tarjeta incorrecta ");
+    		}
+    		log.error("longuitud tarjeta incorrecta ");
+    	}
         return false;
     }
 
     private boolean pucharaseCompleted()
             throws ConversationException, IOException
     {
+    	currentState =STATE.PUCHARASE_COMPLETED;
+    	msgOut.setLength(0);
+    	
+    	msgOut.append(currentState);
+		msgOut.append(sessionId);
+		msgOut.append(nRequestedTickets);
+		msgOut.append("el arreglo de los tickets....");
+		if(db.update_ticket_status(tickets_array)) {
+			msgOut.append("0");
+			return true;
+		}
+		msgOut.append("1");
+		dataOut.writeUTF(msgOut.toString());
         return false;
     }
 
