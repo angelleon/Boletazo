@@ -3,10 +3,6 @@
  */
 package itq.dist;
 
-/**
- * @author Laptop
- *
- */
 public class TimerThread extends Thread
 {
     private int time;

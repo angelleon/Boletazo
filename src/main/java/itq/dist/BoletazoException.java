@@ -5,7 +5,7 @@ public class BoletazoException extends Exception
     /**
      * no se que hace este atributo, eclipse lo declaro como quickfix
      */
-    private static final long serialVersionUID = 1L;
+    private static final long SERIAL_VERSION_UID = 1L;
 
     private ERROR error;
 

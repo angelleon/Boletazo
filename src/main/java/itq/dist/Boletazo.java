@@ -31,7 +31,7 @@ public class Boletazo
         Db db = new Db();
         if (db.getConnected())
         {
-            db.preload();
+            db.preLoad();
             // initialConnection();
             try
             {
@@ -39,8 +39,8 @@ public class Boletazo
                 while (alive)
                 {
                     Socket socket = serverSocket.accept();
-                    SocketThread t = new SocketThread(socket, db, sc);
-                    t.start();
+                    SocketThread thread = new SocketThread(socket, db, sc);
+                    thread.start();
                     // threads.add(t);
                 }
                 serverSocket.close();

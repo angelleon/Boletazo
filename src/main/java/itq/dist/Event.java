@@ -9,7 +9,7 @@ public class Event
     private String name;
     private String description;
     private String city;
-    private String Address;
+    private String address;
     private LocalDate date;
     private float cost;
 
@@ -27,21 +27,21 @@ public class Event
         this.idVenue = idVenue;
     }
 
-    Event(int idEvent, int idVenue, String name, String Address, String city)
+    Event(int idEvent, int idVenue, String name, String address, String city)
     {
         this.idEvent = idEvent;
         this.idVenue = idVenue;
         this.name = name;
-        this.Address = Address;
+        this.address = address;
         this.city = city;
     }
 
-    Event(int idEvent, int idVenue, String name, String Address, String city, float cost)
+    Event(int idEvent, int idVenue, String name, String address, String city, float cost)
     {
         this.idEvent = idEvent;
         this.idVenue = idVenue;
         this.name = name;
-        this.Address = Address;
+        this.address = address;
         this.city = city;
         this.cost = cost;
     }

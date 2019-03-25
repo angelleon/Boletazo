@@ -15,13 +15,13 @@ import org.apache.logging.log4j.Logger;
 
 public class Db
 {
-    private static final Logger log = LogManager.getLogger(Db.class);
+    private static final Logger LOG = LogManager.getLogger(Db.class);
 
     // Informacion necesaria para conectarse a mysql
     private static final String USR = "boletazodev";
     private static final String PASSWD = "contrapass";
     private static final String URL = "jdbc:mysql://127.0.0.1:3306/Boletazo?useLegacyDatetimeCode=false&serverTimezone=UTC";
-    private static final LocalDate today = LocalDate.now();
+    private static final LocalDate TODAY = LocalDate.now();
 
     // Lista de querys
 
@@ -97,20 +97,20 @@ public class Db
         }
         catch (SQLException e)
         {
-            log.error("An error occurred when trying to connect to DB");
-            log.error(e.getMessage());
+            LOG.error("An error occurred when trying to connect to DB");
+            LOG.error(e.getMessage());
         }
         catch (ClassNotFoundException e)
         {
-            log.error(e.getMessage());
+            LOG.error(e.getMessage());
         }
         catch (IllegalAccessException e)
         {
-            log.error(e.getMessage());
+            LOG.error(e.getMessage());
         }
         catch (InstantiationException e)
         {
-            log.error(e.getMessage());
+            LOG.error(e.getMessage());
         }
     }
 
@@ -127,7 +127,7 @@ public class Db
     /**
      * Previous loading the events and tickets on the database
      */
-    public void preload()
+    public void preLoad()
     {
         try
         {
@@ -159,8 +159,8 @@ public class Db
         }
         catch (SQLException e)
         {
-            log.error("");
-            log.error(e.getMessage());
+            LOG.error("");
+            LOG.error(e.getMessage());
         }
     }
 
@@ -220,9 +220,9 @@ public class Db
         }
         catch (SQLException e)
         {
-            log.error(e.getMessage());
+            LOG.error(e.getMessage());
         }
-        log.debug("Retrived [" + nEvents + "] events");
+        LOG.debug("Retrived [" + nEvents + "] events");
         return events;
     }
 
@@ -277,9 +277,9 @@ public class Db
         }
         catch (SQLException e)
         {
-            log.error(e.getMessage());
+            LOG.error(e.getMessage());
         }
-        log.debug("Retrived [" + nEvents + "] events");
+        LOG.debug("Retrived [" + nEvents + "] events");
         return events;
     }
 
@@ -293,7 +293,7 @@ public class Db
     {
         float cost = 0f;
         ResultSet result = null;
-        log.debug("Retrived [" + idticket + "] ");
+        LOG.debug("Retrived [" + idticket + "] ");
         try
         {
             PreparedStatement ps = conn.prepareStatement(SELECT_BY_TICKET_ID);
@@ -305,9 +305,9 @@ public class Db
         }
         catch (SQLException e)
         {
-            log.error(e.getMessage());
+            LOG.error(e.getMessage());
         }
-        log.debug("ticket :" + idticket + " $" + cost);
+        LOG.debug("ticket :" + idticket + " $" + cost);
         return cost;
 
         /*
@@ -358,7 +358,7 @@ public class Db
             int idEvent = 0;
             int idVenue = 0;
             String name = "";
-            String Address = "";
+            String address = "";
             String city = "";
             LocalDate evDate = LocalDate.now();
 
@@ -369,19 +369,19 @@ public class Db
                 idEvent = result.getInt("idEvent");
                 idVenue = result.getInt("idAvenue");
                 name = result.getString("name");
-                Address = result.getString("address");
+                address = result.getString("address");
                 city = result.getString("city");
                 idVenue = result.getInt("idVenue");
-                ev = new Event(idEvent, idVenue, name, Address, city);
+                ev = new Event(idEvent, idVenue, name, address, city);
                 events[i] = ev;
                 i++;
             }
         }
         catch (SQLException e)
         {
-            log.error(e.getMessage());
+            LOG.error(e.getMessage());
         }
-        log.debug("Retrived [" + nEvents + "] events");
+        LOG.debug("Retrived [" + nEvents + "] events");
         return events;
     }
 
@@ -400,12 +400,12 @@ public class Db
     public boolean singup(String email, String usr, String passwd)
     {
         ResultSet result = null;
-        String user_registered = "select count(iduser) "
+        String userRegistered = "select count(iduser) "
                 + "from UserInfo"
                 + "where email = ? ";
         try
         {
-            PreparedStatement ps = conn.prepareStatement(user_registered);
+            PreparedStatement ps = conn.prepareStatement(userRegistered);
             ps.setString(1, email);
             result = ps.executeQuery();
             result.next();
@@ -422,7 +422,7 @@ public class Db
         }
         catch (SQLException e)
         {
-            log.error(e.getMessage());
+            LOG.error(e.getMessage());
         }
 
         return false;
@@ -440,19 +440,19 @@ public class Db
     public boolean toRegister(String user, String passwd, String email, String residence)
     {
         // ResultSet result = null;
-        String update_usr_info = "insert into UserInfo "
+        String updateUsrInfo = "insert into UserInfo "
                 + "(email,estado) values (?,?) ";
-        String update_LoginInfo = "INSERT INTO LoginInfo " +
+        String updateLoginInfo = "INSERT INTO LoginInfo " +
                 "(username,password) values (?.?) ";
 
         try
         {
-            PreparedStatement ps = conn.prepareStatement(update_usr_info);
+            PreparedStatement ps = conn.prepareStatement(updateUsrInfo);
             ps.setString(1, email);
             ps.setString(2, residence);
             ps.executeUpdate();
 
-            ps = conn.prepareStatement(update_LoginInfo);
+            ps = conn.prepareStatement(updateLoginInfo);
             ps.setString(1, user);
             ps.setString(2, passwd);
             ps.close();
@@ -460,7 +460,7 @@ public class Db
         }
         catch (SQLException e)
         {
-            log.error(e.getMessage());
+            LOG.error(e.getMessage());
         }
 
         return false;
@@ -475,21 +475,21 @@ public class Db
      */
     public boolean login(String usr, String pass)
     {
-        String usr_exist = "select idlogin "
+        String userExist = "select idlogin "
                 + "from LoginInfo "
                 + "where username = ? "
                 + "and password = ? ";
         try
         {
             ResultSet result = null;
-            PreparedStatement ps = conn.prepareStatement(usr_exist);
+            PreparedStatement ps = conn.prepareStatement(userExist);
             ps.setString(1, usr);
             ps.setString(2, pass);
             ps.executeUpdate();
             result = ps.executeQuery();
 
-            int usrs = result.last() ? result.getRow() : 0;
-            if (usrs > 0)
+            int users = result.last() ? result.getRow() : 0;
+            if (users > 0)
             {
                 // login
                 return true;
@@ -498,7 +498,7 @@ public class Db
         }
         catch (SQLException e)
         {
-            log.error(e.getMessage());
+            LOG.error(e.getMessage());
         }
         return false;
 
@@ -512,29 +512,29 @@ public class Db
      *            array that contains the idticket for purchase, Status
      * @return true: everything is ok... ?)
      */
-    public boolean update_ticket_status(int idticket, int setStatus)
+    public boolean update_Ticket_Status(int idTicket, int setStatus)
     {
-        String update_ticket = "update  ticket "
+        String updateTicket = "update  ticket "
                 + "set idStatus= ? "
                 + "where idTicket = ? ";
         try
         {
             ResultSet result = null;
             // for(int i =0;i<tickets.length;i++) {
-            PreparedStatement ps = conn.prepareStatement(update_ticket);
+            PreparedStatement ps = conn.prepareStatement(updateTicket);
             // int idticket = tickets[i];
             ps.setInt(1, setStatus);
-            ps.setInt(2, idticket);
+            ps.setInt(2, idTicket);
             ps.executeUpdate();
             // tenemos q volver a la guia houston...
             result = ps.executeQuery();
-            log.info("ticket : " + idticket + " Cambiado a:  " + setStatus);
+            LOG.info("ticket : " + idTicket + " Cambiado a:  " + setStatus);
             // }
             return true;
         }
         catch (SQLException e)
         {
-            log.error(e.getMessage());
+            LOG.error(e.getMessage());
         }
         return false;
     }
@@ -542,33 +542,33 @@ public class Db
     /**
      * Consult the status of ticket
      * 
-     * @param idticket
+     * @param idTicket
      * @return value of status
      */
 
-    public int ConsultStatusTicket(int idticket)
+    public int consultStatusTicket(int idTicket)
     {
-        String update_ticket = "select idstatus "
+        String updateTicket = "select idstatus "
                 + "from ticket "
                 + "where idTicket = ? ";
         try
         {
             ResultSet result = null;
             // for(int i =0;i<tickets.length;i++) {
-            PreparedStatement ps = conn.prepareStatement(update_ticket);
+            PreparedStatement ps = conn.prepareStatement(updateTicket);
             // int idticket = tickets[i];
-            ps.setInt(1, idticket);
+            ps.setInt(1, idTicket);
             ps.executeQuery();
             // tenemos q volver a la guia houston...
             result = ps.executeQuery();
-            log.debug("ticket : " + idticket + " status:  " + result.getString("idstatus"));
+            LOG.debug("ticket : " + idTicket + " status:  " + result.getString("idstatus"));
             return result.getInt("idstatus");
 
             // }
         }
         catch (SQLException e)
         {
-            log.error(e.getMessage());
+            LOG.error(e.getMessage());
         }
         return 0;
     }
@@ -596,30 +596,30 @@ public class Db
             Event ev;
             int idEvent = 0;
             String name = "";
-            String Address = "";
+            String address = "";
             String city = "";
             float cost = 0;
             LocalDate evDate = LocalDate.now();
             int idVenue = 0;
-            int i = 0;
+            int numerator = 0;
             PreparedStatement ps = conn.prepareStatement(SEARCH_EVENT_BY_COST);
             while (result.next())
             {
                 idEvent = result.getInt("idEvent");
                 idVenue = result.getInt("idAvenue");
                 name = result.getString("name");
-                Address = result.getString("address");
+                address = result.getString("address");
                 city = result.getString("city");
                 idVenue = result.getInt("idVenue");
                 cost = result.getFloat("cost");
-                ev = new Event(idEvent, idVenue, name, Address, city, cost);
-                events[i] = ev;
-                i++;
+                ev = new Event(idEvent, idVenue, name, address, city, cost);
+                events[numerator] = ev;
+                numerator++;
             }
         }
         catch (SQLException e)
         {
-            log.error(e.getMessage());
+            LOG.error(e.getMessage());
         }
         return events;
     }
