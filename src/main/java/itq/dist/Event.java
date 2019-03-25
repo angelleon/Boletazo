@@ -11,6 +11,7 @@ public class Event
     private String city;
     private String Address;
     private LocalDate date;
+    private float cost;
     Event()
     {
     	
@@ -31,6 +32,16 @@ public class Event
         this.name = name;
         this.Address = Address;
         this.city = city;
+    }
+
+    Event(int idEvent, int idVenue, String name, String Address, String city, float cost)
+    {
+        this.idEvent = idEvent;
+        this.idVenue = idVenue;
+        this.name = name;
+        this.Address = Address;
+        this.city = city;
+        this.cost = cost;
     }
     /**
      * @return the name
