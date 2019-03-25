@@ -58,7 +58,7 @@ public class Db
             + "WHERE E.idVenue = V.idVenue "
             + "AND LOWER(V.name) LIKE LOWER('%?%')";
 
-    private static final String SEARCH_EVENT_BY_COST = "SELECT E.*, S.name, S.cost"
+    private static final String SEARCH_EVENT_BY_COST = "SELECT E.*, S.name, S.cost "
             + "FROM Event E, Section S, Section_has_Event ShE"
             + "WHERE E.idEvent = ShE.idEvent "
             + "AND ShE.idSection = S.idSection"
@@ -344,8 +344,8 @@ public class Db
     {
         return false;
     }
-    
-    public Event[] getEventsPerCost(LocalDate date){
+    public Event[] getEventsPerCost(LocalDate date)
+    {
         Event[] events = null;
         if (!connected)
         {
@@ -356,8 +356,8 @@ public class Db
         int nEvents = 0;
         ResultSet result = null;
 	
-		try
-		{
+        try
+        {
 	            Event ev;
 	            int idEvent = 0;
 	            String name = "";
@@ -381,10 +381,16 @@ public class Db
 	                events[i] = ev;
 	                i++;
 	            }	
-		}catch (SQLException e)
+		    }
+        catch (SQLException e)
         {
             log.error(e.getMessage());
         }
-		return events;
+		    return events;
+    }
+
+    public Event getEventInfo(int eventId)
+    {
+        return new Event();
     }
 }

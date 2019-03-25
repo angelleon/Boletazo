@@ -14,7 +14,7 @@ public class Event
     private float cost;
     Event()
     {
-    	
+
     }
 
     Event(int idEvent, String name, String description, LocalDate date, int idVenue)
@@ -62,6 +62,28 @@ public class Event
                 + date.toString() + ", idVenue: " + idVenue + "}";
     }
 
+    public int getIdEvent()
+    {
+        return idEvent;
+    }
 
+    public String getName()
+    {
+        return name;
+    }
 
+    public String getDescription()
+    {
+        return description;
+    }
+
+    public LocalDate getDate()
+    {
+        return date;
+    }
+
+    public int getIdVenue()
+    {
+        return idVenue;
+    }
 }
