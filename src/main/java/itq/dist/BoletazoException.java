@@ -24,12 +24,21 @@ public class BoletazoException extends Exception
         this.error = error;
     }
 
+    /**
+     * Get the error message from Boletazo
+     */
     @Override
     public String getMessage()
     {
         return super.getMessage() + "\n" + errorToStr(error);
     }
 
+    /**
+     * Translate the error code enumerator into text
+     * 
+     * @param error
+     * @return String error
+     */
     private static String errorToStr(ERROR error)
     {
         switch (error)

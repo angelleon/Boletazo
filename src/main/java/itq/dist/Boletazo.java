@@ -1,5 +1,7 @@
 package itq.dist;
 
+import java.io.DataOutputStream;
+import java.io.IOException;
 import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
@@ -7,11 +9,7 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
 import java.net.UnknownHostException;
-import java.io.DataOutputStream;
-import java.util.ArrayList;
 import java.util.Enumeration;
-import java.io.IOException;
-import java.time.LocalDate;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -34,7 +32,7 @@ public class Boletazo
         if (db.getConnected())
         {
             db.preload();
-            //initialConnection();
+            // initialConnection();
             try
             {
                 serverSocket = new ServerSocket(PORT);
@@ -89,14 +87,16 @@ public class Boletazo
     }
 
     /**
+     * Get the ip from the assigned host
      * 
      * @return ethernet's assigned ip
      */
     private static String getIP() throws UnknownHostException
     {
         // ToDo: modificar para obtener la ip en windows
-        String system =  System.getProperty("os.name");
-        if(system.equals("Linux")) {
+        String system = System.getProperty("os.name");
+        if (system.equals("Linux"))
+        {
             String interfaceName = "eno1";
             try
             {
@@ -116,11 +116,8 @@ public class Boletazo
             }
             return "127.0.0.1";
         }
-        // For windows...    
-        return InetAddress.getLocalHost().getHostAddress().toString(); 
-        /* if you have active other ethernet interface .... unable!
-         */
-
-        
+        // For windows...
+        return InetAddress.getLocalHost().getHostAddress().toString();
+        // if you have active other ethernet interface .... unable!
     }
 }

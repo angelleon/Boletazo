@@ -1,16 +1,13 @@
 package itq.dist;
 
-//import java.sql.*;
-import java.sql.DriverManager;
-import java.sql.ResultSet;
-import java.sql.PreparedStatement;
 import java.sql.Connection;
 import java.sql.Date;
-import java.time.LocalDate;
+//import java.sql.*;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.lang.ClassNotFoundException;
-import java.lang.IllegalAccessException;
-import java.lang.InstantiationException;
+import java.time.LocalDate;
 import java.util.HashMap;
 
 import org.apache.logging.log4j.LogManager;
@@ -49,9 +46,9 @@ public class Db
             + "FROM Status "
             + "WHERE status = 'DISPONIBLE')";
     private static final String SELECT_BY_TICKET_ID = "SELECT cost "
-													+ "FROM section,ticket "
-													+ "where idticket = ? "
-													+ "and ticket.idsection = section.idsection ";
+            + "FROM section,ticket "
+            + "where idticket = ? "
+            + "and ticket.idsection = section.idsection ";
     private static final String SEARCH_EVENT_BY_NAME = "SELECT * "
             + "FROM Event "
             + "WHERE LOWER(name) LIKE LOWER('%?%')";
@@ -111,13 +108,18 @@ public class Db
         }
     }
 
+    /**
+     * Get the connected status of the database
+     * 
+     * @return connected
+     */
     public boolean getConnected()
     {
         return connected;
     }
 
     /**
-     * Metodo que precarga a memoria los eventos y boletos disponibles
+     * Previous loading the events and tickets on the database
      */
     public void preload()
     {
@@ -157,9 +159,10 @@ public class Db
     }
 
     /**
+     * Search in the database all the events that ocurr at certain date (day).
      * 
      * @param date:
-     * @return An array with all events that ocurr at certain date (day)
+     * @return Event[] events that ocurr at certain date (day)
      */
     public Event[] getEventsAtDay(LocalDate date)
     {
@@ -218,7 +221,7 @@ public class Db
     }
 
     /**
-     * Search by hour
+     * Search in the database all the events that ocurr at certain hour.
      * 
      * @return Event[] array with events on the same time
      */
@@ -275,37 +278,39 @@ public class Db
     }
 
     /**
-     * Look ticket by idticket :V, know the cost of the ticket 
-     * @param idticket 
-     * @return float cost......
+     * Search ticket by idticket to know the cost of the ticket
+     * 
+     * @param idticket
+     * @return float cost
      */
     public float getTicketById(int idticket)
     {
-    	float cost = 0f;
+        float cost = 0f;
         ResultSet result = null;
-    
+
         log.debug("Retrived [" + idticket + "] ");
         try
         {
             PreparedStatement ps = conn.prepareStatement(SELECT_BY_TICKET_ID);
             ps.setInt(1, idticket);
             result = ps.executeQuery();
-            cost = result.getFloat("cost");          
+            cost = result.getFloat("cost");
             ps.close();
-            //return cost;
-        } 
+            // return cost;
+        }
         catch (SQLException e)
         {
             log.error(e.getMessage());
         }
-        log.debug("ticket :"+idticket+" $"+cost); 
+        log.debug("ticket :" + idticket + " $" + cost);
         return cost;
     }
 
     /**
+     * Search in the database all the events that ocurr at certain Avenue.
      * 
-     * @param venue
-     * @return An array with all events that ocurr on an venue
+     * @param Avenue
+     * @return Event[] events that ocurr on an venue
      */
     public Event[] getEventsWhere(String Avenue)
     {
@@ -370,7 +375,7 @@ public class Db
     }
 
     /**
-     * know if the user has not been registered
+     * Status that confirm if the user has been register on the database
      * 
      * @return false: user has been registered before
      */
@@ -406,6 +411,7 @@ public class Db
     }
 
     /**
+     * Register an user into the database to keep is login information stored
      * 
      * @param user
      *            User to register
@@ -443,10 +449,10 @@ public class Db
     }
 
     /**
-     * Login Check it a new account is need or login
+     * Login Check for a new account to see if had an account created or need one.
      * 
-     * @param usr
-     * @param pass
+     * @param user
+     * @param password
      * @return true: the user exist false : the user require registration
      */
     public boolean login(String usr, String pass)
@@ -481,68 +487,79 @@ public class Db
     }
 
     /**
-     * update ticket , 3 = sold , 2 = busy, 1 available ??
-     * @param tickets array contains the idticket that the client wants to buy
-     * @return true: everything is ok... ?) 
+     * Update the ticket status with a numeric code, that depends: 3 = sold , 2 =
+     * busy, 1 = available
+     * 
+     * @param tickets
+     *            array that contains the idticket for purchase, Status
+     * @return true: everything is ok... ?)
      */
-    public boolean update_ticket_status(int idticket,int setStatus) {
-    	String update_ticket = "update  ticket "
-    						 + "set idStatus= ? "
-    						 + "where idTicket = ? ";
-    	try {
-    		ResultSet result = null;
-    		//for(int i =0;i<tickets.length;i++) {    			
-    			PreparedStatement ps = conn.prepareStatement(update_ticket);
-    			//int idticket = tickets[i];
-    			ps.setInt(1, setStatus);
-    			ps.setInt(2, idticket);
-    			ps.executeUpdate();
-    			// tenemos q volver a la guia houston...
-    			result = ps.executeQuery();
-    			log.info("ticket : "+idticket+" Cambiado a:  "+setStatus);
-    		//}
-    		return true;
-    	}
-    	catch (SQLException e)
+    public boolean update_ticket_status(int idticket, int setStatus)
+    {
+        String update_ticket = "update  ticket "
+                + "set idStatus= ? "
+                + "where idTicket = ? ";
+        try
+        {
+            ResultSet result = null;
+            // for(int i =0;i<tickets.length;i++) {
+            PreparedStatement ps = conn.prepareStatement(update_ticket);
+            // int idticket = tickets[i];
+            ps.setInt(1, setStatus);
+            ps.setInt(2, idticket);
+            ps.executeUpdate();
+            // tenemos q volver a la guia houston...
+            result = ps.executeQuery();
+            log.info("ticket : " + idticket + " Cambiado a:  " + setStatus);
+            // }
+            return true;
+        }
+        catch (SQLException e)
         {
             log.error(e.getMessage());
         }
-    	return false;
+        return false;
     }
+
     /**
      * Consult the status of ticket
+     * 
      * @param idticket
      * @return value of status
      */
-    
-    public int ConsultStatusTicket(int idticket) {
+
+    public int ConsultStatusTicket(int idticket)
+    {
         String update_ticket = "select idstatus "
-                            + "from ticket "
-                            + "where idTicket = ? ";
-            try {
-                ResultSet result = null;
-            //for(int i =0;i<tickets.length;i++) {              
-               PreparedStatement ps = conn.prepareStatement(update_ticket);
-               //int idticket = tickets[i];
-               ps.setInt(1, idticket);
-               ps.executeQuery();
-               // tenemos q volver a la guia houston...
-               result = ps.executeQuery();
-               log.debug("ticket : "+idticket+" status:  "+result.getString("idstatus"));
-               return result.getInt("idstatus");
-               
-            //}
-            }
-            catch (SQLException e)
-            {
+                + "from ticket "
+                + "where idTicket = ? ";
+        try
+        {
+            ResultSet result = null;
+            // for(int i =0;i<tickets.length;i++) {
+            PreparedStatement ps = conn.prepareStatement(update_ticket);
+            // int idticket = tickets[i];
+            ps.setInt(1, idticket);
+            ps.executeQuery();
+            // tenemos q volver a la guia houston...
+            result = ps.executeQuery();
+            log.debug("ticket : " + idticket + " status:  " + result.getString("idstatus"));
+            return result.getInt("idstatus");
+
+            // }
+        }
+        catch (SQLException e)
+        {
             log.error(e.getMessage());
-            }
+        }
         return 0;
     }
+
     /**
+     * Search in the database all the events that had a certain cost.
      * 
      * @param date
-     * @return
+     * @return Event[] events array with all the events
      */
     public Event[] getEventsPerCost(LocalDate date)
     {
@@ -589,14 +606,26 @@ public class Db
         return events;
     }
 
+    /**
+     * Get the general info of a certain event searched by the eventID
+     * 
+     * @param eventId
+     * @return Event
+     */
     public Event getEventInfo(int eventId)
     {
         return new Event();
     }
 
+    /**
+     * Get the boleto that correspond to a certain IDTicket
+     * 
+     * @param idTicket
+     * @return Boleto
+     */
     public Boleto getBoletoById(int idTicket)
     {
-        
+
         // TODO Auto-generated method stub
         return availableTickets.get(idTicket);
     }

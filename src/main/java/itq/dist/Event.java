@@ -46,6 +46,9 @@ public class Event
         this.cost = cost;
     }
 
+    /**
+     * Get the concat string with all the parameters of the class
+     */
     @Override
     public String toString()
     {
@@ -53,26 +56,51 @@ public class Event
                 + date.toString() + ", idVenue: " + idVenue + "}";
     }
 
+    /**
+     * Get the ID from the event
+     * 
+     * @return IdEvent
+     */
     public int getIdEvent()
     {
         return idEvent;
     }
 
+    /**
+     * Get the name from the event
+     * 
+     * @return name
+     */
     public String getName()
     {
         return name;
     }
 
+    /**
+     * Get the description from the event
+     * 
+     * @return description
+     */
     public String getDescription()
     {
         return description;
     }
 
+    /**
+     * Get the local date from the event
+     * 
+     * @return date
+     */
     public LocalDate getDate()
     {
         return date;
     }
 
+    /**
+     * get the ID Venue from the event
+     * 
+     * @return IDVenue
+     */
     public int getIdVenue()
     {
         return idVenue;
