@@ -24,7 +24,7 @@ public class Db
     private static final String USR = "boletazodev";
     private static final String PASSWD = "contrapass";
     private static final String URL = "jdbc:mysql://127.0.0.1:3306/Boletazo?useLegacyDatetimeCode=false&serverTimezone=UTC";
-    private static final LocalDate Today = LocalDate.now();
+    private static final LocalDate today = LocalDate.now();
 
     // Lista de querys
 
@@ -47,19 +47,38 @@ public class Db
             + "FROM Ticket T, Status S "
             + "WHERE T.idStatus = (SELECT idStatus "
             + "FROM Status "
-            + "WHERE status = 'DISPONIBLE'); ";
+            + "WHERE status = 'DISPONIBLE')";
     private static final String SELECT_BY_TICKET_ID = "SELECT * FROM Event WHERE idTicket = ? ";
-    
-    
+    private static final String SEARCH_EVENT_BY_NAME = "SELECT * "
+            + "FROM Event "
+            + "WHERE LOWER(name) LIKE LOWER('%?%')";
 
+    private static final String SEARCH_EVENT_BY_VENUE_NAME = "SELECT E.* "
+            + "FROM Event E, Venue V "
+            + "WHERE E.idVenue = V.idVenue "
+            + "AND LOWER(V.name) LIKE LOWER('%?%')";
+
+    private static final String SEARCH_EVENT_BY_COST = "SELECT E.*, S.name, S.cost "
+            + "FROM Event E, Section S, Section_has_Event ShE"
+            + "WHERE E.idEvent = ShE.idEvent "
+            + "AND ShE.idSection = S.idSection"
+            + "AND S.cost <= ?";
+
+    private static final String SEARCH_EVENT_BY_SECTION_NAME = "SELECT E.* "
+            + "FROM Event E, Section S, Section_has_Event ShE "
+            + "WHERE E.idEvent = ShE.idEvent "
+            + "AND S.idSection = ShE.idSection "
+            + "AND S.name = '?'";
+
+    @SuppressWarnings("unused")
     private static char mander = 'c';
 
     private Connection conn;
     private boolean connected;
 
     // Estructuras para almacenamiento temporal de información
-    private HashMap<Integer, Boleto> availableTickets;
-
+    protected HashMap<Integer, Boleto> availableTickets;
+    
     Db()
     {
         connected = false;
@@ -250,6 +269,7 @@ public class Db
         log.debug("Retrived [" + nEvents + "] events");
         return events;
     }
+
     /**
      * Look ticket by idticket :V
      * @param idticket 
@@ -282,19 +302,79 @@ public class Db
                 ticket = idticket+","+seat+","+status+","+section+","+event;
             }
             ps.close();
+
+    /**
+     * 
+     * @param Avenue
+     * @return An array with all events that ocurr on an Avenue
+     */
+    public Event[] getEventsWhere(String Avenue)
+    {
+        Event[] events = null;
+        if (!connected)
+        {
+            events = new Event[1];
+            events[0] = new Event();
+            return events;
+        }
+        int nEvents = 0;
+        ResultSet result = null;
+
+        try
+        {
+            PreparedStatement ps = conn.prepareStatement(SELECT_EVENT_IN_AVENUE);
+            ps.setString(1, Avenue);
+            
+            result = ps.executeQuery();
+            // getting number of selected rows
+            nEvents = result.last() ? result.getRow() : 0;
+            int i = 0;
+            events = new Event[nEvents];
+            result.beforeFirst();
+
+            Event ev;
+            int idEvent = 0;
+            int idVenue = 0;
+            String name = "";
+            String Address = "";
+            String city = "";
+            LocalDate evDate = LocalDate.now();
+
+            // Iterate over rows returned by the query
+            // Populating array
+            while (result.next())
+            {
+            	idEvent = result.getInt("idEvent");
+                idVenue = result.getInt("idAvenue");
+                name = result.getString("name");
+                Address= result.getString("address");
+                city = result.getString("city");
+                idVenue = result.getInt("idVenue");
+                ev = new Event(idEvent, idVenue, name, Address, city);
+                events[i] = ev;
+                i++;
+            }
         }
         catch (SQLException e)
         {
             log.error(e.getMessage());
         }
-        return ticket;
+        log.debug("Retrived [" + nEvents + "] events");
+        return events;
     }
     
+    public Event[] search(String eventName, String venueName, LocalDate eventDate, int hour, float cost,
+            String sectionName)
+    {
+        HashMap<Integer, Event> events = new HashMap<Integer, Event>();
+        return new Event[0];
+    }
+          
     /**
      * know if the user has not been registered
      * @return false: user has been registered before
      */
-    public boolean singup(String email)
+    public boolean singup()
     {
     	ResultSet result = null;
     	String user_registered = "select count(iduser) "
@@ -355,6 +435,7 @@ public class Db
    
         return false;
     }
+
     /**
      * Login Check it a new account is need or login 
      * @param usr 
@@ -416,5 +497,54 @@ public class Db
             log.error(e.getMessage());
         }
     	return false;
+
+    public Event[] getEventsPerCost(LocalDate date)
+    {
+        Event[] events = null;
+        if (!connected)
+        {
+            events = new Event[1];
+            events[0] = new Event();
+            return events;
+        }
+        int nEvents = 0;
+        ResultSet result = null;
+	
+        try
+        {
+	            Event ev;
+	            int idEvent = 0;
+	            String name = "";
+	            String Address = "";
+	            String city = "";
+	            float cost = 0;
+	            LocalDate evDate = LocalDate.now();
+	            int idVenue = 0;
+	            int i=0;
+	            PreparedStatement ps = conn.prepareStatement(SEARCH_EVENT_BY_COST);
+	            while (result.next())
+	            {
+	            	idEvent = result.getInt("idEvent");
+	                idVenue = result.getInt("idAvenue");
+	                name = result.getString("name");
+	                Address= result.getString("address");
+	                city = result.getString("city");
+	                idVenue = result.getInt("idVenue");
+	                cost = result.getFloat("cost");
+	                ev = new Event(idEvent, idVenue, name, Address, city, cost);
+	                events[i] = ev;
+	                i++;
+	            }	
+		    }
+        catch (SQLException e)
+        {
+            log.error(e.getMessage());
+        }
+		    return events;
+    }
+
+    public Event getEventInfo(int eventId)
+    {
+        return new Event();
     }
 }
