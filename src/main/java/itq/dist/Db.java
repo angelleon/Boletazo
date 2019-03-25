@@ -58,7 +58,7 @@ public class Db
             + "WHERE E.idVenue = V.idVenue "
             + "AND LOWER(V.name) LIKE LOWER('%?%')";
 
-    private static final String SEARCH_EVENT_BY_COST = "SELECT E.*, S.name, S.cost"
+    private static final String SEARCH_EVENT_BY_COST = "SELECT E.*, S.name, S.cost "
             + "FROM Event E, Section S, Section_has_Event ShE"
             + "WHERE E.idEvent = ShE.idEvent "
             + "AND ShE.idSection = S.idSection"
@@ -284,5 +284,10 @@ public class Db
     public boolean login(String user, String passwd)
     {
         return false;
+    }
+
+    public Event getEventInfo(int eventId)
+    {
+        return new Event();
     }
 }
