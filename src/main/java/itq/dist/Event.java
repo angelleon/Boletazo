@@ -12,6 +12,7 @@ public class Event
     private String Address;
     private LocalDate date;
     private float cost;
+
     Event()
     {
 
@@ -25,6 +26,7 @@ public class Event
         this.date = date;
         this.idVenue = idVenue;
     }
+
     Event(int idEvent, int idVenue, String name, String Address, String city)
     {
         this.idEvent = idEvent;
@@ -43,18 +45,7 @@ public class Event
         this.city = city;
         this.cost = cost;
     }
-    /**
-     * @return the name
-     */
-    public String getName() {
-    	return name;
-    }
-    /**
-     * @return the idEvent
-     */
-    public int getIdEvent() {
-    	return idEvent;
-    }
+
     @Override
     public String toString()
     {

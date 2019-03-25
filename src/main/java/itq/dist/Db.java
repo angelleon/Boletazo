@@ -81,7 +81,7 @@ public class Db
 
     // Estructuras para almacenamiento temporal de información
     protected HashMap<Integer, Boleto> availableTickets;
-    
+
     Db()
     {
         connected = false;
@@ -219,6 +219,7 @@ public class Db
 
     /**
      * Search by hour
+     * 
      * @return Event[] array with events on the same time
      */
     public Event[] getEventsAtHour(LocalDate date)
@@ -280,14 +281,19 @@ public class Db
      */
     public float getTicketById(int idticket)
     {
-    	float cost = (float)0;
+    	float cost = 0f;
         ResultSet result = null;
+        String ticket = "";
+        if (!connected) { return ticket; }
+
+        ResultSet result = null;
+
+        log.debug("Retrived [" + idticket + "] ");
         try
         {
             PreparedStatement ps = conn.prepareStatement(SELECT_BY_TICKET_ID);
             ps.setInt(1, idticket);
             result = ps.executeQuery();
-            
             cost = result.getFloat("cost");          
             ps.close();
         } 
@@ -297,6 +303,27 @@ public class Db
         }
         log.debug("ticket :"+idticket+" $"+cost);
         return cost;
+
+  /*
+
+            while (result.next())
+            {
+
+                String seat = result.getString("seatNumber");
+                int status = result.getInt("idStatus");
+                int section = result.getInt("idSection");
+                int event = result.getInt("idEvent");
+                ticket = idticket + "," + seat + "," + status + "," + section + "," + event;
+            }
+            ps.close();
+            return ticket;
+        }
+        catch (SQLException e)
+        {
+
+        }
+        return "";
+        */
     }
 
     /**
@@ -320,7 +347,7 @@ public class Db
         {
             PreparedStatement ps = conn.prepareStatement(SELECT_EVENT_IN_VENUE);
             ps.setString(1, Avenue);
-            
+
             result = ps.executeQuery();
             // getting number of selected rows
             nEvents = result.last() ? result.getRow() : 0;
@@ -340,10 +367,10 @@ public class Db
             // Populating array
             while (result.next())
             {
-            	idEvent = result.getInt("idEvent");
+                idEvent = result.getInt("idEvent");
                 idVenue = result.getInt("idAvenue");
                 name = result.getString("name");
-                Address= result.getString("address");
+                Address = result.getString("address");
                 city = result.getString("city");
                 idVenue = result.getInt("idVenue");
                 ev = new Event(idEvent, idVenue, name, Address, city);
@@ -358,114 +385,125 @@ public class Db
         log.debug("Retrived [" + nEvents + "] events");
         return events;
     }
-    
+
     public Event[] search(String eventName, String venueName, LocalDate eventDate, int hour, float cost,
             String sectionName)
     {
         HashMap<Integer, Event> events = new HashMap<Integer, Event>();
         return new Event[0];
     }
-          
+
     /**
      * know if the user has not been registered
+     * 
      * @return false: user has been registered before
      */
-    public boolean singup(String email)
+    public boolean singup(String email, String usr, String passwd)
     {
-    	ResultSet result = null;
-    	String user_registered = "select count(iduser) "
-    							+ "from UserInfo"
-    							+ "where email = ? ";
-    	try {
-    		PreparedStatement ps = conn.prepareStatement(user_registered);
-    		ps.setString(1, email);
-    		result = ps.executeQuery();
-    		result.next();
-    		if(result.getInt("count(iduser)")==0) { 
-    			// then allows registration
-    			return true;
-    		}
-    		else
-    		{
-    			return false;
-    		}
-    		//ps.close();
-    	}
-    	catch (SQLException e)
+        ResultSet result = null;
+        String user_registered = "select count(iduser) "
+                + "from UserInfo"
+                + "where email = ? ";
+        try
+        {
+            PreparedStatement ps = conn.prepareStatement(user_registered);
+            ps.setString(1, email);
+            result = ps.executeQuery();
+            result.next();
+            if (result.getInt("count(iduser)") == 0)
+            {
+                // then allows registration
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+            // ps.close();
+        }
+        catch (SQLException e)
         {
             log.error(e.getMessage());
         }
-   
-        return false;
-    }
-    /**
-     * 
-     * @param user User to register
-     * @param passwd user password...
-     * @return true: correct update on UserInfo,LoginInfo
-     */
-    public boolean toRegister(String user, String passwd, String email,String residence)
-    {
-    	//ResultSet result = null;
-    	String update_usr_info = "insert into UserInfo "
-    			+ "(email,estado) values (?,?) ";
-    	String update_LoginInfo="INSERT INTO LoginInfo "+
-    			"(username,password) values (?.?) ";
-    	  
-    	try {
-    		PreparedStatement ps = conn.prepareStatement(update_usr_info);
-    		ps.setString(1, email);
-    		ps.setString(2, residence);
-    		ps.executeUpdate();
-    		
-    		ps = conn.prepareStatement(update_LoginInfo);
-    		ps.setString(1, user);
-    		ps.setString(2, passwd);
-    		ps.close();
-    		return true;
-    	}
-    	catch (SQLException e)
-        {
-            log.error(e.getMessage());
-        }
-   
+
         return false;
     }
 
     /**
-     * Login Check it a new account is need or login 
-     * @param usr 
-     * @param pass
-     * @return true: the user exist 
-     * 			false : the user require registration 
+     * 
+     * @param user
+     *            User to register
+     * @param passwd
+     *            user password...
+     * @return true: correct update on UserInfo,LoginInfo
      */
-    public boolean login(String usr,String pass) {
-    	String usr_exist = "select idlogin "
-    					 + "from LoginInfo "
-    					 + "where username = ? "
-    					 + "and password = ? ";
-    	try {
-    		ResultSet result = null;
-    		PreparedStatement ps = conn.prepareStatement(usr_exist);
-    		ps.setString(1, usr);
-    		ps.setString(2, pass);
-    		ps.executeUpdate();
-    		result = ps.executeQuery();
-          
-    		int usrs = result.last() ? result.getRow() : 0;
-			if(usrs>0) {
-				//login
-				return true;
-			}
+    public boolean toRegister(String user, String passwd, String email, String residence)
+    {
+        // ResultSet result = null;
+        String update_usr_info = "insert into UserInfo "
+                + "(email,estado) values (?,?) ";
+        String update_LoginInfo = "INSERT INTO LoginInfo " +
+                "(username,password) values (?.?) ";
+
+        try
+        {
+            PreparedStatement ps = conn.prepareStatement(update_usr_info);
+            ps.setString(1, email);
+            ps.setString(2, residence);
+            ps.executeUpdate();
+
+            ps = conn.prepareStatement(update_LoginInfo);
+            ps.setString(1, user);
+            ps.setString(2, passwd);
             ps.close();
-    	}
-    	catch (SQLException e)
+            return true;
+        }
+        catch (SQLException e)
         {
             log.error(e.getMessage());
         }
-    	return false;
-    	
+
+        return false;
     }
+
+    /**
+     * Login Check it a new account is need or login
+     * 
+     * @param usr
+     * @param pass
+     * @return true: the user exist false : the user require registration
+     */
+    public boolean login(String usr, String pass)
+    {
+        String usr_exist = "select idlogin "
+                + "from LoginInfo "
+                + "where username = ? "
+                + "and password = ? ";
+        try
+        {
+            ResultSet result = null;
+            PreparedStatement ps = conn.prepareStatement(usr_exist);
+            ps.setString(1, usr);
+            ps.setString(2, pass);
+            ps.executeUpdate();
+            result = ps.executeQuery();
+
+            int usrs = result.last() ? result.getRow() : 0;
+            if (usrs > 0)
+            {
+                // login
+                return true;
+            }
+            ps.close();
+        }
+        catch (SQLException e)
+        {
+            log.error(e.getMessage());
+        }
+        return false;
+
+    }
+
     /**
      * update ticket , (3 = busy) , 2 = sold, 1 available ??
      * @param tickets array contains the idticket that the client wants to buy
@@ -493,6 +531,7 @@ public class Db
             log.error(e.getMessage());
         }
     	return false;
+
     }
 
     public Event[] getEventsPerCost(LocalDate date)
@@ -506,38 +545,38 @@ public class Db
         }
         int nEvents = 0;
         ResultSet result = null;
-	
+
         try
         {
-	            Event ev;
-	            int idEvent = 0;
-	            String name = "";
-	            String Address = "";
-	            String city = "";
-	            float cost = 0;
-	            LocalDate evDate = LocalDate.now();
-	            int idVenue = 0;
-	            int i=0;
-	            PreparedStatement ps = conn.prepareStatement(SEARCH_EVENT_BY_COST);
-	            while (result.next())
-	            {
-	            	idEvent = result.getInt("idEvent");
-	                idVenue = result.getInt("idAvenue");
-	                name = result.getString("name");
-	                Address= result.getString("address");
-	                city = result.getString("city");
-	                idVenue = result.getInt("idVenue");
-	                cost = result.getFloat("cost");
-	                ev = new Event(idEvent, idVenue, name, Address, city, cost);
-	                events[i] = ev;
-	                i++;
-	            }	
-		    }
+            Event ev;
+            int idEvent = 0;
+            String name = "";
+            String Address = "";
+            String city = "";
+            float cost = 0;
+            LocalDate evDate = LocalDate.now();
+            int idVenue = 0;
+            int i = 0;
+            PreparedStatement ps = conn.prepareStatement(SEARCH_EVENT_BY_COST);
+            while (result.next())
+            {
+                idEvent = result.getInt("idEvent");
+                idVenue = result.getInt("idAvenue");
+                name = result.getString("name");
+                Address = result.getString("address");
+                city = result.getString("city");
+                idVenue = result.getInt("idVenue");
+                cost = result.getFloat("cost");
+                ev = new Event(idEvent, idVenue, name, Address, city, cost);
+                events[i] = ev;
+                i++;
+            }
+        }
         catch (SQLException e)
         {
             log.error(e.getMessage());
         }
-		    return events;
+        return events;
     }
 
     public Event getEventInfo(int eventId)

@@ -28,18 +28,16 @@ public class SocketThread extends Thread
     private int sessionId;
     private StringBuilder msgOut;
 
-    //  TODO: declarar esto dentro de los metodos correspondientes
-    //  la informacion del login debe estar el menor tiempo posible en memoria
-    
-    
+    // TODO: declarar esto dentro de los metodos correspondientes
+    // la informacion del login debe estar el menor tiempo posible en memoria
     private int nRequestedTickets;
     private int idEvent;
     private int[] tickets_array;
     private Ticketinfo[]; // i needed one of these!!!!!!
     private String usr;
-	private String pass;
-	private String email;
-	private String stateResidence;
+    private String pass;
+    private String email;
+    private String stateResidence;
     private Event[] searchResult;
     private Event selectedEvent;
 
@@ -251,7 +249,7 @@ public class SocketThread extends Thread
         return false;
     }
 
-    //opCode = 8 
+    // opCode = 8
     private boolean requestReserveTickets()
             throws ConversationException, SessionException, IOException
     {
@@ -325,31 +323,32 @@ public class SocketThread extends Thread
          }
         return false;
     }
-   
-    
+
     private boolean singup() throws ConversationException, SessionException, IOException
     {
-    	currentState =STATE.SINGUP;
-    	String rawMsg = dataIn.readUTF();
-    	if(checkMsgIntegrity(rawMsg)){
-    		String[] parts = rawMsg.split(",");
-    		//int opcode = Integer.parseInt(parts[0]);
-    		sessionId = Integer.parseInt(parts[1]);
-    		 usr = parts[2];
-    		 pass = parts[3];
-    		 email = parts[4];
-    		 stateResidence = parts[5];
-    		 if(db.singup(email)){
-    			 log.info("usuario registrado: "+usr+" - "+email);
-    			return true;
-    		 }
-    		 log.error("no se puede registrar "+rawMsg);
-    	}
+        currentState = STATE.SINGUP;
+        String rawMsg = dataIn.readUTF();
+        if (checkMsgIntegrity(rawMsg))
+        {
+            String[] parts = rawMsg.split(",");
+            // int opcode = Integer.parseInt(parts[0]);
+            sessionId = Integer.parseInt(parts[1]);
+            usr = parts[2];
+            pass = parts[3];
+            email = parts[4];
+            stateResidence = parts[5];
+            if (db.singup(email, usr, pass))
+            {
+                log.info("usuario registrado: " + usr + " - " + email);
+                return true;
+            }
+            log.error("no se puede registrar " + rawMsg);
+        }
         return false;
     }
 
     /**
-     * Create a new user for Boletazo	 
+     * Create a new user for Boletazo
      */
     private boolean singupStatus() throws ConversationException, IOException
     {
@@ -375,21 +374,20 @@ public class SocketThread extends Thread
 
     private boolean loginCheck() throws ConversationException, SessionException, IOException
     {
-    	currentState =STATE.LOGIN_CHECK;
-    	//msgOut.setLength(0);
-    	String rawMsg = dataIn.readUTF();
-    	
-    	if(checkMsgIntegrity(rawMsg) && sessionId >0){
-    		String[] parts = rawMsg.split(",");
-    		int opCode = Integer.parseInt(parts[0]);
-    		sessionId = Integer.parseInt(parts[1]);
-    		usr = parts[2];
-    		pass = parts[3];
-    		if(db.login(usr,pass)) {
-    			return true;
-    		}
-    	}
-    	log.debug(" algo esta mal escrito U_U "+rawMsg);
+        currentState = STATE.LOGIN_CHECK;
+        // msgOut.setLength(0);
+        String rawMsg = dataIn.readUTF();
+
+        if (checkMsgIntegrity(rawMsg) && sessionId > 0)
+        {
+            String[] parts = rawMsg.split(",");
+            int opCode = Integer.parseInt(parts[0]);
+            sessionId = Integer.parseInt(parts[1]);
+            usr = parts[2];
+            pass = parts[3];
+            if (db.login(usr, pass)) { return true; }
+        }
+        log.debug(" algo esta mal escrito U_U " + rawMsg);
         return false;
     }
 
@@ -411,9 +409,11 @@ public class SocketThread extends Thread
 		dataOut.writeUTF(msgOut.toString());
         return false;
     }
-    /** 14)
-     * Client confirm that he wants the tickets
-     * @return 
+
+    /**
+     * 14) Client confirm that he wants the tickets
+     * 
+     * @return
      * @throws ConversationException
      * @throws IOException
      */
@@ -422,24 +422,27 @@ public class SocketThread extends Thread
     {
         currentState = STATE.POST_PAYMENT_INFO;
         String rawMsg = dataIn.readUTF();
-    	
-    	if(checkMsgIntegrity(rawMsg) && sessionId >0){
-    		String[] parts = rawMsg.split(",");
-    		int opcode = Integer.parseInt(parts[0]);
-    		sessionId = Integer.parseInt(parts[1]);
-    		String numberCard = parts[2];
-    		if(numberCard.length()==20) {
-    			String date = parts[3];
-    			String cvv = parts[4];
-    			String type = parts[5];
-    			if(type.equals("VISA")||type.equals("MASTERCARD")) {
-    				log.info("Compra por :"+numberCard+","+date+","+cvv+","+type);
-    				return true;
-    			}
-    			log.error("tipo tarjeta incorrecta ");
-    		}
-    		log.error("longuitud tarjeta incorrecta ");
-    	}
+
+        if (checkMsgIntegrity(rawMsg) && sessionId > 0)
+        {
+            String[] parts = rawMsg.split(",");
+            int opcode = Integer.parseInt(parts[0]);
+            sessionId = Integer.parseInt(parts[1]);
+            String numberCard = parts[2];
+            if (numberCard.length() == 20)
+            {
+                String date = parts[3];
+                String cvv = parts[4];
+                String type = parts[5];
+                if (type.equals("VISA") || type.equals("MASTERCARD"))
+                {
+                    log.info("Compra por :" + numberCard + "," + date + "," + cvv + "," + type);
+                    return true;
+                }
+                log.error("tipo tarjeta incorrecta ");
+            }
+            log.error("longuitud tarjeta incorrecta ");
+        }
         return false;
     }
 
