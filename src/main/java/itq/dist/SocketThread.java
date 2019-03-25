@@ -10,7 +10,6 @@ import java.time.format.DateTimeParseException;
 import java.lang.StringBuilder;
 
 import org.apache.logging.log4j.Logger;
-
 import itq.dist.ConversationException.ERROR;
 
 import org.apache.logging.log4j.LogManager;
@@ -25,6 +24,7 @@ public class SocketThread extends Thread
     private DataOutputStream dataOut;
     private Db db;
     private SessionControl sc;
+    private int[] ReserverdTickets;
     private int sessionId;
     private StringBuilder msgOut;
     private Event[] searchResult;
@@ -242,13 +242,60 @@ public class SocketThread extends Thread
     private boolean requestReserveTickets()
             throws ConversationException, SessionException, IOException
     {
-        return false;
+    	String msg = dataIn.readUTF();
+    	String[] dataMSG = msg.split(",");
+    	msg = STATE.CONFIRM_RESERVE_TICKETS + ",";
+    	for(int i = 0; i < dataMSG.length - 1; i++) {
+    		if(i == dataMSG.length - 2)
+    			msg += dataMSG[i+1];		
+    		else
+    			msg += dataMSG[i+1] + ",";
+    	}
+    	//msj := �8,1020,1,4,31,32,33,34�
+    	ReserverdTickets = new int[dataMSG.length - 4];
+    	for(int i = 0; i < ReserverdTickets.length; i++) {
+    		ReserverdTickets[i] = Integer.parseInt(dataMSG[4+i]);
+    	}
+    	
+    	for(Boleto ticket : db.availableTickets.values()) {
+    		for(int i = 0; i < ReserverdTickets.length; i++) {
+    			if(ticket.getIdTicket() == ReserverdTickets[i] && ticket.getIdStatus() == 1) {
+    				dataOut.writeUTF(msg);	//envio de respuesta al cliente
+    				ticket.TicketPurchase();//espera por confirmacion.
+    			}
+    		}
+    	}	
+    	return false;
     }
 
     private boolean confirmReserveTickets()
             throws ConversationException, IOException
     {
-        return false;
+    	boolean complete = false;
+    	String msg = dataIn.readUTF();
+    	String[] dataMSG = msg.split(",");
+    															//msj := �12,2020,123-123-123-123,04/22,333,VISA|MASTERCARD�
+    															//agregar proceso de confirmacion en datos de compra
+    	for(Boleto ticket : db.availableTickets.values()) {
+    		for(int i = 0; i < ReserverdTickets.length; i++) {
+    			if(ticket.getIdTicket() == ReserverdTickets[i] && ticket.getIdStatus() == 1) {
+    				ticket.ConfirmationTicketPurchase();
+    				if(ticket.getIdStatus() == 3) {
+    					complete = true;
+    				}
+    			}
+    		}
+    	}
+    	msg = STATE.CONFIRM_RESERVE_TICKETS + ",";
+    	for(int i = 0; i < dataMSG.length - 1; i++) {
+    			msg += dataMSG[i+1] + ",";
+    	}
+    	if(complete)
+    		msg += "0"; //exito de compra
+    	else
+    		msg += "1"; //error de comprar
+    	dataOut.writeUTF(msg); 
+    	return false;
     }
 
     private boolean singup() throws ConversationException, SessionException, IOException

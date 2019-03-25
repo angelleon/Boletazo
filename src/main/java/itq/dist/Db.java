@@ -77,8 +77,8 @@ public class Db
     private boolean connected;
 
     // Estructuras para almacenamiento temporal de información
-    private HashMap<Integer, Boleto> availableTickets;
-
+    protected HashMap<Integer, Boleto> availableTickets;
+    
     Db()
     {
         connected = false;
@@ -268,6 +268,65 @@ public class Db
         log.debug("Retrived [" + nEvents + "] events");
         return events;
     }
+
+    /**
+     * 
+     * @param Avenue
+     * @return An array with all events that ocurr on an Avenue
+     */
+    public Event[] getEventsWhere(String Avenue)
+    {
+        Event[] events = null;
+        if (!connected)
+        {
+            events = new Event[1];
+            events[0] = new Event();
+            return events;
+        }
+        int nEvents = 0;
+        ResultSet result = null;
+
+        try
+        {
+            PreparedStatement ps = conn.prepareStatement(SELECT_EVENT_IN_AVENUE);
+            ps.setString(1, Avenue);
+            
+            result = ps.executeQuery();
+            // getting number of selected rows
+            nEvents = result.last() ? result.getRow() : 0;
+            int i = 0;
+            events = new Event[nEvents];
+            result.beforeFirst();
+
+            Event ev;
+            int idEvent = 0;
+            int idVenue = 0;
+            String name = "";
+            String Address = "";
+            String city = "";
+            LocalDate evDate = LocalDate.now();
+
+            // Iterate over rows returned by the query
+            // Populating array
+            while (result.next())
+            {
+            	idEvent = result.getInt("idEvent");
+                idVenue = result.getInt("idAvenue");
+                name = result.getString("name");
+                Address= result.getString("address");
+                city = result.getString("city");
+                idVenue = result.getInt("idVenue");
+                ev = new Event(idEvent, idVenue, name, Address, city);
+                events[i] = ev;
+                i++;
+            }
+        }
+        catch (SQLException e)
+        {
+            log.error(e.getMessage());
+        }
+        log.debug("Retrived [" + nEvents + "] events");
+        return events;
 
     public Event[] search(String eventName, String venueName, LocalDate eventDate, int hour, float cost,
             String sectionName)
