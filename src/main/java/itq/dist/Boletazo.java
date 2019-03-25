@@ -95,29 +95,32 @@ public class Boletazo
     private static String getIP() throws UnknownHostException
     {
         // ToDo: modificar para obtener la ip en windows
-        // Para windows...
-        /**
-         * return InetAddress.getLocalHost().getHostAddress().toString(); si tienes
-         * interfaces activas de vmware hay veces que las toma #desactivalas!
+        String system =  System.getProperty("os.name");
+        if(system.equals("Linux")) {
+            String interfaceName = "eno1";
+            try
+            {
+                NetworkInterface netInt = NetworkInterface.getByName(interfaceName);
+                Enumeration<InetAddress> addresses = netInt.getInetAddresses();
+                InetAddress address;
+                while (addresses.hasMoreElements())
+                {
+                    address = addresses.nextElement();
+                    if (address instanceof Inet4Address
+                            && !address.isLoopbackAddress()) { return address
+                                    .getHostAddress(); }
+                }
+            }
+            catch (SocketException e)
+            {
+            }
+            return "127.0.0.1";
+        }
+        // For windows...    
+        return InetAddress.getLocalHost().getHostAddress().toString(); 
+        /* if you have active other ethernet interface .... unable!
          */
 
-        String interfaceName = "eno1";
-        try
-        {
-            NetworkInterface netInt = NetworkInterface.getByName(interfaceName);
-            Enumeration<InetAddress> addresses = netInt.getInetAddresses();
-            InetAddress address;
-            while (addresses.hasMoreElements())
-            {
-                address = addresses.nextElement();
-                if (address instanceof Inet4Address
-                        && !address.isLoopbackAddress()) { return address
-                                .getHostAddress(); }
-            }
-        }
-        catch (SocketException e)
-        {
-        }
-        return "127.0.0.1";
+        
     }
 }
