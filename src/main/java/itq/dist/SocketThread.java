@@ -27,6 +27,8 @@ public class SocketThread extends Thread
     private SessionControl sc;
     private int sessionId;
     private StringBuilder msgOut;
+    private Event[] searchResult;
+    private Event selectedEvent;
 
     private static enum STATE {
         C_START_SESSION,
@@ -126,8 +128,7 @@ public class SocketThread extends Thread
         if (checkMsgIntegrity(rawMsg))
         {
             String[] valuesIn = rawMsg.split(",");
-            if (Integer.parseInt(valuesIn[0]) != STATE.C_START_SESSION.ordinal())
-                throw new ConversationException(ERROR.INCORRECT_CONVERSATION_STATE);
+            checkConversationState(valuesIn[0]);
             return true;
         }
         return false;
@@ -156,18 +157,28 @@ public class SocketThread extends Thread
         if (checkMsgIntegrity(rawMsg))
         {
             String[] valuesIn = rawMsg.split(",");
-            if (Integer.parseInt(valuesIn[0]) != STATE.GET_EVENT_LIST.ordinal())
-                throw new ConversationException(ERROR.INCORRECT_CONVERSATION_STATE);
-            if (Integer.parseInt(valuesIn[1]) != sessionId)
-                throw new SessionException(SessionException.ERROR.INVALID_SESSION_ID);
+            checkConversationState(valuesIn[0]);
+            checkSessionId(valuesIn[1]);
             String eventName = valuesIn[2];
             String venueName = valuesIn[3];
             String rawDate = valuesIn[4];
             DateTimeFormatter format = DateTimeFormatter.ofPattern("dd-MM-YYYY");
-            LocalDate eventDate = LocalDate.parse(rawDate, format);
+            LocalDate eventDate;
+            try
+            {
+                eventDate = LocalDate.parse(rawDate, format);
+            }
+            catch (DateTimeParseException e)
+            {
+                throw new ConversationException(ERROR.INCORRECT_DATE_FORMAT);
+            }
             int hour = Integer.parseInt(valuesIn[5]);
             if (hour < 0 || hour > 23)
                 throw new ConversationException(ERROR.VALUE_OUT_OF_RANGE);
+            float cost = Float.parseFloat(valuesIn[6]);
+            String sectionName = valuesIn[7];
+            searchResult = db.search(eventName, venueName, eventDate, hour, cost, sectionName);
+            return true;
         }
         return false;
     }
@@ -175,18 +186,42 @@ public class SocketThread extends Thread
     private boolean postEventList() throws ConversationException, IOException
     {
         currentState = STATE.POST_EVENT_LIST;
-        return false;
+        msgOut.setLength(0);
+        msgOut.append(STATE.POST_EVENT_LIST.ordinal());
+        msgOut.append(",");
+        msgOut.append(sessionId);
+        msgOut.append(",");
+        msgOut.append(searchResult.length);
+        msgOut.append(",");
+        for (Event ev : searchResult)
+        {
+            msgOut.append(ev.getIdEvent());
+            msgOut.append(",");
+            msgOut.append(ev.getName());
+        }
+        dataOut.writeUTF(msgOut.toString());
+        return true;
     }
 
     private boolean getEventInfo() throws ConversationException, SessionException, IOException
     {
         currentState = STATE.GET_EVENT_INFO;
+        String rawMsg = dataIn.readUTF();
+        if (checkMsgIntegrity(rawMsg))
+        {
+            String[] valuesIn = rawMsg.split(",");
+            checkConversationState(valuesIn[0]);
+            checkSessionId(valuesIn[1]);
+            int idEvent = Integer.parseInt(valuesIn[2]);
+            selectedEvent = db.getEventInfo(idEvent);
+        }
         return false;
     }
 
     private boolean postEventInfo() throws ConversationException, IOException
     {
         currentState = STATE.POST_EVENT_INFO;
+
         return false;
     }
 
@@ -451,5 +486,17 @@ public class SocketThread extends Thread
             throw new ConversationException(ERROR.INCORRECT_CONVERSATION_STATE);
         }
         return t;
+    }
+
+    private void checkConversationState(String rawConversationState) throws ConversationException
+    {
+        if (Integer.parseInt(rawConversationState) != currentState.ordinal())
+            throw new ConversationException(ERROR.INCORRECT_CONVERSATION_STATE);
+    }
+
+    private void checkSessionId(String rawSessionId) throws SessionException
+    {
+        if (Integer.parseInt(rawSessionId) != sessionId)
+            throw new SessionException(SessionException.ERROR.INVALID_SESSION_ID);
     }
 }
