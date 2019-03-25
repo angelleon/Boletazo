@@ -8,7 +8,6 @@ public class SessionControl
                          // MAX_SESSIONS - 1]
     private int lastId;
     private int maxSessions;
-
     private int lastAssignedIndex;
 
     SessionControl(int startId, int maxSessions)

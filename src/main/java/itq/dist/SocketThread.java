@@ -7,16 +7,15 @@ import java.net.Socket;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
-import java.lang.StringBuilder;
-
-import org.apache.logging.log4j.Logger;
-import itq.dist.ConversationException.ERROR;
 
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
+import itq.dist.ConversationException.ERROR;
 
 public class SocketThread extends Thread
 {
-    private static final Logger log = LogManager.getLogger(SocketThread.class);
+    private static final Logger LOG = LogManager.getLogger(SocketThread.class);
     private static final int MAX_MSG_LENGTH = 1024;
     private static final int PERMIT_TICKETS = 4;
 
@@ -32,8 +31,8 @@ public class SocketThread extends Thread
     // la informacion del login debe estar el menor tiempo posible en memoria
     private int nRequestedTickets;
     private int idEvent;
-    private int[] tickets_array;
-    private TicketInfo[] ticketInfo; // i needed one of these!!!!!!
+    private int[] tickets_Array;
+    // private Ticketinfo[]; // i needed one of these!!!!!!
     private String usr;
     private String pass;
     private String email;
@@ -85,7 +84,7 @@ public class SocketThread extends Thread
         }
         catch (IOException e)
         {
-            log.error(e.getMessage());
+            LOG.error(e.getMessage());
         }
     }
 
@@ -306,20 +305,24 @@ public class SocketThread extends Thread
             // see if the nRequestedTickets is equal or less than permit_Ticket
             if (nRequestedTickets <= PERMIT_TICKETS)
             {
-                tickets_array = new int[nRequestedTickets];
+
+                ticketsArray = new int[nRequestedTickets];
                 // desde la posicion de nRequestedTicked + nRequestTicked
                 int numPart = 4;
 
                 // array with the request idtickets
+                TimerThread wait = null;
                 for (int i = 0; i < nRequestedTickets; i++)
                 {
-                    log.debug(" posicion en mensaje " + numPart + " posicion-numero de ticket " + i);
-                    tickets_array[i] = Integer.parseInt(parts[numPart]);
+                    wait = new TimerThread();
+                    LOG.debug(" posicion en mensaje " + numPart + " posicion-numero de ticket " + i);
+                    tickets_Array[i] = Integer.parseInt(parts[numPart]);
+                    reserv[i] = db.getBoletoById(tickets_Array[i]);
+                    reserv[i].setTimer(wait);// comenzar el tiempo de apartado
                     numPart++;
-
                 }
             }
-            log.error("Los tickets solicitados exceden el limite permitido ");
+            LOG.error("Los tickets solicitados exceden el limite permitido ");
             return true;
         }
         return false;
@@ -327,7 +330,7 @@ public class SocketThread extends Thread
 
     /**
      * !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! requiere el tiempo de espera y no
-     * entendi como hacer ese pedo
+     * entendi como hacer ese pedo (olvidalo)
      * 
      * @return true; all tickets were reserved
      * @throws ConversationException
@@ -347,23 +350,26 @@ public class SocketThread extends Thread
             msgOut.append(sessionId);
             // todo los tickets fueron rerservados
             msgOut.append(",");
-            for (int i = 0; i < tickets_array.length; i++)
+            for (int i = 0; i < tickets_Array.length; i++)
             {
-                /*
-                 * if() { //ver si puede ser reservado ....y reservarlo :V
-                 * 
-                 * }
-                 */
-                cost = cost + db.getTicketById(tickets_array[i]);
+                if (db.consultStatusTicket(tickets_Array[i]) == 1)
+                { // ver si puede ser reservado ....y reservarlo :V
+                    db.update_Ticket_Status(tickets_Array[i], 2);
+                    cost = cost + db.getTicketById(tickets_Array[i]);
+                }
+                else
+                {
+                    LOG.info(" No se puede obtener el estado del ticket");
+                }
             }
             msgOut.append(cost);
             msgOut.append(",");
             msgOut.append(nRequestedTickets);
             // details of each ticket
-            for (int i = 0; i < tickets_array.length; i++)
+            for (int i = 0; i < tickets_Array.length; i++)
             {
                 msgOut.append(",");
-                msgOut.append(tickets_array[i]);
+                msgOut.append(tickets_Array[i]);
                 // sacar por aca un arreglo de cada ticket con su detalle?, #nunca se usa
                 // despues
             }
@@ -388,10 +394,10 @@ public class SocketThread extends Thread
             stateResidence = parts[5];
             if (db.singup(email, usr, pass))
             {
-                log.info("usuario registrado: " + usr + " - " + email);
+                LOG.info("usuario registrado: " + usr + " - " + email);
                 return true;
             }
-            log.error("no se puede registrar " + rawMsg);
+            LOG.error("no se puede registrar " + rawMsg);
         }
         return false;
     }
@@ -403,12 +409,10 @@ public class SocketThread extends Thread
     {
         currentState = STATE.SINGUP_STATUS;
         msgOut.setLength(0);
-
-        msgOut.append(currentState);
+        msgOut.append(currentState.ordinal());
         msgOut.append(",");
         msgOut.append(sessionId);
         msgOut.append(",");
-
         if (db.toRegister(usr, pass, email, stateResidence))
         {
             msgOut.append(0);
@@ -418,7 +422,7 @@ public class SocketThread extends Thread
         }
         msgOut.append(1);
         dataOut.writeUTF(msgOut.toString());
-        log.info("usuario equivocado o falta registrar " + usr + " - " + email);
+        LOG.info("usuario equivocado o falta registrar " + usr + " - " + email);
         return false;
     }
 
@@ -437,7 +441,7 @@ public class SocketThread extends Thread
             pass = parts[3];
             if (db.login(usr, pass)) { return true; }
         }
-        log.debug(" algo esta mal escrito U_U " + rawMsg);
+        LOG.debug(" algo esta mal escrito U_U " + rawMsg);
         return false;
     }
 
@@ -449,7 +453,6 @@ public class SocketThread extends Thread
         msgOut.append(",");
         msgOut.append(sessionId);
         msgOut.append(",");
-
         if (db.login(usr, pass))
         {
             msgOut.append("0");
@@ -462,7 +465,7 @@ public class SocketThread extends Thread
     }
 
     /**
-     * 14) Client confirm that he wants the tickets
+     * Client confirm that he wants the tickets
      * 
      * @return
      * @throws ConversationException
@@ -487,12 +490,12 @@ public class SocketThread extends Thread
                 String type = parts[5];
                 if (type.equals("VISA") || type.equals("MASTERCARD"))
                 {
-                    log.info("Compra por :" + numberCard + "," + date + "," + cvv + "," + type);
+                    LOG.info("Compra por :" + numberCard + "," + date + "," + cvv + "," + type);
                     return true;
                 }
-                log.error("tipo tarjeta incorrecta ");
+                LOG.error("tipo tarjeta incorrecta ");
             }
-            log.error("longuitud tarjeta incorrecta ");
+            LOG.error("longuitud tarjeta incorrecta ");
         }
         return false;
     }
@@ -504,6 +507,7 @@ public class SocketThread extends Thread
         msgOut.setLength(0);
 
         msgOut.append(currentState);
+
         msgOut.append(",");
         msgOut.append(sessionId);
         msgOut.append(",");
@@ -511,7 +515,7 @@ public class SocketThread extends Thread
         msgOut.append(",");
 
         msgOut.append("el arreglo de los tickets....");
-        if (db.update_ticket_status(tickets_array))
+        if (db.update_Ticket_Status(ticketsArray[i], 3) && reserv[i])
         {
             msgOut.append("0");
             return true;
@@ -533,9 +537,9 @@ public class SocketThread extends Thread
         String[] valuesIn = rawMsg.split(",");
         int nTokens = getTokenNumber();
         int[] arrayLengths = getArrayLengthPositions();
-        int n = valuesIn.length;
+        int valuesLen = valuesIn.length;
         TYPES[] types = getArgumentTypes();
-        if (n < nTokens)
+        if (valuesLen < nTokens)
         {
             throw new ConversationException(ERROR.NOT_ENOUGH_ARGUMENTS);
         }
@@ -558,22 +562,22 @@ public class SocketThread extends Thread
                     }
                     break;
                 case REQUEST_RESERVE_TICKETS:
-                    int i = 0;
-                    for (; i < nTokens; i++)
+                    int contFirst = 0;
+                    for (; contFirst < nTokens; contFirst++)
                     {
-                        if (types[i] == TYPES.ARRAY)
+                        if (types[contFirst] == TYPES.ARRAY)
                             break;
-                        correct = correct && checkArgument(valuesIn[i], types[i]);
+                        correct = correct && checkArgument(valuesIn[contFirst], types[contFirst]);
                     }
-                    int arrayLength = Integer.parseInt(valuesIn[i]);
-                    for (int j = 0; j < arrayLength; j++)
+                    int arrayLength = Integer.parseInt(valuesIn[contFirst]);
+                    for (int contSecond = 0; contSecond < arrayLength; contSecond++)
                     {
-                        correct = correct && checkArgument(valuesIn[i], TYPES.INT);
-                        i++;
-                        correct = correct && checkArgument(valuesIn[i], TYPES.INT);
-                        i++;
+                        correct = correct && checkArgument(valuesIn[contFirst], TYPES.INT);
+                        contFirst++;
+                        correct = correct && checkArgument(valuesIn[contFirst], TYPES.INT);
+                        contFirst++;
                     }
-                    if (i < n) { throw new ConversationException(ERROR.TO_MANY_ARGUMENTS); }
+                    if (contFirst < valuesLen) { throw new ConversationException(ERROR.TO_MANY_ARGUMENTS); }
                     break;
                 default:
                     throw new ConversationException(ERROR.INCORRECT_CONVERSATION_STATE);
@@ -588,9 +592,9 @@ public class SocketThread extends Thread
     }
 
     // ToDo: terminar la definicion del metodo
-    private boolean checkArgument(String token, TYPES t) throws NumberFormatException
+    private boolean checkArgument(String token, TYPES types) throws NumberFormatException
     {
-        switch (t)
+        switch (types)
         {
         case ARRAY:
             return false;
@@ -664,62 +668,62 @@ public class SocketThread extends Thread
     @SuppressWarnings("incomplete-switch")
     private TYPES[] getArgumentTypes() throws ConversationException
     {
-        TYPES[] t = new TYPES[getTokenNumber()];
+        TYPES[] type = new TYPES[getTokenNumber()];
         switch (currentState)
         {
         case C_START_SESSION:
-            t[0] = TYPES.INT;
-            t[1] = TYPES.NULL;
+            type[0] = TYPES.INT;
+            type[1] = TYPES.NULL;
             break;
         case GET_EVENT_LIST:
-            t[0] = TYPES.INT;
-            t[1] = TYPES.INT;
-            t[2] = TYPES.STRING;
-            t[3] = TYPES.STRING;
-            t[4] = TYPES.STRING;
-            t[5] = TYPES.INT;
-            t[6] = TYPES.FLOAT;
-            t[7] = TYPES.STRING;
+            type[0] = TYPES.INT;
+            type[1] = TYPES.INT;
+            type[2] = TYPES.STRING;
+            type[3] = TYPES.STRING;
+            type[4] = TYPES.STRING;
+            type[5] = TYPES.INT;
+            type[6] = TYPES.FLOAT;
+            type[7] = TYPES.STRING;
             break;
         case GET_EVENT_INFO:
         case GET_AVAILABLE_SEATS:
-            t[0] = TYPES.INT;
-            t[1] = TYPES.INT;
-            t[2] = TYPES.INT;
+            type[0] = TYPES.INT;
+            type[1] = TYPES.INT;
+            type[2] = TYPES.INT;
             break;
         case REQUEST_RESERVE_TICKETS:
-            t[0] = TYPES.INT;
-            t[1] = TYPES.INT;
-            t[2] = TYPES.INT;
-            t[3] = TYPES.INT;
-            t[4] = TYPES.ARRAY;
+            type[0] = TYPES.INT;
+            type[1] = TYPES.INT;
+            type[2] = TYPES.INT;
+            type[3] = TYPES.INT;
+            type[4] = TYPES.ARRAY;
             break;
         case SINGUP:
-            t[0] = TYPES.INT;
-            t[1] = TYPES.STRING;
-            t[2] = TYPES.STRING;
-            t[3] = TYPES.STRING;
-            t[4] = TYPES.STRING;
+            type[0] = TYPES.INT;
+            type[1] = TYPES.STRING;
+            type[2] = TYPES.STRING;
+            type[3] = TYPES.STRING;
+            type[4] = TYPES.STRING;
             break;
         case LOGIN_CHECK:
-            t[0] = TYPES.INT;
-            t[1] = TYPES.INT;
-            t[2] = TYPES.STRING;
-            t[3] = TYPES.STRING;
+            type[0] = TYPES.INT;
+            type[1] = TYPES.INT;
+            type[2] = TYPES.STRING;
+            type[3] = TYPES.STRING;
             break;
         case POST_PAYMENT_INFO:
-            t[0] = TYPES.INT;
-            t[1] = TYPES.INT;
-            t[2] = TYPES.INT;
-            t[3] = TYPES.STRING;
-            t[4] = TYPES.STRING;
-            t[5] = TYPES.STRING;
-            t[6] = TYPES.STRING;
+            type[0] = TYPES.INT;
+            type[1] = TYPES.INT;
+            type[2] = TYPES.INT;
+            type[3] = TYPES.STRING;
+            type[4] = TYPES.STRING;
+            type[5] = TYPES.STRING;
+            type[6] = TYPES.STRING;
             break;
         default:
             throw new ConversationException(ERROR.INCORRECT_CONVERSATION_STATE);
         }
-        return t;
+        return type;
     }
 
     private void checkConversationState(String rawConversationState) throws ConversationException

@@ -5,7 +5,7 @@ public class DbException extends BoletazoException
     /**
      * 
      */
-    private static final long serialVersionUID = 1L;
+    private static final long SERIAL_VERSION_UID = 1L;
 
     public static enum ERROR {
         GENERIC_ERROR,
@@ -24,12 +24,23 @@ public class DbException extends BoletazoException
         this.error = error;
     }
 
+    /**
+     * Get the error message from the database
+     * 
+     * @return error
+     */
     @Override
     public String getMessage()
     {
         return super.getMessage() + "\n" + errorToStr(error);
     }
 
+    /**
+     * Translate the error code into a string
+     * 
+     * @param error
+     * @return String error
+     */
     private static String errorToStr(ERROR error)
     {
         switch (error)

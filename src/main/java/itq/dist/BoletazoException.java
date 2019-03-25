@@ -5,7 +5,7 @@ public class BoletazoException extends Exception
     /**
      * no se que hace este atributo, eclipse lo declaro como quickfix
      */
-    private static final long serialVersionUID = 1L;
+    private static final long SERIAL_VERSION_UID = 1L;
 
     private ERROR error;
 
@@ -24,12 +24,21 @@ public class BoletazoException extends Exception
         this.error = error;
     }
 
+    /**
+     * Get the error message from Boletazo
+     */
     @Override
     public String getMessage()
     {
         return super.getMessage() + "\n" + errorToStr(error);
     }
 
+    /**
+     * Translate the error code enumerator into text
+     * 
+     * @param error
+     * @return String error
+     */
     private static String errorToStr(ERROR error)
     {
         switch (error)
