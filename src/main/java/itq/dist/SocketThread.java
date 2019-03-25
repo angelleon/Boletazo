@@ -40,6 +40,7 @@ public class SocketThread extends Thread
     private String stateResidence;
     private Event[] searchResult;
     private Event selectedEvent;
+    private Boleto[] reserv;
 
     private static enum STATE {
         C_START_SESSION,
@@ -269,11 +270,15 @@ public class SocketThread extends Thread
     			int numPart = 4;
     			
         		//array with the request idtickets
+    			
+    			TimerThread wait =null;
         		for(int i = 0;i<nRequestedTickets;i++) {
+        		    wait =new TimerThread();
         			log.debug(" posicion en mensaje "+numPart+" posicion-numero de ticket "+i);
-        			tickets_array[i] = Integer.parseInt(parts[numPart]);
+            		tickets_array[i] = Integer.parseInt(parts[numPart]);
+            		reserv[i] = db.getBoletoById(tickets_array[i]);
+            		reserv[i].setTimer(wait);//comenzar el tiempo de apartado
         			numPart++;
-        			
         		}
     		}
     			log.error("Los tickets solicitados exceden el limite permitido ");
@@ -282,7 +287,7 @@ public class SocketThread extends Thread
         return false;
     }
     /**
-     * !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! requiere el tiempo de espera y no entendi como hacer ese pedo 
+     * !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! requiere el tiempo de espera y no entendi como hacer ese pedo (olvidalo)
      * @return true; all tickets were reserved 
      * @throws ConversationException
      * @throws IOException
@@ -302,19 +307,19 @@ public class SocketThread extends Thread
             // todo los tickets fueron rerservados
              msgOut.append(",");
              for(int i =0;i<tickets_array.length;i++) {
-            	 /*
-            	 if() { //ver si puede ser reservado ....y reservarlo :V
-            		 
+            	 if(db.ConsultStatusTicket(tickets_array[i])==1 ) { //ver si puede ser reservado ....y reservarlo :V
+            	     db.update_ticket_status(tickets_array[i],2);
+            	     cost = cost + db.getTicketById(tickets_array[i]);
+            	 }else {
+            	     log.info(" No se puede obtener el estado del ticket");
             	 }
-            	 */
-            	 cost = cost + db.getTicketById(tickets_array[i]);
              }
              msgOut.append(cost);
              msgOut.append(",");
              msgOut.append(nRequestedTickets);
              //details of each ticket
              for(int i =0;i<tickets_array.length;i++) {
-            	 msgOut.append(",");
+            	msgOut.append(",");
             	msgOut.append(tickets_array[i]);
             	//sacar por aca un arreglo de cada ticket con su detalle?, #nunca se usa despues
              }
@@ -460,7 +465,7 @@ public class SocketThread extends Thread
 	      msgOut.append(",");
 	      
 		msgOut.append("el arreglo de los tickets....");
-		if(db.update_ticket_status(tickets_array)) {
+		if(db.update_ticket_status(tickets_array[i],3) && reserv[i]) {
 			msgOut.append("0");
 			return true;
 		}
