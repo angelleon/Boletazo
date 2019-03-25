@@ -344,6 +344,50 @@ public class Db
     {
         return false;
     }
+    public Event[] getEventsPerCost(LocalDate date)
+    {
+        Event[] events = null;
+        if (!connected)
+        {
+            events = new Event[1];
+            events[0] = new Event();
+            return events;
+        }
+        int nEvents = 0;
+        ResultSet result = null;
+	
+        try
+        {
+	            Event ev;
+	            int idEvent = 0;
+	            String name = "";
+	            String Address = "";
+	            String city = "";
+	            float cost = 0;
+	            LocalDate evDate = LocalDate.now();
+	            int idVenue = 0;
+	            int i=0;
+	            PreparedStatement ps = conn.prepareStatement(SEARCH_EVENT_BY_COST);
+	            while (result.next())
+	            {
+	            	idEvent = result.getInt("idEvent");
+	                idVenue = result.getInt("idAvenue");
+	                name = result.getString("name");
+	                Address= result.getString("address");
+	                city = result.getString("city");
+	                idVenue = result.getInt("idVenue");
+	                cost = result.getFloat("cost");
+	                ev = new Event(idEvent, idVenue, name, Address, city, cost);
+	                events[i] = ev;
+	                i++;
+	            }	
+		    }
+        catch (SQLException e)
+        {
+            log.error(e.getMessage());
+        }
+		    return events;
+    }
 
     public Event getEventInfo(int eventId)
     {
