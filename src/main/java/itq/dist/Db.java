@@ -324,6 +324,16 @@ public class Db
         }
         return "";
         */
+            
+            cost = result.getFloat("cost");          
+            ps.close();
+        } 
+        catch (SQLException e)
+        {
+            log.error(e.getMessage());
+        }
+        log.debug("ticket :"+idticket+" $"+cost);
+        return cost;
     }
 
     /**
@@ -345,7 +355,7 @@ public class Db
 
         try
         {
-            PreparedStatement ps = conn.prepareStatement("");
+            PreparedStatement ps = conn.prepareStatement(SELECT_EVENT_IN_VENUE);
             ps.setString(1, Avenue);
 
             result = ps.executeQuery();
@@ -531,6 +541,7 @@ public class Db
             log.error(e.getMessage());
         }
     	return false;
+    }
 
     }
 
