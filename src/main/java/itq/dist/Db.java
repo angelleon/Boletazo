@@ -78,7 +78,7 @@ public class Db
 
     // Estructuras para almacenamiento temporal de información
     protected HashMap<Integer, Boleto> availableTickets;
-    
+
     Db()
     {
         connected = false;
@@ -288,9 +288,9 @@ public class Db
 
         try
         {
-            PreparedStatement ps = conn.prepareStatement(SELECT_EVENT_IN_AVENUE);
+            PreparedStatement ps = conn.prepareStatement("");
             ps.setString(1, Avenue);
-            
+
             result = ps.executeQuery();
             // getting number of selected rows
             nEvents = result.last() ? result.getRow() : 0;
@@ -310,10 +310,10 @@ public class Db
             // Populating array
             while (result.next())
             {
-            	idEvent = result.getInt("idEvent");
+                idEvent = result.getInt("idEvent");
                 idVenue = result.getInt("idAvenue");
                 name = result.getString("name");
-                Address= result.getString("address");
+                Address = result.getString("address");
                 city = result.getString("city");
                 idVenue = result.getInt("idVenue");
                 ev = new Event(idEvent, idVenue, name, Address, city);
@@ -327,6 +327,7 @@ public class Db
         }
         log.debug("Retrived [" + nEvents + "] events");
         return events;
+    }
 
     public Event[] search(String eventName, String venueName, LocalDate eventDate, int hour, float cost,
             String sectionName)
