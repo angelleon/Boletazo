@@ -14,7 +14,8 @@ public class ConversationException extends BoletazoException
         TO_MANY_ARGUMENTS,
         NOT_ENOUGH_ARGUMENTS,
         INCORRECT_CONVERSATION_STATE,
-        VALUE_OUT_OF_RANGE
+        VALUE_OUT_OF_RANGE,
+        INCORRECT_DATE_FORMAT
     }
 
     private ERROR error;
@@ -50,6 +51,10 @@ public class ConversationException extends BoletazoException
             return "there are more argumets than expected";
         case INCORRECT_CONVERSATION_STATE:
             return "actual conversation state is incorrect";
+        case VALUE_OUT_OF_RANGE:
+            return "provided value is out of range";
+        case INCORRECT_DATE_FORMAT:
+            return "provided date have incorrect format";
         default:
             return "";
         }
