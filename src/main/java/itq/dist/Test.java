@@ -11,6 +11,7 @@ public class Test
 
     public static void main(String[] args)
     {
+        log.info(System.getProperty("os.name"));
         Random r = new Random();
         SessionControl sc = new SessionControl(0, 40);
         int sessionId;

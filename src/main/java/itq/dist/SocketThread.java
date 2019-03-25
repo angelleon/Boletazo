@@ -31,15 +31,21 @@ public class SocketThread extends Thread
     // la informacion del login debe estar el menor tiempo posible en memoria
     private int nRequestedTickets;
     private int idEvent;
-    private int[] tickets_array;
+    private int[] tickets_array;<<<<<<<HEAD
     // private Ticketinfo[]; // i needed one of these!!!!!!
+    =======
+    private TicketInfo[] ticketInfo; // i needed one of these!!!!!!
+    >>>>>>>
+    resolved conflicts
     private String usr;
     private String pass;
     private String email;
     private String stateResidence;
-    private Event[] searchResult;
+    private Event[] searchResult;<<<<<<<HEAD
     private Event selectedEvent;
-    private TimerThread timer;
+    private TimerThread timer;=======
+    private EventInfo selectedEvent;>>>>>>>
+    resolved conflicts
 
     private static enum STATE {
         C_START_SESSION,
@@ -229,23 +235,62 @@ public class SocketThread extends Thread
         return false;
     }
 
-    private boolean postEventInfo() throws ConversationException, IOException
+    private boolean postEventInfo() throws ConversationException, SessionException, IOException
     {
         currentState = STATE.POST_EVENT_INFO;
-
-        return false;
+        msgOut.setLength(0);
+        msgOut.append(currentState.ordinal());
+        msgOut.append(",");
+        msgOut.append(sessionId);
+        msgOut.append(",");
+        msgOut.append(selectedEvent.getIdEvent());
+        msgOut.append(",");
+        msgOut.append(selectedEvent.getName());
+        msgOut.append(",");
+        LocalDate[] dates = selectedEvent.getDates();
+        msgOut.append(dates.length);
+        for (LocalDate d : dates)
+        {
+            msgOut.append(",");
+            msgOut.append(d.getDayOfMonth());
+            msgOut.append("-");
+            msgOut.append(d.getMonthValue());
+            msgOut.append("-");
+            msgOut.append(d.getYear());
+        }
+        Participant[] participants = selectedEvent.getParticipants();
+        msgOut.append(participants.length);
+        for (Participant p : participants)
+        {
+            msgOut.append(",");
+            msgOut.append(p.getName());
+            msgOut.append(",");
+            msgOut.append(p.getDescription());
+        }
+        dataOut.writeUTF(msgOut.toString());
+        return true;
     }
 
     private boolean getAvailableSeats()
             throws ConversationException, SessionException, IOException
     {
         currentState = STATE.GET_AVAILABLE_SEATS;
+        String rawMsg = dataIn.readUTF();
+        if (checkMsgIntegrity(rawMsg))
+        {
+            String[] valuesIn = rawMsg.split(",");
+            checkConversationState(valuesIn[0]);
+            checkSessionId(valuesIn[1]);
+            idEvent = Integer.parseInt(valuesIn[2]);
+        }
         return false;
     }
 
     private boolean postAvailableSeats() throws ConversationException, IOException
     {
         currentState = STATE.POST_AVAILABLE_SEATS;
+        msgOut.setLength(0);
+        msgOut.append(currentState.ordinal());
         return false;
     }
 
@@ -271,6 +316,7 @@ public class SocketThread extends Thread
                 int numPart = 4;
 
                 // array with the request idtickets
+<<<<<<< HEAD
 
                 TimerThread wait = null;
                 for (int i = 0; i < nRequestedTickets; i++)
@@ -281,6 +327,14 @@ public class SocketThread extends Thread
                     reserv[i] = db.getBoletoById(tickets_array[i]);
                     reserv[i].setTimer(wait);// comenzar el tiempo de apartado
                     numPart++;
+=======
+                for (int i = 0; i < nRequestedTickets; i++)
+                {
+                    log.debug(" posicion en mensaje " + numPart + " posicion-numero de ticket " + i);
+                    tickets_array[i] = Integer.parseInt(parts[numPart]);
+                    numPart++;
+
+>>>>>>> resolved conflicts
                 }
             }
             log.error("Los tickets solicitados exceden el limite permitido ");
@@ -291,7 +345,11 @@ public class SocketThread extends Thread
 
     /**
      * !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! requiere el tiempo de espera y no
+<<<<<<< HEAD
      * entendi como hacer ese pedo (olvidalo)
+=======
+     * entendi como hacer ese pedo
+>>>>>>> resolved conflicts
      * 
      * @return true; all tickets were reserved
      * @throws ConversationException
@@ -313,6 +371,7 @@ public class SocketThread extends Thread
             msgOut.append(",");
             for (int i = 0; i < tickets_array.length; i++)
             {
+<<<<<<< HEAD
                 if (db.ConsultStatusTicket(tickets_array[i]) == 1)
                 { // ver si puede ser reservado ....y reservarlo :V
                     db.update_ticket_status(tickets_array[i], 2);
@@ -322,6 +381,14 @@ public class SocketThread extends Thread
                 {
                     log.info(" No se puede obtener el estado del ticket");
                 }
+=======
+                /*
+                 * if() { //ver si puede ser reservado ....y reservarlo :V
+                 * 
+                 * }
+                 */
+                cost = cost + db.getTicketById(tickets_array[i]);
+>>>>>>> resolved conflicts
             }
             msgOut.append(cost);
             msgOut.append(",");
@@ -372,9 +439,15 @@ public class SocketThread extends Thread
         msgOut.setLength(0);
 
         msgOut.append(currentState);
+<<<<<<< HEAD
         msgOut.append(",");
         msgOut.append(sessionId);
         msgOut.append(",");
+=======
+        msgOut.append(",");
+        msgOut.append(sessionId);
+        msgOut.append(",");
+>>>>>>> resolved conflicts
 
         if (db.toRegister(usr, pass, email, stateResidence))
         {
@@ -467,7 +540,6 @@ public class SocketThread extends Thread
     private boolean pucharaseCompleted()
             throws ConversationException, IOException
     {
-
         currentState = STATE.PUCHARASE_COMPLETED;
         msgOut.setLength(0);
 
@@ -479,23 +551,18 @@ public class SocketThread extends Thread
         msgOut.append(",");
 
         msgOut.append("el arreglo de los tickets....");
-        if (timer.isAlive())
+        if (db.update_ticket_status(tickets_array))
         {
-            if (db.update_ticket_status(tickets_array))
-            {
-                msgOut.append("0");
-                return true;
-            }
+            msgOut.append("0");
+            return true;
         }
-        else
-            msgOut.append("1");
+        msgOut.append("1");
         dataOut.writeUTF(msgOut.toString());
         return false;
     }
 
     private String[] spliceMsgTokens(String rawMsg, int nTokens, int[] arrayLengthPositions)
     {
-
         return new String[0];
     }
 
