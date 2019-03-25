@@ -283,11 +283,7 @@ public class Db
     {
     	float cost = 0f;
         ResultSet result = null;
-        String ticket = "";
-        if (!connected) { return ticket; }
-
-        ResultSet result = null;
-
+    
         log.debug("Retrived [" + idticket + "] ");
         try
         {
@@ -296,50 +292,20 @@ public class Db
             result = ps.executeQuery();
             cost = result.getFloat("cost");          
             ps.close();
+            //return cost;
         } 
         catch (SQLException e)
         {
             log.error(e.getMessage());
         }
-        log.debug("ticket :"+idticket+" $"+cost);
-        return cost;
-
-  /*
-
-            while (result.next())
-            {
-
-                String seat = result.getString("seatNumber");
-                int status = result.getInt("idStatus");
-                int section = result.getInt("idSection");
-                int event = result.getInt("idEvent");
-                ticket = idticket + "," + seat + "," + status + "," + section + "," + event;
-            }
-            ps.close();
-            return ticket;
-        }
-        catch (SQLException e)
-        {
-
-        }
-        return "";
-        */
-            
-            cost = result.getFloat("cost");          
-            ps.close();
-        } 
-        catch (SQLException e)
-        {
-            log.error(e.getMessage());
-        }
-        log.debug("ticket :"+idticket+" $"+cost);
+        log.debug("ticket :"+idticket+" $"+cost); 
         return cost;
     }
 
     /**
      * 
      * @param venue
-     * @return An array with all events that ocurr on an Avenue
+     * @return An array with all events that ocurr on an venue
      */
     public Event[] getEventsWhere(String Avenue)
     {
@@ -515,25 +481,26 @@ public class Db
     }
 
     /**
-     * update ticket , (3 = busy) , 2 = sold, 1 available ??
+     * update ticket , 3 = sold , 2 = busy, 1 available ??
      * @param tickets array contains the idticket that the client wants to buy
      * @return true: everything is ok... ?) 
      */
-    public boolean update_ticket_status(int[] tickets) {
+    public boolean update_ticket_status(int idticket,int setStatus) {
     	String update_ticket = "update  ticket "
-    						 + "set idStatus= 2 "
+    						 + "set idStatus= ? "
     						 + "where idTicket = ? ";
     	try {
     		ResultSet result = null;
-    		for(int i =0;i<tickets.length;i++) {    			
+    		//for(int i =0;i<tickets.length;i++) {    			
     			PreparedStatement ps = conn.prepareStatement(update_ticket);
-    			int idticket = tickets[i];
-    			ps.setInt(1, idticket);
+    			//int idticket = tickets[i];
+    			ps.setInt(1, setStatus);
+    			ps.setInt(2, idticket);
     			ps.executeUpdate();
     			// tenemos q volver a la guia houston...
     			result = ps.executeQuery();
-    			log.info("ticket : "+idticket+" VENDIDO ");
-    		}
+    			log.info("ticket : "+idticket+" Cambiado a:  "+setStatus);
+    		//}
     		return true;
     	}
     	catch (SQLException e)
@@ -542,9 +509,41 @@ public class Db
         }
     	return false;
     }
-
+    /**
+     * Consult the status of ticket
+     * @param idticket
+     * @return value of status
+     */
+    
+    public int ConsultStatusTicket(int idticket) {
+        String update_ticket = "select idstatus "
+                            + "from ticket "
+                            + "where idTicket = ? ";
+            try {
+                ResultSet result = null;
+            //for(int i =0;i<tickets.length;i++) {              
+               PreparedStatement ps = conn.prepareStatement(update_ticket);
+               //int idticket = tickets[i];
+               ps.setInt(1, idticket);
+               ps.executeQuery();
+               // tenemos q volver a la guia houston...
+               result = ps.executeQuery();
+               log.debug("ticket : "+idticket+" status:  "+result.getString("idstatus"));
+               return result.getInt("idstatus");
+               
+            //}
+            }
+            catch (SQLException e)
+            {
+            log.error(e.getMessage());
+            }
+        return 0;
     }
-
+    /**
+     * 
+     * @param date
+     * @return
+     */
     public Event[] getEventsPerCost(LocalDate date)
     {
         Event[] events = null;
@@ -593,5 +592,12 @@ public class Db
     public Event getEventInfo(int eventId)
     {
         return new Event();
+    }
+
+    public Boleto getBoletoById(int idTicket)
+    {
+        
+        // TODO Auto-generated method stub
+        return  ;
     }
 }
