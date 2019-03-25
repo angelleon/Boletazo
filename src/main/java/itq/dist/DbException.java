@@ -24,12 +24,23 @@ public class DbException extends BoletazoException
         this.error = error;
     }
 
+    /**
+     * Get the error message from the database
+     * 
+     * @return error
+     */
     @Override
     public String getMessage()
     {
         return super.getMessage() + "\n" + errorToStr(error);
     }
 
+    /**
+     * Translate the error code into a string
+     * 
+     * @param error
+     * @return String error
+     */
     private static String errorToStr(ERROR error)
     {
         switch (error)

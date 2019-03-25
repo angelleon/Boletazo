@@ -31,12 +31,22 @@ public class ConversationException extends BoletazoException
         this(ERROR.GENERIC_ERROR);
     }
 
+    /**
+     * Get the error message generated on the conversation between the server and
+     * the client
+     */
     @Override
     public String getMessage()
     {
         return super.getMessage() + errorToStr(error);
     }
 
+    /**
+     * Translate the error code to an string
+     * 
+     * @param error
+     * @return String error
+     */
     private static String errorToStr(ERROR error)
     {
         switch (error)
