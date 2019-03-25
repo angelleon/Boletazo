@@ -598,6 +598,6 @@ public class Db
     {
         
         // TODO Auto-generated method stub
-        return  ;
+        return availableTickets.get(idTicket);
     }
 }
