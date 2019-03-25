@@ -40,6 +40,7 @@ public class SocketThread extends Thread
     private String stateResidence;
     private Event[] searchResult;
     private EventInfo selectedEvent;
+    private TimerThread timer;
 
     private static enum STATE {
         C_START_SESSION,
