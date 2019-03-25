@@ -26,7 +26,7 @@ public class Boletazo
 
     public static void main(String[] args)
     {
-        boolean alive = false;
+        boolean alive = true;
         ServerSocket serverSocket;
         SessionControl sc = new SessionControl(0, 10);
         // ArrayList<SocketThread> threads = new ArrayList<SocketThread>();
@@ -34,7 +34,7 @@ public class Boletazo
         if (db.getConnected())
         {
             db.preload();
-            initialConnection();
+            //initialConnection();
             try
             {
                 serverSocket = new ServerSocket(PORT);
