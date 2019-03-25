@@ -119,7 +119,7 @@ public class Boleto
      * 
      * @return true if purchase complete | false if purchase failed
      */
-    public synchronized boolean TicketPurchase()
+    public synchronized boolean ticketPurchase()
     {
         timer.setTime(purchaseTime);// whaaaat?
         timer.start();
@@ -150,7 +150,7 @@ public class Boleto
     /**
      * Interrupt the TimerThread to confirm a purchase from the ticket
      */
-    public void ConfirmationTicketPurchase()
+    public void confirmationTicketPurchase()
     {
         timer.interrupt();
     }
