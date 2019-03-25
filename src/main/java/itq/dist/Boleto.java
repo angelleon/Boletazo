@@ -80,7 +80,7 @@ public class Boleto
 
     public synchronized boolean TicketPurchase()
     {
-        timer.setTime(purchaseTime);
+        timer.setTime(purchaseTime);// whaaaat?
         timer.start();
         try
         {
