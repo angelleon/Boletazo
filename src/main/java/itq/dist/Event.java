@@ -12,7 +12,7 @@ public class Event
 
     Event()
     {
-    	
+
     }
 
     Event(int idEvent, String name, String description, LocalDate date, int idVenue)
@@ -29,5 +29,30 @@ public class Event
     {
         return "Event object {idEvent: " + idEvent + ", name: " + name + ", description: " + description + ", date: "
                 + date.toString() + ", idVenue: " + idVenue + "}";
+    }
+
+    public int getIdEvent()
+    {
+        return idEvent;
+    }
+
+    public String getName()
+    {
+        return name;
+    }
+
+    public String getDescription()
+    {
+        return description;
+    }
+
+    public LocalDate getDate()
+    {
+        return date;
+    }
+
+    public int getIdVenue()
+    {
+        return idVenue;
     }
 }
