@@ -18,21 +18,24 @@ public class SocketThread extends Thread
 {
     private static final Logger log = LogManager.getLogger(SocketThread.class);
     private static final int MAX_MSG_LENGTH = 1024;
+    private static final int PERMIT_TICKETS = 4;
 
     private Socket socket;
     private DataInputStream dataIn;
     private DataOutputStream dataOut;
     private Db db;
     private SessionControl sc;
-    private int[] ReserverdTickets;
     private int sessionId;
     private StringBuilder msgOut;
 
     //  TODO: declarar esto dentro de los metodos correspondientes
     //  la informacion del login debe estar el menor tiempo posible en memoria
+    
+    
     private int nRequestedTickets;
     private int idEvent;
     private int[] tickets_array;
+    private Ticketinfo[]; // i needed one of these!!!!!!
     private String usr;
 	private String pass;
 	private String email;
@@ -253,56 +256,73 @@ public class SocketThread extends Thread
             throws ConversationException, SessionException, IOException
     {
     	currentState =STATE.REQUEST_RESERVE_TICKETS;
-    	//msgOut.setLength(0);   
     	String rawMsg = dataIn.readUTF();
     	
     	if(checkMsgIntegrity(rawMsg) && sessionId >0){
     		String[] parts = rawMsg.split(",");
-    		int opcode = Integer.parseInt(parts[0]);
+    		//int opcode = Integer.parseInt(parts[0]);
     		sessionId = Integer.parseInt(parts[1]);
     		idEvent = Integer.parseInt(parts[2]);
-    		// ver que el nRequestedTickets sea menor o igual que el numero de tickets permitidos a comprar
     		nRequestedTickets = Integer.parseInt(parts[3]);
-    		
-    		tickets_array = new int[nRequestedTickets];
-    		//desde la posicion de nRequestedTicked + nRequestTicked
-    		
-    		int numPart = 2;
-    		//array con los tickets solicitados
-    		for(int i = 0;i<nRequestedTickets;i++) {
-    			numPart++;
-    			tickets_array[i] = Integer.parseInt(parts[numPart]);
+    		// see if the nRequestedTickets is equal or less than permit_Ticket
+    		if(nRequestedTickets <= PERMIT_TICKETS) {
+    			tickets_array = new int[nRequestedTickets];
+    			//desde la posicion de nRequestedTicked + nRequestTicked
+    			int numPart = 4;
     			
+        		//array with the request idtickets
+        		for(int i = 0;i<nRequestedTickets;i++) {
+        			log.debug(" posicion en mensaje "+numPart+" posicion-numero de ticket "+i);
+        			tickets_array[i] = Integer.parseInt(parts[numPart]);
+        			numPart++;
+        			
+        		}
     		}
-    		//debe comenzar aca el contador del tiempo?
-    		//consultar cada ticket 
-    		
+    			log.error("Los tickets solicitados exceden el limite permitido ");
     		return true;
     	}
         return false;
     }
-
+    /**
+     * !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! requiere el tiempo de espera y no entendi como hacer ese pedo 
+     * @return true; all tickets were reserved 
+     * @throws ConversationException
+     * @throws IOException
+     */
     private boolean confirmReserveTickets()
             throws ConversationException, IOException
     {
     	currentState =STATE.CONFIRM_RESERVE_TICKETS;
     	msgOut.setLength(0);
-    	 if (sessionId > 0) // #ArmaTuMensaje
+    	float cost = 0;
+    	
+    	 if (sessionId > 0) // #ArmaTuMensaje !!(revisar esta wean en todos)
          {
              msgOut.append(currentState);
+             msgOut.append(",");
              msgOut.append(sessionId);
-             float cost = 0;
-             ///.............Calcular el  costo...e_�
-             
-             
+            // todo los tickets fueron rerservados
+             msgOut.append(",");
+             for(int i =0;i<tickets_array.length;i++) {
+            	 /*
+            	 if() { //ver si puede ser reservado ....y reservarlo :V
+            		 
+            	 }
+            	 */
+            	 cost = cost + db.getTicketById(tickets_array[i]);
+             }
              msgOut.append(cost);
+             msgOut.append(",");
              msgOut.append(nRequestedTickets);
-             
-             
+             //details of each ticket
+             for(int i =0;i<tickets_array.length;i++) {
+            	 msgOut.append(",");
+            	msgOut.append(tickets_array[i]);
+            	//sacar por aca un arreglo de cada ticket con su detalle?, #nunca se usa despues
+             }
              dataOut.writeUTF(msgOut.toString());
              return true;
          }
-    	
         return false;
     }
    
@@ -337,7 +357,10 @@ public class SocketThread extends Thread
     	msgOut.setLength(0);
     	
     	msgOut.append(currentState);
-		msgOut.append(sessionId);
+        msgOut.append(",");
+		msgOut.append(sessionId);      
+		msgOut.append(",");
+		
     	if(db.toRegister(usr, pass,email,stateResidence)) {
     		msgOut.append(0);
     		dataOut.writeUTF(msgOut.toString());
@@ -375,7 +398,10 @@ public class SocketThread extends Thread
     	currentState =STATE.LOGIN_STATUS;
     	msgOut.setLength(0);
     	msgOut.append(currentState);
+        msgOut.append(",");
 		msgOut.append(sessionId);
+	      msgOut.append(",");
+	      
 		if(db.login(usr, pass)) {
 			msgOut.append("0");
 			dataOut.writeUTF(msgOut.toString());
@@ -424,8 +450,12 @@ public class SocketThread extends Thread
     	msgOut.setLength(0);
     	
     	msgOut.append(currentState);
+        msgOut.append(",");
 		msgOut.append(sessionId);
+	      msgOut.append(",");
 		msgOut.append(nRequestedTickets);
+	      msgOut.append(",");
+	      
 		msgOut.append("el arreglo de los tickets....");
 		if(db.update_ticket_status(tickets_array)) {
 			msgOut.append("0");

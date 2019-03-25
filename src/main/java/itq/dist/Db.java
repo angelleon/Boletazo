@@ -48,12 +48,15 @@ public class Db
             + "WHERE T.idStatus = (SELECT idStatus "
             + "FROM Status "
             + "WHERE status = 'DISPONIBLE')";
-    private static final String SELECT_BY_TICKET_ID = "SELECT * FROM Event WHERE idTicket = ? ";
+    private static final String SELECT_BY_TICKET_ID = "SELECT cost "
+													+ "FROM section,ticket "
+													+ "where idticket = ? "
+													+ "and ticket.idsection = section.idsection ";
     private static final String SEARCH_EVENT_BY_NAME = "SELECT * "
             + "FROM Event "
             + "WHERE LOWER(name) LIKE LOWER('%?%')";
 
-    private static final String SEARCH_EVENT_BY_VENUE_NAME = "SELECT E.* "
+    private static final String SELECT_EVENT_IN_VENUE = "SELECT E.* "
             + "FROM Event E, Venue V "
             + "WHERE E.idVenue = V.idVenue "
             + "AND LOWER(V.name) LIKE LOWER('%?%')";
@@ -271,41 +274,34 @@ public class Db
     }
 
     /**
-     * Look ticket by idticket :V
+     * Look ticket by idticket :V, know the cost of the ticket 
      * @param idticket 
-     * @return string with information ticket
+     * @return float cost......
      */
-    public String getTicketById(int idticket)
+    public float getTicketById(int idticket)
     {
-        String ticket = "";
-        if (!connected)
-        {
-            return ticket;
-        }
-            
+    	float cost = (float)0;
         ResultSet result = null;
-        
-        log.debug("Retrived [" + idticket + "] ");
         try
         {
             PreparedStatement ps = conn.prepareStatement(SELECT_BY_TICKET_ID);
             ps.setInt(1, idticket);
             result = ps.executeQuery();
             
-            while (result.next())
-            {
-            
-                String seat = result.getString("seatNumber");
-                int status = result.getInt("idStatus");
-                int section = result.getInt("idSection");
-                int event = result.getInt("idEvent");                
-                ticket = idticket+","+seat+","+status+","+section+","+event;
-            }
+            cost = result.getFloat("cost");          
             ps.close();
+        } 
+        catch (SQLException e)
+        {
+            log.error(e.getMessage());
+        }
+        log.debug("ticket :"+idticket+" $"+cost);
+        return cost;
+    }
 
     /**
      * 
-     * @param Avenue
+     * @param venue
      * @return An array with all events that ocurr on an Avenue
      */
     public Event[] getEventsWhere(String Avenue)
@@ -322,7 +318,7 @@ public class Db
 
         try
         {
-            PreparedStatement ps = conn.prepareStatement(SELECT_EVENT_IN_AVENUE);
+            PreparedStatement ps = conn.prepareStatement(SELECT_EVENT_IN_VENUE);
             ps.setString(1, Avenue);
             
             result = ps.executeQuery();
@@ -374,7 +370,7 @@ public class Db
      * know if the user has not been registered
      * @return false: user has been registered before
      */
-    public boolean singup()
+    public boolean singup(String email)
     {
     	ResultSet result = null;
     	String user_registered = "select count(iduser) "
@@ -471,13 +467,13 @@ public class Db
     	
     }
     /**
-     * update ticket , 3 = sold , 2 = busy, 1 available ??
+     * update ticket , (3 = busy) , 2 = sold, 1 available ??
      * @param tickets array contains the idticket that the client wants to buy
      * @return true: everything is ok... ?) 
      */
     public boolean update_ticket_status(int[] tickets) {
     	String update_ticket = "update  ticket "
-    						 + "set idStatus= 3 "
+    						 + "set idStatus= 2 "
     						 + "where idTicket = ? ";
     	try {
     		ResultSet result = null;
@@ -497,6 +493,7 @@ public class Db
             log.error(e.getMessage());
         }
     	return false;
+    }
 
     public Event[] getEventsPerCost(LocalDate date)
     {
