@@ -1,6 +1,6 @@
 package itq.dist;
 
-public class Boleto
+public class Ticket
 {
     public static enum STATUS {
         NULL, // DB does not define an id with value 0
@@ -14,13 +14,9 @@ public class Boleto
     private int idStatus;
     private int idSection;
     private int idEvent;
-
     private STATUS ticketStatus;
 
-    private int purchaseTime = 6000; // tiempo configurable para la espera de compra
-    private TimerThread timer;
-
-    Boleto(int idTicket, String seatNumber, int idStatus, int idSection,
+    Ticket(int idTicket, String seatNumber, int idStatus, int idSection,
             int idEvent)
     {
         this.idTicket = idTicket;
@@ -28,39 +24,17 @@ public class Boleto
         this.idStatus = idStatus;
         this.idSection = idSection;
         this.idEvent = idEvent;
-        setStatus(idStatus);
     }
 
-    Boleto(int idTicket, String seatNumber, int idStatus, int idSection,
+    Ticket(int idTicket, String seatNumber, int idStatus, int idSection,
             int idEvent, TimerThread timer)
     {
         this(idTicket, seatNumber, idStatus, idSection, idEvent);
-        this.timer = timer;
     }
 
-    Boleto()
+    Ticket()
     {
         this(0, "a0", 0, 0, 0);
-    }
-
-    /**
-     * Get the TimerThread from the class boleto
-     * 
-     * @return TimerThread
-     */
-    public TimerThread getTimer()
-    {
-        return timer;
-    }
-
-    /**
-     * Set a TimerThread on the class boleto
-     * 
-     * @param TimerThread
-     */
-    public void setTimer(TimerThread timer)
-    {
-        this.timer = timer;
     }
 
     /**
@@ -119,73 +93,50 @@ public class Boleto
      * 
      * @return true if purchase complete | false if purchase failed
      */
-    public synchronized boolean ticketPurchase()
-    {
-        timer.setTime(purchaseTime);// whaaaat?
-        timer.start();
-        try
-        {
-            timer.join();
-            if (timer.isInterrupted())
-            {
-                idStatus = STATUS.SOLD.ordinal(); // Se concreto la compra en el
-                                                  // tiempo de apartado
-                setStatus(idStatus);
-                return true;
-            }
-            else
-            {
-                idStatus = STATUS.AVAILABLE.ordinal(); // no se concreto la
-                                                       // compra en el tiempo de
-                                                       // apartado
-                setStatus(idStatus);
-                return false;
-            }
-        }
-        catch (InterruptedException e)
-        {
-            e.printStackTrace();
-            return false;
-        }
-    }
-
-    /**
-     * Interrupt the TimerThread to confirm a purchase from the ticket
-     */
-    public void confirmationTicketPurchase()
-    {
-        timer.interrupt();
-    }
+    // public synchronized boolean ticketPurchase()
+    // {
+    // timer.setTime(purchaseTime);// whaaaat?
+    // timer.start();
+    // try
+    // {
+    // timer.join();
+    // if (timer.isInterrupted())
+    // {
+    // idStatus = STATUS.SOLD.ordinal(); // Se concreto la compra en el
+    // // tiempo de apartado
+    // return true;
+    // }
+    // else
+    // {
+    // idStatus = STATUS.AVAILABLE.ordinal(); // no se concreto la
+    // // compra en el tiempo de
+    // // apartado
+    // setStatus(idStatus);
+    // return false;
+    // }
+    // }
+    // catch (InterruptedException e)
+    // {
+    // e.printStackTrace();
+    // return false;
+    // }
+    // }
 
     /**
      * Set status that means if the ticket is available for purchase or is in
-     * another state. Available - Ready to buy. Reserved - Wait for purchase. Sold -
+     * another state. Available - Ready to buy. Reserved - Wait for purchase. Sold
      * No available for buy.
      * 
      * @param idStatus
      */
-    private void setStatus(int idStatus)
+    private void setStatusId(int idStatus)
     {
-        setStatus(idStatus);
-        if (idStatus == STATUS.NULL.ordinal())
-        {
-            ticketStatus = STATUS.NULL;
-        }
-        else if (idStatus == STATUS.AVAILABLE.ordinal())
-        {
-            ticketStatus = STATUS.AVAILABLE;
-        }
-        else if (idStatus == STATUS.RESERVED.ordinal())
-        {
-            ticketStatus = STATUS.RESERVED;
-        }
-        else if (idStatus == STATUS.SOLD.ordinal())
-        {
-            ticketStatus = STATUS.SOLD;
-        }
-        else
-        {
+        this.idStatus = idStatus;
+    }
 
-        }
+    public void setTicketStatus(STATUS status)
+    {
+        this.ticketStatus = status;
+        setStatusId(ticketStatus.ordinal());
     }
 }
