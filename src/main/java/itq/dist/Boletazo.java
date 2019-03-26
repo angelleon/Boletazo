@@ -47,8 +47,7 @@ public class Boletazo
             }
             catch (IOException e)
             {
-                LOG.error("An I/O error occurred");
-                LOG.error(e.getMessage());
+                LOG.error("An I/O error occurred "+e.getMessage()+"(2)");
             }
         }
         else
@@ -68,27 +67,25 @@ public class Boletazo
         try
         {
             Socket socketProf = new Socket(PROF_HOST, PROF_PORT);
-            DataOutputStream dataOut = new DataOutputStream(
-                    socketProf.getOutputStream());
-            dataOut.writeUTF("" + TEAM_NUM + "," + getIP());
+            DataOutputStream dataOut = new DataOutputStream(socketProf.getOutputStream());
+            dataOut.writeUTF(" " + TEAM_NUM + "," + getIP());
             socketProf.close();
             return true;
         }
         catch (UnknownHostException e)
         {
-            LOG.error(e.getMessage());
+            LOG.error(e.getMessage()+"(3)");
         }
         catch (IOException e)
         {
-            LOG.error("An I/O error ocurred");
+            LOG.error("An I/O error ocurred (2)");
             LOG.error(e.getMessage());
         }
         return false;
     }
 
     /**
-     * Get the ip from the assigned host
-     * 
+     * Get the ip from the assigned host 
      * @return ethernet's assigned ip
      */
     private static String getIP() throws UnknownHostException
@@ -106,17 +103,20 @@ public class Boletazo
                 while (addresses.hasMoreElements())
                 {
                     address = addresses.nextElement();
-                    if (address instanceof Inet4Address
-                            && !address.isLoopbackAddress()) { return address
-                                    .getHostAddress(); }
+                    if (address instanceof Inet4Address&& !address.isLoopbackAddress()) { 
+                        LOG.info("ip assigned by InetAddres: "+InetAddress.getLocalHost().getHostAddress().toString());
+                        return address.getHostAddress();
+                    }
                 }
             }
             catch (SocketException e)
             {
+                LOG.error("Can't get ip for Linux (1)");
             }
             return "127.0.0.1";
         }
         // For windows...
+        LOG.info("ip assigned by InetAddres: "+InetAddress.getLocalHost().getHostAddress().toString());
         return InetAddress.getLocalHost().getHostAddress().toString();
         // if you have active other ethernet interface .... unable!
     }

@@ -73,8 +73,7 @@ public class SocketThread extends Thread
      *            equal to 13
      * @param POST_PAYMENT_INFO
      *            equal to 14
-     * @param PUCHARASE_COMPLETED
-     *            equal to 15
+     * @param PUCHARASE_COMPLETED   equal to 15
      */
     private static enum STATE {
         C_START_SESSION,
