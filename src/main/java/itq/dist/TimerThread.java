@@ -7,6 +7,11 @@ public class TimerThread extends Thread
 {
     private int time;
 
+    public TimerThread()
+    {
+        this(6000);
+    }
+
     public TimerThread(int time)
     {
         this.time = time;
