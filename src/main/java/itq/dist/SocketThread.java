@@ -18,6 +18,7 @@ public class SocketThread extends Thread
     private static final Logger LOG = LogManager.getLogger(SocketThread.class);
     private static final int MAX_MSG_LENGTH = 1024;
     private static final int PERMIT_TICKETS = 4;
+    private static final int PAYMENT_TIMEOUT = 6000;
 
     private Socket socket;
     private DataInputStream dataIn;
@@ -31,7 +32,7 @@ public class SocketThread extends Thread
     // la informacion del login debe estar el menor tiempo posible en memoria
     private int nRequestedTickets;
     private int idEvent;
-    private int[] reqTicketsArray;
+    private int[] reqTicketIds;
     // private Ticketinfo[]; // i needed one of these!!!!!!
     private String usr;
     private String pass;
@@ -39,6 +40,7 @@ public class SocketThread extends Thread
     private String stateResidence;
     private Event[] searchResult;
     private EventInfo selectedEvent;
+    private Ticket[] reservedTickets;
     private TimerThread timer;
 
     /**
@@ -182,14 +184,18 @@ public class SocketThread extends Thread
         {
 
         }
+        catch (DbException e)
+        {
+
+        }
         catch (IOException e)
         {
 
         }
     }
 
-    // ToDo: implementar un metodo por cada constante del enum STATE
-    // ToDo: considerar lanzar excepciones para manejar todos los errores de la
+    // TODO: implementar un metodo por cada constante del enum STATE
+    // TODO: considerar lanzar excepciones para manejar todos los errores de la
     // conversacion dentro de un bloque catch
 
     // La tablita .....si hay sesion tabla.. ok no..
@@ -249,7 +255,7 @@ public class SocketThread extends Thread
      * @throws SessionException
      * @throws IOException
      */
-    private boolean getEventList() throws ConversationException, SessionException, IOException
+    private boolean getEventList() throws ConversationException, SessionException, DbException, IOException
     {
         currentState = STATE.GET_EVENT_LIST;
         String rawMsg = dataIn.readUTF();
@@ -320,7 +326,7 @@ public class SocketThread extends Thread
      * @throws SessionException
      * @throws IOException
      */
-    private boolean getEventInfo() throws ConversationException, SessionException, IOException
+    private boolean getEventInfo() throws ConversationException, SessionException, DbException, IOException
     {
         currentState = STATE.GET_EVENT_INFO;
         String rawMsg = dataIn.readUTF();
@@ -329,7 +335,7 @@ public class SocketThread extends Thread
             String[] valuesIn = rawMsg.split(",");
             checkConversationState(valuesIn[0]);
             checkSessionId(valuesIn[1]);
-            int idEvent = Integer.parseInt(valuesIn[2]);
+            idEvent = Integer.parseInt(valuesIn[2]);
             selectedEvent = db.getEventInfo(idEvent);
         }
         return false;
@@ -429,7 +435,7 @@ public class SocketThread extends Thread
      * @throws IOException
      */
     private boolean requestReserveTickets()
-            throws ConversationException, SessionException, IOException
+            throws ConversationException, SessionException, DbException, IOException
     {
         currentState = STATE.REQUEST_RESERVE_TICKETS;
         String rawMsg = dataIn.readUTF();
@@ -444,23 +450,23 @@ public class SocketThread extends Thread
             // see if the nRequestedTickets is equal or less than permit_Ticket
             if (nRequestedTickets <= PERMIT_TICKETS)
             {
-                reqTicketsArray = new int[nRequestedTickets];
+                reqTicketIds = new int[nRequestedTickets];
                 // desde la posicion de nRequestedTicked + nRequestTicked
                 int numPart = 4;
 
                 // array with the request idtickets
-                TimerThread wait = null;
                 for (int i = 0; i < nRequestedTickets; i++)
                 {
                     timer = new TimerThread();
                     LOG.debug(" posicion en mensaje " + numPart + " posicion-numero de ticket " + i);
-                    reqTicketsArray[i] = Integer.parseInt(parts[numPart]);
-                    reserv[i] = db.getBoletoById(reqTicketsArray[i]);
-                    reserv[i].setTimer(wait);// comenzar el tiempo de apartado
+                    reqTicketIds[i] = Integer.parseInt(parts[numPart]);
+                    reservedTickets[i] = db.getBoletoById(reqTicketIds[i]);
                     numPart++;
                 }
             }
-            LOG.error("Los tickets solicitados exceden el limite permitido ");
+            // Starting time for pay reserved tickets
+            timer = new TimerThread(PAYMENT_TIMEOUT);
+            timer.run();
             return true;
         }
         return false;
@@ -473,7 +479,7 @@ public class SocketThread extends Thread
      * @throws IOException
      */
     private boolean confirmReserveTickets()
-            throws ConversationException, IOException
+            throws ConversationException, DbException, IOException
     {
         currentState = STATE.CONFIRM_RESERVE_TICKETS;
         msgOut.setLength(0);
@@ -486,12 +492,12 @@ public class SocketThread extends Thread
             msgOut.append(sessionId);
             // todo los tickets fueron rerservados
             msgOut.append(",");
-            for (int i = 0; i < reqTicketsArray.length; i++)
+            for (int i = 0; i < reqTicketIds.length; i++)
             {
-                if (db.consultStatusTicket(reqTicketsArray[i]) == 1)
+                if (db.consultTicketStatus(reqTicketIds[i]) == 1)
                 { // ver si puede ser reservado ....y reservarlo :V
-                    db.update_Ticket_Status(reqTicketsArray[i], 2);
-                    cost = cost + db.getTicketById(reqTicketsArray[i]);
+                    db.updateTicketStatus(reqTicketIds[i], 2);
+                    cost = cost + db.getTicketById(reqTicketIds[i]);
                 }
                 else
                 {
@@ -502,10 +508,10 @@ public class SocketThread extends Thread
             msgOut.append(",");
             msgOut.append(nRequestedTickets);
             // details of each ticket
-            for (int i = 0; i < reqTicketsArray.length; i++)
+            for (int i = 0; i < reqTicketIds.length; i++)
             {
                 msgOut.append(",");
-                msgOut.append(reqTicketsArray[i]);
+                msgOut.append(reqTicketIds[i]);
                 // sacar por aca un arreglo de cada ticket con su detalle?, #nunca se usa
                 // despues
             }
@@ -523,7 +529,7 @@ public class SocketThread extends Thread
      * @throws SessionException
      * @throws IOException
      */
-    private boolean singup() throws ConversationException, SessionException, IOException
+    private boolean singup() throws ConversationException, SessionException, DbException, IOException
     {
         currentState = STATE.SINGUP;
         String rawMsg = dataIn.readUTF();
@@ -553,7 +559,7 @@ public class SocketThread extends Thread
      * @throws ConversationException
      * @throws IOException
      */
-    private boolean singupStatus() throws ConversationException, IOException
+    private boolean singupStatus() throws ConversationException, DbException, IOException
     {
         currentState = STATE.SINGUP_STATUS;
         msgOut.setLength(0);
@@ -581,7 +587,8 @@ public class SocketThread extends Thread
      * @throws SessionException
      * @throws IOException
      */
-    private boolean loginCheck() throws ConversationException, SessionException, IOException
+    private boolean loginCheck() throws ConversationException, SessionException, DbException,
+            IOException
     {
         currentState = STATE.LOGIN_CHECK;
         // msgOut.setLength(0);
@@ -590,7 +597,7 @@ public class SocketThread extends Thread
         if (checkMsgIntegrity(rawMsg) && sessionId > 0)
         {
             String[] parts = rawMsg.split(",");
-            int opCode = Integer.parseInt(parts[0]);
+            checkConversationState(parts[0]);
             sessionId = Integer.parseInt(parts[1]);
             usr = parts[2];
             pass = parts[3];
@@ -640,7 +647,7 @@ public class SocketThread extends Thread
         if (checkMsgIntegrity(rawMsg) && sessionId > 0)
         {
             String[] parts = rawMsg.split(",");
-            int opcode = Integer.parseInt(parts[0]);
+            checkConversationState(parts[0]);
             sessionId = Integer.parseInt(parts[1]);
             String numberCard = parts[2];
             if (numberCard.length() == 20)
@@ -684,20 +691,22 @@ public class SocketThread extends Thread
         msgOut.append(",");
 
         msgOut.append("el arreglo de los tickets....");
-        if (db.update_Ticket_Status(reqTicketsArray[i], 3) && reserv[i])
+        // TODO completar condicion
+        boolean success = true;
+        for (int i = 0; i < reqTicketIds.length; i++)
         {
-            msgOut.append("0");
-            return true;
+            if (db.updateTicketStatus(reqTicketIds[i], 3)) // && reservedTickets[i].)
+            {
+                msgOut.append("0");
+            }
+            else
+            {
+                success = false;
+            }
         }
         msgOut.append("1");
         dataOut.writeUTF(msgOut.toString());
-        return false;
-    }
-
-    private String[] spliceMsgTokens(String rawMsg, int nTokens, int[] arrayLengthPositions)
-    {
-
-        return new String[0];
+        return success;
     }
 
     /**
@@ -714,7 +723,7 @@ public class SocketThread extends Thread
         boolean correct = false;
         String[] valuesIn = rawMsg.split(",");
         int nTokens = getTokenNumber();
-        int[] arrayLengths = getArrayLengthPositions();
+        // int[] arrayLengths = getArrayLengthPositions();
         int valuesLen = valuesIn.length;
         TYPES[] types = getArgumentTypes();
         if (valuesLen < nTokens)
@@ -769,7 +778,7 @@ public class SocketThread extends Thread
         return correct;
     }
 
-    // ToDo: terminar la definicion del metodo
+    // TODO: terminar la definicion del metodo
     /**
      * this method makes a parsing or an equal actions depending to the type of
      * request
@@ -829,37 +838,22 @@ public class SocketThread extends Thread
         }
     }
 
-    // ToDo: evaluar la utilidad real de este metodo
+    // TODO: evaluar la utilidad real de este metodo
     // tal vez se pueden usar constantes en su lugar
     /**
      * 
      * @return
      * @throws ConversationException
      */
-    private int[] getArrayLengthPositions() throws ConversationException
-    {
-        switch (currentState)
-        {
-        case C_START_SESSION:
-            return new int[0];
-        case GET_EVENT_LIST:
-            return new int[0];
-        case GET_EVENT_INFO:
-            return new int[0];
-        case GET_AVAILABLE_SEATS:
-            return new int[0];
-        case REQUEST_RESERVE_TICKETS:
-            return new int[] {3};
-        case SINGUP:
-            return new int[0];
-        case LOGIN_CHECK:
-            return new int[0];
-        case POST_PAYMENT_INFO:
-            return new int[0];
-        default:
-            throw new ConversationException(ERROR.INCORRECT_CONVERSATION_STATE);
-        }
-    }
+    /*
+     * private int[] getArrayLengthPositions() throws ConversationException { switch
+     * (currentState) { case C_START_SESSION: return new int[0]; case
+     * GET_EVENT_LIST: return new int[0]; case GET_EVENT_INFO: return new int[0];
+     * case GET_AVAILABLE_SEATS: return new int[0]; case REQUEST_RESERVE_TICKETS:
+     * return new int[] {3}; case SINGUP: return new int[0]; case LOGIN_CHECK:
+     * return new int[0]; case POST_PAYMENT_INFO: return new int[0]; default: throw
+     * new ConversationException(ERROR.INCORRECT_CONVERSATION_STATE); } }
+     */
 
     /**
      * 
