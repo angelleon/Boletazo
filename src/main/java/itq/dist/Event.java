@@ -46,6 +46,21 @@ public class Event
         this.cost = cost;
     }
 
+    public String getCity()
+    {
+        return city;
+    }
+
+    public String getAddress()
+    {
+        return address;
+    }
+
+    public float getCost()
+    {
+        return cost;
+    }
+
     /**
      * Get the concat string with all the parameters of the class
      */
