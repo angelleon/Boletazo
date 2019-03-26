@@ -284,10 +284,10 @@ public class Db
     }
 
     /**
-     * Search ticket by idticket to know the cost of the ticket
+     * Look ticket by idticket :V, know the cost of the ticket
      * 
      * @param idticket
-     * @return float cost
+     * @return float cost......
      */
     public float getTicketById(int idticket)
     {
@@ -301,12 +301,12 @@ public class Db
             result = ps.executeQuery();
             cost = result.getFloat("cost");
             ps.close();
-            // return cost;
         }
         catch (SQLException e)
         {
             LOG.error(e.getMessage());
         }
+
         LOG.debug("ticket :" + idticket + " $" + cost);
         return cost;
 
@@ -505,72 +505,37 @@ public class Db
     }
 
     /**
-     * Update the ticket status with a numeric code, that depends: 3 = sold , 2 =
-     * busy, 1 = available
+     * update ticket , (3 = busy) , 2 = sold, 1 available ??
      * 
      * @param tickets
-     *            array that contains the idticket for purchase, Status
+     *            array contains the idticket that the client wants to buy
      * @return true: everything is ok... ?)
      */
-    public boolean update_Ticket_Status(int idTicket, int setStatus)
+    public boolean update_ticket_status(int[] tickets)
     {
-        String updateTicket = "update  ticket "
-                + "set idStatus= ? "
+        String update_ticket = "update  ticket "
+                + "set idStatus= 2 "
                 + "where idTicket = ? ";
         try
         {
             ResultSet result = null;
-            // for(int i =0;i<tickets.length;i++) {
-            PreparedStatement ps = conn.prepareStatement(updateTicket);
-            // int idticket = tickets[i];
-            ps.setInt(1, setStatus);
-            ps.setInt(2, idTicket);
-            ps.executeUpdate();
-            // tenemos q volver a la guia houston...
-            result = ps.executeQuery();
-            LOG.info("ticket : " + idTicket + " Cambiado a:  " + setStatus);
-            // }
+            for (int i = 0; i < tickets.length; i++)
+            {
+                PreparedStatement ps = conn.prepareStatement(update_ticket);
+                int idticket = tickets[i];
+                ps.setInt(1, idticket);
+                ps.executeUpdate();
+                // tenemos q volver a la guia houston...
+                result = ps.executeQuery();
+                log.info("ticket : " + idticket + " VENDIDO ");
+            }
             return true;
         }
         catch (SQLException e)
         {
-            LOG.error(e.getMessage());
+            log.error(e.getMessage());
         }
         return false;
-    }
-
-    /**
-     * Consult the status of ticket
-     * 
-     * @param idTicket
-     * @return value of status
-     */
-
-    public int consultStatusTicket(int idTicket)
-    {
-        String updateTicket = "select idstatus "
-                + "from ticket "
-                + "where idTicket = ? ";
-        try
-        {
-            ResultSet result = null;
-            // for(int i =0;i<tickets.length;i++) {
-            PreparedStatement ps = conn.prepareStatement(updateTicket);
-            // int idticket = tickets[i];
-            ps.setInt(1, idTicket);
-            ps.executeQuery();
-            // tenemos q volver a la guia houston...
-            result = ps.executeQuery();
-            LOG.debug("ticket : " + idTicket + " status:  " + result.getString("idstatus"));
-            return result.getInt("idstatus");
-
-            // }
-        }
-        catch (SQLException e)
-        {
-            LOG.error(e.getMessage());
-        }
-        return 0;
     }
 
     /**
