@@ -293,6 +293,9 @@ public class Db
     {
         float cost = 0f;
         ResultSet result = null;
+        String ticket = "";
+        if (!connected) { return cost; }
+        ResultSet result = null;
         LOG.debug("Retrived [" + idticket + "] ");
         try
         {
@@ -304,10 +307,9 @@ public class Db
         }
         catch (SQLException e)
         {
-            LOG.error(e.getMessage());
+            log.error(e.getMessage());
         }
-
-        LOG.debug("ticket :" + idticket + " $" + cost);
+        log.debug("ticket :" + idticket + " $" + cost);
         return cost;
 
         /*
