@@ -1,6 +1,9 @@
 package itq.dist;
 
 import java.util.Random;
+import java.net.Inet4Address;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
@@ -9,10 +12,11 @@ public class Test
 {
     private static final Logger log = LogManager.getLogger(Test.class);
 
-    public static void main(String[] args)
+    public static void main(String[] args) throws UnknownHostException
     {
         log.info(System.getProperty("os.name"));
         Random r = new Random();
+        System.out.println(InetAddress.getLocalHost().getHostAddress().toString());
         SessionControl sc = new SessionControl(0, 40);
         int sessionId;
         int releasedCount = 0;
