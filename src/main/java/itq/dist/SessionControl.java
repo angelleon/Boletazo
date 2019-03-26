@@ -91,4 +91,9 @@ public class SessionControl
     {
         return !avalilableSessionIDs[sessionId];
     }
+
+    public int getMaxSessions()
+    {
+        return maxSessions;
+    }
 }
