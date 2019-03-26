@@ -312,15 +312,7 @@ public class SocketThread extends Thread
                 TimerThread wait = null;
                 for (int i = 0; i < nRequestedTickets; i++)
                 {
-                    wait = new TimerThread();
-                for (int i = 0; i < nRequestedTickets; i++)
-                {
-                    log.debug(" posicion en mensaje " + numPart + " posicion-numero de ticket " + i);
-                    tickets_array[i] = Integer.parseInt(parts[numPart]);
-                    numPart++;
-                }
-            }
-            log.error("Los tickets solicitados exceden el limite permitido ");
+                    timer = new TimerThread();
                     LOG.debug(" posicion en mensaje " + numPart + " posicion-numero de ticket " + i);
                     tickets_Array[i] = Integer.parseInt(parts[numPart]);
                     reserv[i] = db.getBoletoById(tickets_Array[i]);
@@ -330,7 +322,8 @@ public class SocketThread extends Thread
             }
             LOG.error("Los tickets solicitados exceden el limite permitido ");
             return true;
-        }return false;
+        }
+        return false;
 
     }
 
