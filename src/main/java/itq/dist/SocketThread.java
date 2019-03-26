@@ -41,6 +41,42 @@ public class SocketThread extends Thread
     private EventInfo selectedEvent;
     private TimerThread timer;
 
+    /**
+     * create an association between variable and its value
+     * 
+     * @param C_START_SESSION
+     *            equal to 0
+     * @param S_START_SESSION
+     *            equal to 1
+     * @param GET_EVENT_LIST
+     *            equal to 2
+     * @param POST_EVENT_LIST
+     *            equal to 3
+     * @param GET_EVENT_INFO
+     *            equal to 4
+     * @param POST_EVENT_INFO
+     *            equal to 5
+     * @param GET_AVAILABLE_SEATS
+     *            equal to 6
+     * @param POST_AVAILABLE_SEATS
+     *            equal to 7
+     * @param REQUEST_RESERVE_TICKETS
+     *            equal to 8
+     * @param CONFIRM_RESERVE_TICKETS
+     *            equal to 9
+     * @param SINGUP
+     *            equal to 10
+     * @param SINGUP_STATUS
+     *            equal to 11
+     * @param LOGIN_CHECK
+     *            equal to 12
+     * @param LOGIN_STATUS
+     *            equal to 13
+     * @param POST_PAYMENT_INFO
+     *            equal to 14
+     * @param PUCHARASE_COMPLETED
+     *            equal to 15
+     */
     private static enum STATE {
         C_START_SESSION,
         S_START_SESSION,
@@ -62,6 +98,18 @@ public class SocketThread extends Thread
 
     private STATE currentState;
 
+    /**
+     * create an association between variable and its value
+     * 
+     * @param NULL
+     *            equal to 0
+     * @param INT
+     *            equal to 1
+     * @param FLOAT
+     *            equal to 2
+     * @param ARRAY
+     *            equal to 3
+     */
     private enum TYPES {
         NULL,
         INT,
@@ -70,6 +118,15 @@ public class SocketThread extends Thread
         ARRAY
     }
 
+    /**
+     * 
+     * @param socket
+     * @param db
+     * @param sc
+     *            this method set each one of all these three parameters where the
+     *            Socket is the socket, db is the data base already loaded and sc is
+     *            the control of the session client
+     */
     SocketThread(Socket socket, Db db, SessionControl sc)
     {
         this.socket = socket;
@@ -88,6 +145,9 @@ public class SocketThread extends Thread
         }
     }
 
+    /**
+     * This method create the sequence of the conversation between the server-client
+     */
     @Override
     public void run()
     {
@@ -103,7 +163,7 @@ public class SocketThread extends Thread
             postAvailableSeats();
             requestReserveTickets();
             confirmReserveTickets();
-            if (currentState == STATE.SINGUP)
+            if (currentState == STATE.SINGUP)// this case if the client does not has a account yet
             {
                 singup();
                 singupStatus();
@@ -133,6 +193,18 @@ public class SocketThread extends Thread
     // conversacion dentro de un bloque catch
 
     // La tablita .....si hay sesion tabla.. ok no..
+
+    /**
+     * The first action to send a request to the server
+     * 
+     * @return true if the conversation is successful(The client already has a
+     *         petition for tickets), false if the message has an error in its
+     *         syntax and content
+     * @throws ConversationException
+     * @throws IOException
+     * 
+     *             read the message and split its content with a ,
+     */
     private boolean cStartSession() throws ConversationException, IOException
     {
         String rawMsg = dataIn.readUTF();
@@ -145,6 +217,14 @@ public class SocketThread extends Thread
         return false;
     }
 
+    /**
+     * the server has already received a request for tickets
+     * 
+     * @return true if the server received a successful petition by the client
+     *         software, false if syntax or content is different
+     * @throws ConversationException
+     * @throws IOException
+     */
     private boolean sStartSession() throws ConversationException, IOException
     {
         currentState = STATE.S_START_SESSION;
@@ -161,6 +241,14 @@ public class SocketThread extends Thread
         return false;
     }
 
+    /**
+     * is a solicitation for the events available
+     * 
+     * @return true if the process got all then requirements for an specific event
+     * @throws ConversationException
+     * @throws SessionException
+     * @throws IOException
+     */
     private boolean getEventList() throws ConversationException, SessionException, IOException
     {
         currentState = STATE.GET_EVENT_LIST;
@@ -194,6 +282,15 @@ public class SocketThread extends Thread
         return false;
     }
 
+    /**
+     * create a message to send to the client with all events available
+     * 
+     * @return true if all the information needed by the client is founded in the
+     *         data base after that is sent to the client separated by , return
+     *         false if some part of the information is not founded
+     * @throws ConversationException
+     * @throws IOException
+     */
     private boolean postEventList() throws ConversationException, IOException
     {
         currentState = STATE.POST_EVENT_LIST;
@@ -214,6 +311,15 @@ public class SocketThread extends Thread
         return true;
     }
 
+    /**
+     * this method load the information associated to an specific event
+     * 
+     * @return return true if the events information was founded in other case
+     *         return false
+     * @throws ConversationException
+     * @throws SessionException
+     * @throws IOException
+     */
     private boolean getEventInfo() throws ConversationException, SessionException, IOException
     {
         currentState = STATE.GET_EVENT_INFO;
@@ -229,6 +335,16 @@ public class SocketThread extends Thread
         return false;
     }
 
+    /**
+     * Create a message with information about an specific event separated by , then
+     * is sent to the client
+     * 
+     * @return true if the information about the particular event is founded in
+     *         other case return false
+     * @throws ConversationException
+     * @throws SessionException
+     * @throws IOException
+     */
     private boolean postEventInfo() throws ConversationException, SessionException, IOException
     {
         currentState = STATE.POST_EVENT_INFO;
@@ -265,6 +381,14 @@ public class SocketThread extends Thread
         return true;
     }
 
+    /**
+     * create a request for the server to show the available seats
+     * 
+     * @return
+     * @throws ConversationException
+     * @throws SessionException
+     * @throws IOException
+     */
     private boolean getAvailableSeats()
             throws ConversationException, SessionException, IOException
     {
@@ -280,6 +404,12 @@ public class SocketThread extends Thread
         return false;
     }
 
+    /**
+     * 
+     * @return true if the information is founded in other case return false
+     * @throws ConversationException
+     * @throws IOException
+     */
     private boolean postAvailableSeats() throws ConversationException, IOException
     {
         currentState = STATE.POST_AVAILABLE_SEATS;
@@ -289,6 +419,15 @@ public class SocketThread extends Thread
     }
 
     // opCode = 8
+    /**
+     * This method read a request by the client to buy an specific number of tickets
+     * 
+     * @return true if the information and the number of tickets can be bought in
+     *         other case return false
+     * @throws ConversationException
+     * @throws SessionException
+     * @throws IOException
+     */
     private boolean requestReserveTickets()
             throws ConversationException, SessionException, IOException
     {
@@ -328,8 +467,6 @@ public class SocketThread extends Thread
     }
 
     /**
-     * !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! requiere el tiempo de espera y no
-     * entendi como hacer ese pedo (olvidalo)
      * 
      * @return true; all tickets were reserved
      * @throws ConversationException
@@ -378,6 +515,14 @@ public class SocketThread extends Thread
         return false;
     }
 
+    /**
+     * this method tries to sing up a new client that does not has an account yet
+     * 
+     * @return true if the account was created i other case return false
+     * @throws ConversationException
+     * @throws SessionException
+     * @throws IOException
+     */
     private boolean singup() throws ConversationException, SessionException, IOException
     {
         currentState = STATE.SINGUP;
@@ -403,6 +548,10 @@ public class SocketThread extends Thread
 
     /**
      * Create a new user for Boletazo
+     * 
+     * @return
+     * @throws ConversationException
+     * @throws IOException
      */
     private boolean singupStatus() throws ConversationException, IOException
     {
@@ -425,6 +574,13 @@ public class SocketThread extends Thread
         return false;
     }
 
+    /**
+     * 
+     * @return
+     * @throws ConversationException
+     * @throws SessionException
+     * @throws IOException
+     */
     private boolean loginCheck() throws ConversationException, SessionException, IOException
     {
         currentState = STATE.LOGIN_CHECK;
@@ -444,6 +600,12 @@ public class SocketThread extends Thread
         return false;
     }
 
+    /**
+     * 
+     * @return
+     * @throws ConversationException
+     * @throws IOException
+     */
     private boolean loginStatus() throws ConversationException, IOException
     {
         currentState = STATE.LOGIN_STATUS;
@@ -470,7 +632,6 @@ public class SocketThread extends Thread
      * @throws ConversationException
      * @throws IOException
      */
-
     private boolean postPaymentInfo() throws ConversationException, SessionException, IOException
     {
         currentState = STATE.POST_PAYMENT_INFO;
@@ -499,6 +660,15 @@ public class SocketThread extends Thread
         return false;
     }
 
+    /**
+     * The methos send a message with the sell successful of the number of the
+     * tickets bought
+     * 
+     * @return return true if the tickets have already bought on the data base in
+     *         other case return false
+     * @throws ConversationException
+     * @throws IOException
+     */
     private boolean pucharaseCompleted()
             throws ConversationException, IOException
     {
@@ -530,6 +700,15 @@ public class SocketThread extends Thread
         return new String[0];
     }
 
+    /**
+     * This method check the syntax of the message sent between the client and the
+     * server
+     * 
+     * @param rawMsg
+     * @return true if the message corresponds to the syntax of the process that is
+     *         happening in other case return false
+     * @throws ConversationException
+     */
     private boolean checkMsgIntegrity(String rawMsg) throws ConversationException
     {
         boolean correct = false;
@@ -591,6 +770,15 @@ public class SocketThread extends Thread
     }
 
     // ToDo: terminar la definicion del metodo
+    /**
+     * this method makes a parsing or an equal actions depending to the type of
+     * request
+     * 
+     * @param token
+     * @param types
+     * @return return true if the action has completed in other case return false
+     * @throws NumberFormatException
+     */
     private boolean checkArgument(String token, TYPES types) throws NumberFormatException
     {
         switch (types)
@@ -612,6 +800,10 @@ public class SocketThread extends Thread
         }
     }
 
+    /**
+     * 
+     * @return the next number that corresponds to the variable name
+     */
     private int getTokenNumber()
     {
         switch (currentState)
@@ -639,6 +831,11 @@ public class SocketThread extends Thread
 
     // ToDo: evaluar la utilidad real de este metodo
     // tal vez se pueden usar constantes en su lugar
+    /**
+     * 
+     * @return
+     * @throws ConversationException
+     */
     private int[] getArrayLengthPositions() throws ConversationException
     {
         switch (currentState)
@@ -664,6 +861,11 @@ public class SocketThread extends Thread
         }
     }
 
+    /**
+     * 
+     * @return
+     * @throws ConversationException
+     */
     @SuppressWarnings("incomplete-switch")
     private TYPES[] getArgumentTypes() throws ConversationException
     {
@@ -725,12 +927,22 @@ public class SocketThread extends Thread
         return type;
     }
 
+    /**
+     * 
+     * @param rawConversationState
+     * @throws ConversationException
+     */
     private void checkConversationState(String rawConversationState) throws ConversationException
     {
         if (Integer.parseInt(rawConversationState) != currentState.ordinal())
             throw new ConversationException(ERROR.INCORRECT_CONVERSATION_STATE);
     }
 
+    /**
+     * 
+     * @param rawSessionId
+     * @throws SessionException
+     */
     private void checkSessionId(String rawSessionId) throws SessionException
     {
         if (Integer.parseInt(rawSessionId) != sessionId)
