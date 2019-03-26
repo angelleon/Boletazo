@@ -1,16 +1,13 @@
 package itq.dist;
 
-//import java.sql.*;
-import java.sql.DriverManager;
-import java.sql.ResultSet;
-import java.sql.PreparedStatement;
 import java.sql.Connection;
 import java.sql.Date;
-import java.time.LocalDate;
+//import java.sql.*;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.lang.ClassNotFoundException;
-import java.lang.IllegalAccessException;
-import java.lang.InstantiationException;
+import java.time.LocalDate;
 import java.util.HashMap;
 
 import org.apache.logging.log4j.LogManager;
@@ -49,9 +46,9 @@ public class Db
             + "FROM Status "
             + "WHERE status = 'DISPONIBLE')";
     private static final String SELECT_BY_TICKET_ID = "SELECT cost "
-													+ "FROM section,ticket "
-													+ "where idticket = ? "
-													+ "and ticket.idsection = section.idsection ";
+            + "FROM section,ticket "
+            + "where idticket = ? "
+            + "and ticket.idsection = section.idsection ";
     private static final String SEARCH_EVENT_BY_NAME = "SELECT * "
             + "FROM Event "
             + "WHERE LOWER(name) LIKE LOWER('%?%')";
@@ -275,13 +272,14 @@ public class Db
     }
 
     /**
-     * Look ticket by idticket :V, know the cost of the ticket 
-     * @param idticket 
+     * Look ticket by idticket :V, know the cost of the ticket
+     * 
+     * @param idticket
      * @return float cost......
      */
     public float getTicketById(int idticket)
     {
-    	float cost = 0f;
+        float cost = 0f;
         ResultSet result = null;
         String ticket = "";
         if (!connected) { return ticket; }
@@ -294,36 +292,28 @@ public class Db
             PreparedStatement ps = conn.prepareStatement(SELECT_BY_TICKET_ID);
             ps.setInt(1, idticket);
             result = ps.executeQuery();
-            cost = result.getFloat("cost");          
+            cost = result.getFloat("cost");
             ps.close();
-        } 
+        }
         catch (SQLException e)
         {
             log.error(e.getMessage());
         }
-        log.debug("ticket :"+idticket+" $"+cost);
+        log.debug("ticket :" + idticket + " $" + cost);
         return cost;
 
-  /*
-
-            while (result.next())
-            {
-
-                String seat = result.getString("seatNumber");
-                int status = result.getInt("idStatus");
-                int section = result.getInt("idSection");
-                int event = result.getInt("idEvent");
-                ticket = idticket + "," + seat + "," + status + "," + section + "," + event;
-            }
-            ps.close();
-            return ticket;
-        }
-        catch (SQLException e)
-        {
-
-        }
-        return "";
-        */
+        /*
+         * 
+         * while (result.next()) {
+         * 
+         * String seat = result.getString("seatNumber"); int status =
+         * result.getInt("idStatus"); int section = result.getInt("idSection"); int
+         * event = result.getInt("idEvent"); ticket = idticket + "," + seat + "," +
+         * status + "," + section + "," + event; } ps.close(); return ticket; } catch
+         * (SQLException e) {
+         * 
+         * } return "";
+         */
     }
 
     /**
@@ -506,32 +496,36 @@ public class Db
 
     /**
      * update ticket , (3 = busy) , 2 = sold, 1 available ??
-     * @param tickets array contains the idticket that the client wants to buy
-     * @return true: everything is ok... ?) 
+     * 
+     * @param tickets
+     *            array contains the idticket that the client wants to buy
+     * @return true: everything is ok... ?)
      */
-    public boolean update_ticket_status(int[] tickets) {
-    	String update_ticket = "update  ticket "
-    						 + "set idStatus= 2 "
-    						 + "where idTicket = ? ";
-    	try {
-    		ResultSet result = null;
-    		for(int i =0;i<tickets.length;i++) {    			
-    			PreparedStatement ps = conn.prepareStatement(update_ticket);
-    			int idticket = tickets[i];
-    			ps.setInt(1, idticket);
-    			ps.executeUpdate();
-    			// tenemos q volver a la guia houston...
-    			result = ps.executeQuery();
-    			log.info("ticket : "+idticket+" VENDIDO ");
-    		}
-    		return true;
-    	}
-    	catch (SQLException e)
+    public boolean update_ticket_status(int[] tickets)
+    {
+        String update_ticket = "update  ticket "
+                + "set idStatus= 2 "
+                + "where idTicket = ? ";
+        try
+        {
+            ResultSet result = null;
+            for (int i = 0; i < tickets.length; i++)
+            {
+                PreparedStatement ps = conn.prepareStatement(update_ticket);
+                int idticket = tickets[i];
+                ps.setInt(1, idticket);
+                ps.executeUpdate();
+                // tenemos q volver a la guia houston...
+                result = ps.executeQuery();
+                log.info("ticket : " + idticket + " VENDIDO ");
+            }
+            return true;
+        }
+        catch (SQLException e)
         {
             log.error(e.getMessage());
         }
-    	return false;
-
+        return false;
     }
 
     public Event[] getEventsPerCost(LocalDate date)
