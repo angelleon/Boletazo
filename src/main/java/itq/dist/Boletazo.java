@@ -16,7 +16,7 @@ import org.apache.logging.log4j.Logger;
 
 public class Boletazo
 {
-    private static final Logger log = LogManager.getLogger();
+    private static final Logger LOG = LogManager.getLogger();
     private static final int PORT = 2000;
     private static final String PROF_HOST = "localhost";
     private static final int PROF_PORT = 5000;
@@ -47,21 +47,21 @@ public class Boletazo
             }
             catch (IOException e)
             {
-                log.error("An I/O error occurred");
-                log.error(e.getMessage());
+                LOG.error("An I/O error occurred");
+                LOG.error(e.getMessage());
             }
         }
         else
         {
-            log.error("Can not connect to DataBase");
+            LOG.error("Can not connect to DataBase");
         }
-        log.info("Exiting...");
+        LOG.info("Exiting...");
     }
 
     /**
      * Connects to professor server to send IP and port of this service
      * 
-     * @return true if succesful connection, else otherwise
+     * @return true if successful connection, else otherwise
      */
     private static boolean initialConnection()
     {
@@ -76,12 +76,12 @@ public class Boletazo
         }
         catch (UnknownHostException e)
         {
-            log.error(e.getMessage());
+            LOG.error(e.getMessage());
         }
         catch (IOException e)
         {
-            log.error("An I/O error ocurred");
-            log.error(e.getMessage());
+            LOG.error("An I/O error ocurred");
+            LOG.error(e.getMessage());
         }
         return false;
     }
