@@ -10,7 +10,11 @@ public class BoletazoException extends Exception
     private ERROR error;
 
     public static enum ERROR {
-        GENERIC_ERROR
+        GENERIC_ERROR,
+        IP_PROBLEM,
+        CONNECTION_ERROR,
+        INCONSCISTENT_MESSAGE,
+        ONLOAD_DATABASE,
     };
 
     BoletazoException()
@@ -45,6 +49,14 @@ public class BoletazoException extends Exception
         {
         case GENERIC_ERROR:
             return "Top-level exception for Boletazo software";
+        case IP_PROBLEM:
+            return "Failed to get a correct format IP";
+        case CONNECTION_ERROR:
+            return "Conection refused by inconsistent conection";
+        case INCONSCISTENT_MESSAGE:
+            return "Bad format message for incoming connection";
+        case ONLOAD_DATABASE:
+            return "Database on load charge, request incomplete";
         default:
             return "";
         }

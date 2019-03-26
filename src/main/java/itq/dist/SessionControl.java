@@ -22,7 +22,6 @@ public class SessionControl
         {
             avalilableSessionIDs[i] = true;
         }
-
     }
 
     SessionControl()
