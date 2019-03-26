@@ -5,7 +5,7 @@ public class DbException extends BoletazoException
     /**
      * 
      */
-    private static final long SERIAL_VERSION_UID = 1L;
+    private static final long serialVersionUID = 1L;
 
     public static enum ERROR {
         GENERIC_ERROR,
