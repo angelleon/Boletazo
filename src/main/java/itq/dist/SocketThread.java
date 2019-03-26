@@ -305,7 +305,7 @@ public class SocketThread extends Thread
             // see if the nRequestedTickets is equal or less than permit_Ticket
             if (nRequestedTickets <= PERMIT_TICKETS)
             {
-                tickets_Array = new int[nRequestedTickets];
+                int[] ticketsArray = new int[nRequestedTickets];
                 // desde la posicion de nRequestedTicked + nRequestTicked
                 int numPart = 4;
                 // array with the request idtickets
