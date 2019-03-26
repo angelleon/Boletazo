@@ -305,8 +305,7 @@ public class SocketThread extends Thread
             // see if the nRequestedTickets is equal or less than permit_Ticket
             if (nRequestedTickets <= PERMIT_TICKETS)
             {
-
-                ticketsArray = new int[nRequestedTickets];
+                int[] ticketsArray = new int[nRequestedTickets];
                 // desde la posicion de nRequestedTicked + nRequestTicked
                 int numPart = 4;
 
@@ -314,7 +313,7 @@ public class SocketThread extends Thread
                 TimerThread wait = null;
                 for (int i = 0; i < nRequestedTickets; i++)
                 {
-                    wait = new TimerThread();
+                    timer = new TimerThread();
                     LOG.debug(" posicion en mensaje " + numPart + " posicion-numero de ticket " + i);
                     tickets_Array[i] = Integer.parseInt(parts[numPart]);
                     reserv[i] = db.getBoletoById(tickets_Array[i]);
