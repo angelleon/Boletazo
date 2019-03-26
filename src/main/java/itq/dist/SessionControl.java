@@ -10,6 +10,16 @@ public class SessionControl
     private int maxSessions;
     private int lastAssignedIndex;
 
+    /**
+     * 
+     * @param availableCount
+     * @param avalilableSessionIDs
+     * @param startId
+     * @param lastId
+     * @param maxSessions
+     * @param lastAssignedIndex
+     */
+
     SessionControl(int startId, int maxSessions)
     {
         this.startId = startId;
