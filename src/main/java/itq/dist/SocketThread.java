@@ -7,12 +7,11 @@ import java.net.Socket;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
-import java.lang.StringBuilder;
-
-import org.apache.logging.log4j.Logger;
-import itq.dist.ConversationException.ERROR;
 
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
+import itq.dist.ConversationException.ERROR;
 
 public class SocketThread extends Thread
 {
@@ -33,14 +32,14 @@ public class SocketThread extends Thread
     private int nRequestedTickets;
     private int idEvent;
     private int[] tickets_array;
-    //private Ticketinfo[]; // i needed one of these!!!!!!
+    // private Ticketinfo[]; // i needed one of these!!!!!!
     private String usr;
     private String pass;
     private String email;
     private String stateResidence;
     private Event[] searchResult;
     private Event selectedEvent;
-    private Boleto[] reserv;
+    private TimerThread timer;
 
     private static enum STATE {
         C_START_SESSION,
@@ -254,78 +253,90 @@ public class SocketThread extends Thread
     private boolean requestReserveTickets()
             throws ConversationException, SessionException, IOException
     {
-    	currentState =STATE.REQUEST_RESERVE_TICKETS;
-    	String rawMsg = dataIn.readUTF();
-    	
-    	if(checkMsgIntegrity(rawMsg) && sessionId >0){
-    		String[] parts = rawMsg.split(",");
-    		//int opcode = Integer.parseInt(parts[0]);
-    		sessionId = Integer.parseInt(parts[1]);
-    		idEvent = Integer.parseInt(parts[2]);
-    		nRequestedTickets = Integer.parseInt(parts[3]);
-    		// see if the nRequestedTickets is equal or less than permit_Ticket
-    		if(nRequestedTickets <= PERMIT_TICKETS) {
-    			tickets_array = new int[nRequestedTickets];
-    			//desde la posicion de nRequestedTicked + nRequestTicked
-    			int numPart = 4;
-    			
-        		//array with the request idtickets
-    			
-    			TimerThread wait =null;
-        		for(int i = 0;i<nRequestedTickets;i++) {
-        		    wait =new TimerThread();
-        			log.debug(" posicion en mensaje "+numPart+" posicion-numero de ticket "+i);
-            		tickets_array[i] = Integer.parseInt(parts[numPart]);
-            		reserv[i] = db.getBoletoById(tickets_array[i]);
-            		reserv[i].setTimer(wait);//comenzar el tiempo de apartado
-        			numPart++;
-        		}
-    		}
-    			log.error("Los tickets solicitados exceden el limite permitido ");
-    		return true;
-    	}
+        currentState = STATE.REQUEST_RESERVE_TICKETS;
+        String rawMsg = dataIn.readUTF();
+
+        if (checkMsgIntegrity(rawMsg) && sessionId > 0)
+        {
+            String[] parts = rawMsg.split(",");
+            // int opcode = Integer.parseInt(parts[0]);
+            sessionId = Integer.parseInt(parts[1]);
+            idEvent = Integer.parseInt(parts[2]);
+            nRequestedTickets = Integer.parseInt(parts[3]);
+            // see if the nRequestedTickets is equal or less than permit_Ticket
+            if (nRequestedTickets <= PERMIT_TICKETS)
+            {
+                tickets_array = new int[nRequestedTickets];
+                // desde la posicion de nRequestedTicked + nRequestTicked
+                int numPart = 4;
+
+                // array with the request idtickets
+
+                TimerThread wait = null;
+                for (int i = 0; i < nRequestedTickets; i++)
+                {
+                    wait = new TimerThread();
+                    log.debug(" posicion en mensaje " + numPart + " posicion-numero de ticket " + i);
+                    tickets_array[i] = Integer.parseInt(parts[numPart]);
+                    reserv[i] = db.getBoletoById(tickets_array[i]);
+                    reserv[i].setTimer(wait);// comenzar el tiempo de apartado
+                    numPart++;
+                }
+            }
+            log.error("Los tickets solicitados exceden el limite permitido ");
+            return true;
+        }
         return false;
     }
+
     /**
-     * !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! requiere el tiempo de espera y no entendi como hacer ese pedo (olvidalo)
-     * @return true; all tickets were reserved 
+     * !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! requiere el tiempo de espera y no
+     * entendi como hacer ese pedo (olvidalo)
+     * 
+     * @return true; all tickets were reserved
      * @throws ConversationException
      * @throws IOException
      */
     private boolean confirmReserveTickets()
             throws ConversationException, IOException
     {
-    	currentState =STATE.CONFIRM_RESERVE_TICKETS;
-    	msgOut.setLength(0);
-    	float cost = 0;
-    	
-    	 if (sessionId > 0) // #ArmaTuMensaje !!(revisar esta wean en todos)
-         {
-             msgOut.append(currentState);
-             msgOut.append(",");
-             msgOut.append(sessionId);
+        currentState = STATE.CONFIRM_RESERVE_TICKETS;
+        msgOut.setLength(0);
+        float cost = 0;
+
+        if (sessionId > 0) // #ArmaTuMensaje !!(revisar esta wean en todos)
+        {
+            msgOut.append(currentState);
+            msgOut.append(",");
+            msgOut.append(sessionId);
             // todo los tickets fueron rerservados
-             msgOut.append(",");
-             for(int i =0;i<tickets_array.length;i++) {
-            	 if(db.ConsultStatusTicket(tickets_array[i])==1 ) { //ver si puede ser reservado ....y reservarlo :V
-            	     db.update_ticket_status(tickets_array[i],2);
-            	     cost = cost + db.getTicketById(tickets_array[i]);
-            	 }else {
-            	     log.info(" No se puede obtener el estado del ticket");
-            	 }
-             }
-             msgOut.append(cost);
-             msgOut.append(",");
-             msgOut.append(nRequestedTickets);
-             //details of each ticket
-             for(int i =0;i<tickets_array.length;i++) {
-            	msgOut.append(",");
-            	msgOut.append(tickets_array[i]);
-            	//sacar por aca un arreglo de cada ticket con su detalle?, #nunca se usa despues
-             }
-             dataOut.writeUTF(msgOut.toString());
-             return true;
-         }
+            msgOut.append(",");
+            for (int i = 0; i < tickets_array.length; i++)
+            {
+                if (db.ConsultStatusTicket(tickets_array[i]) == 1)
+                { // ver si puede ser reservado ....y reservarlo :V
+                    db.update_ticket_status(tickets_array[i], 2);
+                    cost = cost + db.getTicketById(tickets_array[i]);
+                }
+                else
+                {
+                    log.info(" No se puede obtener el estado del ticket");
+                }
+            }
+            msgOut.append(cost);
+            msgOut.append(",");
+            msgOut.append(nRequestedTickets);
+            // details of each ticket
+            for (int i = 0; i < tickets_array.length; i++)
+            {
+                msgOut.append(",");
+                msgOut.append(tickets_array[i]);
+                // sacar por aca un arreglo de cada ticket con su detalle?, #nunca se usa
+                // despues
+            }
+            dataOut.writeUTF(msgOut.toString());
+            return true;
+        }
         return false;
     }
 
@@ -357,23 +368,24 @@ public class SocketThread extends Thread
      */
     private boolean singupStatus() throws ConversationException, IOException
     {
-    	currentState = STATE.SINGUP_STATUS;
-    	msgOut.setLength(0);
-    	
-    	msgOut.append(currentState);
+        currentState = STATE.SINGUP_STATUS;
+        msgOut.setLength(0);
+
+        msgOut.append(currentState);
         msgOut.append(",");
-		msgOut.append(sessionId);      
-		msgOut.append(",");
-		
-    	if(db.toRegister(usr, pass,email,stateResidence)) {
-    		msgOut.append(0);
-    		dataOut.writeUTF(msgOut.toString());
-    		
-    		return true;
-    	}
-    	msgOut.append(1);
-    	dataOut.writeUTF(msgOut.toString());
-    	log.info("usuario equivocado o falta registrar "+usr+" - " +email);	
+        msgOut.append(sessionId);
+        msgOut.append(",");
+
+        if (db.toRegister(usr, pass, email, stateResidence))
+        {
+            msgOut.append(0);
+            dataOut.writeUTF(msgOut.toString());
+
+            return true;
+        }
+        msgOut.append(1);
+        dataOut.writeUTF(msgOut.toString());
+        log.info("usuario equivocado o falta registrar " + usr + " - " + email);
         return false;
     }
 
@@ -398,20 +410,21 @@ public class SocketThread extends Thread
 
     private boolean loginStatus() throws ConversationException, IOException
     {
-    	currentState =STATE.LOGIN_STATUS;
-    	msgOut.setLength(0);
-    	msgOut.append(currentState);
+        currentState = STATE.LOGIN_STATUS;
+        msgOut.setLength(0);
+        msgOut.append(currentState);
         msgOut.append(",");
-		msgOut.append(sessionId);
-	      msgOut.append(",");
-	      
-		if(db.login(usr, pass)) {
-			msgOut.append("0");
-			dataOut.writeUTF(msgOut.toString());
-			return true;
-		}
-		msgOut.append("1");
-		dataOut.writeUTF(msgOut.toString());
+        msgOut.append(sessionId);
+        msgOut.append(",");
+
+        if (db.login(usr, pass))
+        {
+            msgOut.append("0");
+            dataOut.writeUTF(msgOut.toString());
+            return true;
+        }
+        msgOut.append("1");
+        dataOut.writeUTF(msgOut.toString());
         return false;
     }
 
@@ -454,23 +467,29 @@ public class SocketThread extends Thread
     private boolean pucharaseCompleted()
             throws ConversationException, IOException
     {
-    	currentState =STATE.PUCHARASE_COMPLETED;
-    	msgOut.setLength(0);
-    	
-    	msgOut.append(currentState);
+
+        currentState = STATE.PUCHARASE_COMPLETED;
+        msgOut.setLength(0);
+
+        msgOut.append(currentState);
         msgOut.append(",");
-		msgOut.append(sessionId);
-	      msgOut.append(",");
-		msgOut.append(nRequestedTickets);
-	      msgOut.append(",");
-	      
-		msgOut.append("el arreglo de los tickets....");
-		if(db.update_ticket_status(tickets_array[i],3) && reserv[i]) {
-			msgOut.append("0");
-			return true;
-		}
-		msgOut.append("1");
-		dataOut.writeUTF(msgOut.toString());
+        msgOut.append(sessionId);
+        msgOut.append(",");
+        msgOut.append(nRequestedTickets);
+        msgOut.append(",");
+
+        msgOut.append("el arreglo de los tickets....");
+        if (timer.isAlive())
+        {
+            if (db.update_ticket_status(tickets_array))
+            {
+                msgOut.append("0");
+                return true;
+            }
+        }
+        else
+            msgOut.append("1");
+        dataOut.writeUTF(msgOut.toString());
         return false;
     }
 
