@@ -15,13 +15,13 @@ import org.apache.logging.log4j.Logger;
 
 public class Db
 {
-    private static final Logger log = LogManager.getLogger(Db.class);
+    private static final Logger LOG = LogManager.getLogger(Db.class);
 
     // Informacion necesaria para conectarse a mysql
     private static final String USR = "boletazodev";
     private static final String PASSWD = "contrapass";
     private static final String URL = "jdbc:mysql://127.0.0.1:3306/Boletazo?useLegacyDatetimeCode=false&serverTimezone=UTC";
-    private static final LocalDate today = LocalDate.now();
+    private static final LocalDate TODAY = LocalDate.now();
 
     // Lista de querys
 
@@ -70,6 +70,12 @@ public class Db
             + "AND S.idSection = ShE.idSection "
             + "AND S.name = '?'";
 
+    private static final String SELECT_AVAILABLE_SECTIONS_BY_IDEVENT = "SELECT S.* "
+            + "FROM Section S, Event E, Section_has_Event ShE "
+            + "WHERE ShE.idSection = S.idSection "
+            + "AND E.idEvent = ShE.idEvent "
+            + "AND E.idEvent = ?";
+
     @SuppressWarnings("unused")
     private static char mander = 'c';
 
@@ -91,32 +97,37 @@ public class Db
         }
         catch (SQLException e)
         {
-            log.error("An error occurred when trying to connect to DB");
-            log.error(e.getMessage());
+            LOG.error("An error occurred when trying to connect to DB");
+            LOG.error(e.getMessage());
         }
         catch (ClassNotFoundException e)
         {
-            log.error(e.getMessage());
+            LOG.error(e.getMessage());
         }
         catch (IllegalAccessException e)
         {
-            log.error(e.getMessage());
+            LOG.error(e.getMessage());
         }
         catch (InstantiationException e)
         {
-            log.error(e.getMessage());
+            LOG.error(e.getMessage());
         }
     }
 
+    /**
+     * Get the connected status of the database
+     * 
+     * @return connected
+     */
     public boolean getConnected()
     {
         return connected;
     }
 
     /**
-     * Metodo que precarga a memoria los eventos y boletos disponibles
+     * Previous loading the events and tickets on the database
      */
-    public void preload()
+    public void preLoad()
     {
         try
         {
@@ -148,15 +159,16 @@ public class Db
         }
         catch (SQLException e)
         {
-            log.error("");
-            log.error(e.getMessage());
+            LOG.error("");
+            LOG.error(e.getMessage());
         }
     }
 
     /**
+     * Search in the database all the events that ocurr at certain date (day).
      * 
      * @param date:
-     * @return An array with all events that ocurr at certain date (day)
+     * @return Event[] events that ocurr at certain date (day)
      */
     public Event[] getEventsAtDay(LocalDate date)
     {
@@ -208,14 +220,14 @@ public class Db
         }
         catch (SQLException e)
         {
-            log.error(e.getMessage());
+            LOG.error(e.getMessage());
         }
-        log.debug("Retrived [" + nEvents + "] events");
+        LOG.debug("Retrived [" + nEvents + "] events");
         return events;
     }
 
     /**
-     * Search by hour
+     * Search in the database all the events that ocurr at certain hour.
      * 
      * @return Event[] array with events on the same time
      */
@@ -265,9 +277,9 @@ public class Db
         }
         catch (SQLException e)
         {
-            log.error(e.getMessage());
+            LOG.error(e.getMessage());
         }
-        log.debug("Retrived [" + nEvents + "] events");
+        LOG.debug("Retrived [" + nEvents + "] events");
         return events;
     }
 
@@ -280,13 +292,10 @@ public class Db
     public float getTicketById(int idticket)
     {
         float cost = 0f;
-        ResultSet result = null;
         String ticket = "";
-        if (!connected) { return ticket; }
-
+        if (!connected) { return cost; }
         ResultSet result = null;
-
-        log.debug("Retrived [" + idticket + "] ");
+        LOG.debug("Retrived [" + idticket + "] ");
         try
         {
             PreparedStatement ps = conn.prepareStatement(SELECT_BY_TICKET_ID);
@@ -294,32 +303,21 @@ public class Db
             result = ps.executeQuery();
             cost = result.getFloat("cost");
             ps.close();
+            // return cost;
         }
         catch (SQLException e)
         {
-            log.error(e.getMessage());
+            LOG.error(e.getMessage());
         }
-        log.debug("ticket :" + idticket + " $" + cost);
+        LOG.debug("ticket :" + idticket + " $" + cost);
         return cost;
-
-        /*
-         * 
-         * while (result.next()) {
-         * 
-         * String seat = result.getString("seatNumber"); int status =
-         * result.getInt("idStatus"); int section = result.getInt("idSection"); int
-         * event = result.getInt("idEvent"); ticket = idticket + "," + seat + "," +
-         * status + "," + section + "," + event; } ps.close(); return ticket; } catch
-         * (SQLException e) {
-         * 
-         * } return "";
-         */
     }
 
     /**
+     * Search in the database all the events that ocurr at certain Avenue.
      * 
-     * @param venue
-     * @return An array with all events that ocurr on an Avenue
+     * @param Avenue
+     * @return Event[] events that ocurr on an venue
      */
     public Event[] getEventsWhere(String Avenue)
     {
@@ -349,7 +347,7 @@ public class Db
             int idEvent = 0;
             int idVenue = 0;
             String name = "";
-            String Address = "";
+            String address = "";
             String city = "";
             LocalDate evDate = LocalDate.now();
 
@@ -360,19 +358,19 @@ public class Db
                 idEvent = result.getInt("idEvent");
                 idVenue = result.getInt("idAvenue");
                 name = result.getString("name");
-                Address = result.getString("address");
+                address = result.getString("address");
                 city = result.getString("city");
                 idVenue = result.getInt("idVenue");
-                ev = new Event(idEvent, idVenue, name, Address, city);
+                ev = new Event(idEvent, idVenue, name, address, city);
                 events[i] = ev;
                 i++;
             }
         }
         catch (SQLException e)
         {
-            log.error(e.getMessage());
+            LOG.error(e.getMessage());
         }
-        log.debug("Retrived [" + nEvents + "] events");
+        LOG.debug("Retrived [" + nEvents + "] events");
         return events;
     }
 
@@ -384,19 +382,19 @@ public class Db
     }
 
     /**
-     * know if the user has not been registered
+     * Status that confirm if the user has been register on the database
      * 
      * @return false: user has been registered before
      */
     public boolean singup(String email, String usr, String passwd)
     {
         ResultSet result = null;
-        String user_registered = "select count(iduser) "
+        String userRegistered = "select count(iduser) "
                 + "from UserInfo"
                 + "where email = ? ";
         try
         {
-            PreparedStatement ps = conn.prepareStatement(user_registered);
+            PreparedStatement ps = conn.prepareStatement(userRegistered);
             ps.setString(1, email);
             result = ps.executeQuery();
             result.next();
@@ -413,13 +411,14 @@ public class Db
         }
         catch (SQLException e)
         {
-            log.error(e.getMessage());
+            LOG.error(e.getMessage());
         }
 
         return false;
     }
 
     /**
+     * Register an user into the database to keep is login information stored
      * 
      * @param user
      *            User to register
@@ -430,19 +429,19 @@ public class Db
     public boolean toRegister(String user, String passwd, String email, String residence)
     {
         // ResultSet result = null;
-        String update_usr_info = "insert into UserInfo "
+        String updateUsrInfo = "insert into UserInfo "
                 + "(email,estado) values (?,?) ";
-        String update_LoginInfo = "INSERT INTO LoginInfo " +
+        String updateLoginInfo = "INSERT INTO LoginInfo " +
                 "(username,password) values (?.?) ";
 
         try
         {
-            PreparedStatement ps = conn.prepareStatement(update_usr_info);
+            PreparedStatement ps = conn.prepareStatement(updateUsrInfo);
             ps.setString(1, email);
             ps.setString(2, residence);
             ps.executeUpdate();
 
-            ps = conn.prepareStatement(update_LoginInfo);
+            ps = conn.prepareStatement(updateLoginInfo);
             ps.setString(1, user);
             ps.setString(2, passwd);
             ps.close();
@@ -450,36 +449,36 @@ public class Db
         }
         catch (SQLException e)
         {
-            log.error(e.getMessage());
+            LOG.error(e.getMessage());
         }
 
         return false;
     }
 
     /**
-     * Login Check it a new account is need or login
+     * Login Check for a new account to see if had an account created or need one.
      * 
-     * @param usr
-     * @param pass
+     * @param user
+     * @param password
      * @return true: the user exist false : the user require registration
      */
     public boolean login(String usr, String pass)
     {
-        String usr_exist = "select idlogin "
+        String userExist = "select idlogin "
                 + "from LoginInfo "
                 + "where username = ? "
                 + "and password = ? ";
         try
         {
             ResultSet result = null;
-            PreparedStatement ps = conn.prepareStatement(usr_exist);
+            PreparedStatement ps = conn.prepareStatement(userExist);
             ps.setString(1, usr);
             ps.setString(2, pass);
             ps.executeUpdate();
             result = ps.executeQuery();
 
-            int usrs = result.last() ? result.getRow() : 0;
-            if (usrs > 0)
+            int users = result.last() ? result.getRow() : 0;
+            if (users > 0)
             {
                 // login
                 return true;
@@ -488,46 +487,87 @@ public class Db
         }
         catch (SQLException e)
         {
-            log.error(e.getMessage());
+            LOG.error(e.getMessage());
         }
         return false;
 
     }
 
     /**
-     * update ticket , (3 = busy) , 2 = sold, 1 available ??
+     * Update the ticket status with a numeric code, that depends: 3 = sold , 2 =
+     * busy, 1 = available
      * 
      * @param tickets
-     *            array contains the idticket that the client wants to buy
+     *            array that contains the idticket for purchase, Status
      * @return true: everything is ok... ?)
      */
-    public boolean update_ticket_status(int[] tickets)
+    public boolean update_Ticket_Status(int idTicket, int setStatus)
     {
-        String update_ticket = "update  ticket "
-                + "set idStatus= 2 "
+        String updateTicket = "update  ticket "
+                + "set idStatus= ? "
                 + "where idTicket = ? ";
         try
         {
             ResultSet result = null;
-            for (int i = 0; i < tickets.length; i++)
-            {
-                PreparedStatement ps = conn.prepareStatement(update_ticket);
-                int idticket = tickets[i];
-                ps.setInt(1, idticket);
-                ps.executeUpdate();
-                // tenemos q volver a la guia houston...
-                result = ps.executeQuery();
-                log.info("ticket : " + idticket + " VENDIDO ");
-            }
+
+            // for(int i =0;i<tickets.length;i++) {
+            PreparedStatement ps = conn.prepareStatement(updateTicket);
+            // int idticket = tickets[i];
+            ps.setInt(1, setStatus);
+            ps.setInt(2, idTicket);
+            ps.executeUpdate();
+            // tenemos q volver a la guia houston...
+            result = ps.executeQuery();
+            LOG.info("ticket : " + idTicket + " Cambiado a:  " + setStatus);
+            // }
             return true;
         }
         catch (SQLException e)
         {
-            log.error(e.getMessage());
+            LOG.error(e.getMessage());
         }
         return false;
     }
 
+    /**
+     * Consult the status of ticket
+     * 
+     * @param idTicket
+     * @return value of status
+     */
+    public int consultStatusTicket(int idTicket)
+    {
+        String updateTicket = "select idstatus "
+                + "from ticket "
+                + "where idTicket = ? ";
+        try
+        {
+            ResultSet result = null;
+            // for(int i =0;i<tickets.length;i++) {
+            PreparedStatement ps = conn.prepareStatement(updateTicket);
+            // int idticket = tickets[i];
+            ps.setInt(1, idTicket);
+            ps.executeQuery();
+            // tenemos q volver a la guia houston...
+            result = ps.executeQuery();
+            LOG.debug("ticket : " + idTicket + " status:  " + result.getString("idstatus"));
+            return result.getInt("idstatus");
+
+            // }
+        }
+        catch (SQLException e)
+        {
+            LOG.error(e.getMessage());
+        }
+        return 0;
+    }
+
+    /**
+     * Search in the database all the events that had a certain cost.
+     * 
+     * @param date
+     * @return Event[] events array with all the events
+     */
     public Event[] getEventsPerCost(LocalDate date)
     {
         Event[] events = null;
@@ -545,36 +585,88 @@ public class Db
             Event ev;
             int idEvent = 0;
             String name = "";
-            String Address = "";
+            String address = "";
             String city = "";
             float cost = 0;
             LocalDate evDate = LocalDate.now();
             int idVenue = 0;
-            int i = 0;
+            int numerator = 0;
             PreparedStatement ps = conn.prepareStatement(SEARCH_EVENT_BY_COST);
             while (result.next())
             {
                 idEvent = result.getInt("idEvent");
                 idVenue = result.getInt("idAvenue");
                 name = result.getString("name");
-                Address = result.getString("address");
+                address = result.getString("address");
                 city = result.getString("city");
                 idVenue = result.getInt("idVenue");
                 cost = result.getFloat("cost");
-                ev = new Event(idEvent, idVenue, name, Address, city, cost);
-                events[i] = ev;
-                i++;
+                ev = new Event(idEvent, idVenue, name, address, city, cost);
+                events[numerator] = ev;
+                numerator++;
             }
         }
         catch (SQLException e)
         {
-            log.error(e.getMessage());
+            LOG.error(e.getMessage());
         }
         return events;
     }
 
-    public Event getEventInfo(int eventId)
+    /**
+     * Get the general info of a certain event searched by the eventID
+     * 
+     * @param eventId
+     * @return Event
+     */
+    public EventInfo getEventInfo(int eventId)
     {
-        return new Event();
+        return new EventInfo();
+    }
+
+    public Section[] getAvailabeSections()
+    {
+        Section[] sections = new Section[0];
+        try
+        {
+            PreparedStatement ps = conn.prepareStatement(SELECT_AVAILABLE_SECTIONS_BY_IDEVENT);
+            ResultSet result = ps.executeQuery();
+
+            int nSections = result.last() ? result.getRow() : 0;
+            result.beforeFirst();
+            sections = new Section[nSections];
+
+            int idSection;
+            String name;
+            float cost;
+
+            int i = 0;
+            while (result.next())
+            {
+                idSection = result.getInt("idSection");
+                name = result.getString("name");
+                cost = result.getFloat("cost");
+                sections[i] = new Section(idSection, name, cost);
+                i++;
+            }
+
+        }
+        catch (SQLException e)
+        {
+        }
+        return sections;
+    }
+
+    /**
+     * Get the boleto that correspond to a certain IDTicket
+     * 
+     * @param idTicket
+     * @return Boleto
+     */
+    public Boleto getBoletoById(int idTicket)
+    {
+
+        // TODO Auto-generated method stub
+        return availableTickets.get(idTicket);
     }
 }

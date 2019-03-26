@@ -14,6 +14,7 @@ public class Test
 
     public static void main(String[] args) throws UnknownHostException
     {
+        log.info(System.getProperty("os.name"));
         Random r = new Random();
         System.out.println(InetAddress.getLocalHost().getHostAddress().toString());
         SessionControl sc = new SessionControl(0, 40);

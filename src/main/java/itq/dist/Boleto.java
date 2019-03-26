@@ -43,44 +43,85 @@ public class Boleto
         this(0, "a0", 0, 0, 0);
     }
 
+    /**
+     * Get the TimerThread from the class boleto
+     * 
+     * @return TimerThread
+     */
     public TimerThread getTimer()
     {
         return timer;
     }
 
+    /**
+     * Set a TimerThread on the class boleto
+     * 
+     * @param TimerThread
+     */
     public void setTimer(TimerThread timer)
     {
         this.timer = timer;
     }
 
+    /**
+     * Get the ID Ticket from the class boleto
+     * 
+     * @return
+     */
     public int getIdTicket()
     {
         return idTicket;
     }
 
+    /**
+     * Get the seat number from the class boleto
+     * 
+     * @return SeatNumber
+     */
     public String getSeatNumber()
     {
         return seatNumber;
     }
 
-    public int getIdStatus()
+    /**
+     * Get the ID Status from the class boleto
+     * 
+     * @return IdStatus
+     */
+    public synchronized int getIdStatus()
     {
         return idStatus;
     }
 
+    /**
+     * Get the ID Section from the class boleto
+     * 
+     * @return idSection
+     */
     public int getIdSection()
     {
         return idSection;
     }
 
+    /**
+     * Get the ID Event from the class boleto
+     * 
+     * @return idEvent
+     */
     public int getIdEvent()
     {
         return idEvent;
     }
 
-    public synchronized boolean TicketPurchase()
+    /**
+     * Set the boleto status on reserved until the client response with a
+     * confirmation purchase
+     * 
+     * @return true if purchase complete | false if purchase failed
+     */
+    public synchronized boolean ticketPurchase()
     {
-        timer.setTime(purchaseTime);
+        timer.setTime(purchaseTime);// whaaaat?
         timer.start();
         try
         {
@@ -89,6 +130,7 @@ public class Boleto
             {
                 idStatus = STATUS.SOLD.ordinal(); // Se concreto la compra en el
                                                   // tiempo de apartado
+                setStatus(idStatus);
                 return true;
             }
             else
@@ -96,6 +138,7 @@ public class Boleto
                 idStatus = STATUS.AVAILABLE.ordinal(); // no se concreto la
                                                        // compra en el tiempo de
                                                        // apartado
+                setStatus(idStatus);
                 return false;
             }
         }
@@ -105,13 +148,25 @@ public class Boleto
             return false;
         }
     }
-    public void ConfirmationTicketPurchase()
+
+    /**
+     * Interrupt the TimerThread to confirm a purchase from the ticket
+     */
+    public void confirmationTicketPurchase()
     {
         timer.interrupt();
     }
 
+    /**
+     * Set status that means if the ticket is available for purchase or is in
+     * another state. Available - Ready to buy. Reserved - Wait for purchase. Sold -
+     * No available for buy.
+     * 
+     * @param idStatus
+     */
     private void setStatus(int idStatus)
     {
+        setStatus(idStatus);
         if (idStatus == STATUS.NULL.ordinal())
         {
             ticketStatus = STATUS.NULL;
