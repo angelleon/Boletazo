@@ -31,7 +31,7 @@ public class SocketThread extends Thread
     // la informacion del login debe estar el menor tiempo posible en memoria
     private int nRequestedTickets;
     private int idEvent;
-    private int[] tickets_Array;
+    private int[] reqTicketsArray;
     // private Ticketinfo[]; // i needed one of these!!!!!!
     private String usr;
     private String pass;
@@ -444,7 +444,7 @@ public class SocketThread extends Thread
             // see if the nRequestedTickets is equal or less than permit_Ticket
             if (nRequestedTickets <= PERMIT_TICKETS)
             {
-                int[] ticketsArray = new int[nRequestedTickets];
+                reqTicketsArray = new int[nRequestedTickets];
                 // desde la posicion de nRequestedTicked + nRequestTicked
                 int numPart = 4;
 
@@ -454,8 +454,8 @@ public class SocketThread extends Thread
                 {
                     timer = new TimerThread();
                     LOG.debug(" posicion en mensaje " + numPart + " posicion-numero de ticket " + i);
-                    tickets_Array[i] = Integer.parseInt(parts[numPart]);
-                    reserv[i] = db.getBoletoById(tickets_Array[i]);
+                    reqTicketsArray[i] = Integer.parseInt(parts[numPart]);
+                    reserv[i] = db.getBoletoById(reqTicketsArray[i]);
                     reserv[i].setTimer(wait);// comenzar el tiempo de apartado
                     numPart++;
                 }
@@ -486,12 +486,12 @@ public class SocketThread extends Thread
             msgOut.append(sessionId);
             // todo los tickets fueron rerservados
             msgOut.append(",");
-            for (int i = 0; i < tickets_Array.length; i++)
+            for (int i = 0; i < reqTicketsArray.length; i++)
             {
-                if (db.consultStatusTicket(tickets_Array[i]) == 1)
+                if (db.consultStatusTicket(reqTicketsArray[i]) == 1)
                 { // ver si puede ser reservado ....y reservarlo :V
-                    db.update_Ticket_Status(tickets_Array[i], 2);
-                    cost = cost + db.getTicketById(tickets_Array[i]);
+                    db.update_Ticket_Status(reqTicketsArray[i], 2);
+                    cost = cost + db.getTicketById(reqTicketsArray[i]);
                 }
                 else
                 {
@@ -502,10 +502,10 @@ public class SocketThread extends Thread
             msgOut.append(",");
             msgOut.append(nRequestedTickets);
             // details of each ticket
-            for (int i = 0; i < tickets_Array.length; i++)
+            for (int i = 0; i < reqTicketsArray.length; i++)
             {
                 msgOut.append(",");
-                msgOut.append(tickets_Array[i]);
+                msgOut.append(reqTicketsArray[i]);
                 // sacar por aca un arreglo de cada ticket con su detalle?, #nunca se usa
                 // despues
             }
@@ -684,7 +684,7 @@ public class SocketThread extends Thread
         msgOut.append(",");
 
         msgOut.append("el arreglo de los tickets....");
-        if (db.update_Ticket_Status(ticketsArray[i], 3) && reserv[i])
+        if (db.update_Ticket_Status(reqTicketsArray[i], 3) && reserv[i])
         {
             msgOut.append("0");
             return true;
