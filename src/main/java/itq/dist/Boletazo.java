@@ -10,6 +10,7 @@ import java.net.Socket;
 import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.util.Enumeration;
+import java.time.LocalDateTime;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -24,15 +25,15 @@ public class Boletazo
 
     public static void main(String[] args)
     {
+        LOG.info("Boletazo server started at " + LocalDateTime.now().toString());
         boolean alive = true;
         ServerSocket serverSocket;
         SessionControl sc = new SessionControl(0, 10);
-        // ArrayList<SocketThread> threads = new ArrayList<SocketThread>();
         Db db = new Db();
         if (db.getConnected())
         {
             db.preLoad();
-            // initialConnection();
+            initialConnection();
             try
             {
                 serverSocket = new ServerSocket(PORT);
@@ -41,7 +42,6 @@ public class Boletazo
                     Socket socket = serverSocket.accept();
                     SocketThread thread = new SocketThread(socket, db, sc);
                     thread.start();
-                    // threads.add(t);
                 }
                 serverSocket.close();
             }
@@ -93,7 +93,7 @@ public class Boletazo
      */
     private static String getIP() throws UnknownHostException
     {
-        // ToDo: modificar para obtener la ip en windows
+        // TODO: modificar para obtener la ip en windows
         String system = System.getProperty("os.name");
         if (system.equals("Linux"))
         {
