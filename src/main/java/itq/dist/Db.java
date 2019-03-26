@@ -76,6 +76,10 @@ public class Db
             + "AND E.idEvent = ShE.idEvent "
             + "AND E.idEvent = ?";
 
+    private static final String UPDATE_TICKET_STATUS = "UPDATE  Ticket "
+            + "SET idStatus= ? "
+            + "WHERE idTicket = ? ";
+
     @SuppressWarnings("unused")
     private static char mander = 'c';
 
@@ -83,12 +87,12 @@ public class Db
     private boolean connected;
 
     // Estructuras para almacenamiento temporal de información
-    protected HashMap<Integer, Boleto> availableTickets;
+    protected HashMap<Integer, Ticket> availableTickets;
 
     Db()
     {
         connected = false;
-        availableTickets = new HashMap<Integer, Boleto>();
+        availableTickets = new HashMap<Integer, Ticket>();
         try
         {
             Class.forName("com.mysql.cj.jdbc.Driver").newInstance();
@@ -151,7 +155,7 @@ public class Db
                 {
                     seatNumber = result.getString("seatNumber");
                     availableTickets.put(idTicket,
-                            new Boleto(idTicket.intValue(), seatNumber,
+                            new Ticket(idTicket.intValue(), seatNumber,
                                     idStatus, idSection, idEvent));
                 }
             }
@@ -295,7 +299,6 @@ public class Db
         ResultSet result = null;
         String ticket = "";
         if (!connected) { return cost; }
-        ResultSet result = null;
         LOG.debug("Retrived [" + idticket + "] ");
         try
         {
@@ -307,9 +310,9 @@ public class Db
         }
         catch (SQLException e)
         {
-            log.error(e.getMessage());
+            LOG.error(e.getMessage());
         }
-        log.debug("ticket :" + idticket + " $" + cost);
+        LOG.debug("ticket :" + idticket + " $" + cost);
         return cost;
 
         /*
@@ -507,40 +510,6 @@ public class Db
     }
 
     /**
-     * update ticket , (3 = busy) , 2 = sold, 1 available ??
-     * 
-     * @param tickets
-     *            array contains the idticket that the client wants to buy
-     * @return true: everything is ok... ?)
-     */
-    public boolean update_ticket_status(int[] tickets)
-    {
-        String update_ticket = "update  ticket "
-                + "set idStatus= 2 "
-                + "where idTicket = ? ";
-        try
-        {
-            ResultSet result = null;
-            for (int i = 0; i < tickets.length; i++)
-            {
-                PreparedStatement ps = conn.prepareStatement(update_ticket);
-                int idticket = tickets[i];
-                ps.setInt(1, idticket);
-                ps.executeUpdate();
-                // tenemos q volver a la guia houston...
-                result = ps.executeQuery();
-                log.info("ticket : " + idticket + " VENDIDO ");
-            }
-            return true;
-        }
-        catch (SQLException e)
-        {
-            log.error(e.getMessage());
-        }
-        return false;
-    }
-
-    /**
      * Search in the database all the events that had a certain cost.
      * 
      * @param date
@@ -641,10 +610,36 @@ public class Db
      * @param idTicket
      * @return Boleto
      */
-    public Boleto getBoletoById(int idTicket)
+    public Ticket getBoletoById(int idTicket)
     {
-
-        // TODO Auto-generated method stub
         return availableTickets.get(idTicket);
+    }
+
+    public int consultTicketStatus(int idTicket)
+    {
+        if (availableTickets.containsKey(idTicket)) { return availableTickets.get(idTicket).getIdStatus(); }
+        return -1;
+    }
+
+    public boolean updateTicketStatus(int idTicket, int status)
+    {
+        if (availableTickets.containsKey(idTicket))
+        {
+            try
+            {
+                PreparedStatement ps = conn.prepareStatement(UPDATE_TICKET_STATUS);
+                ps.setInt(1, status);
+                ps.setInt(2, idTicket);
+                ps.executeUpdate();
+                // tenemos q volver a la guia houston...
+                LOG.info("ticket : " + idTicket + " VENDIDO ");
+                return true;
+            }
+            catch (SQLException e)
+            {
+                LOG.error(e.getMessage());
+            }
+        }
+        return false;
     }
 }
