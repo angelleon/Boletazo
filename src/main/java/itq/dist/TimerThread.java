@@ -7,10 +7,9 @@ public class TimerThread extends Thread
 {
     private int time;
 
-    public TimerThread()
-    {
-        this(6000);
-    }
+    /**
+     * @param time
+     */
 
     public TimerThread(int time)
     {
@@ -21,6 +20,12 @@ public class TimerThread extends Thread
     {
         this(6000);
     }
+
+    /**
+     * 
+     * @param time
+     *            the time to set
+     */
 
     public void setTime(int time)
     {
@@ -33,6 +38,10 @@ public class TimerThread extends Thread
         time();
     }
 
+    /**
+     * this method tries to create a counter to control the process of choose and
+     * buy a ticket by a client
+     */
     public void time()
     {
         try
