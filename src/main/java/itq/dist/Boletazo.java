@@ -10,6 +10,7 @@ import java.net.Socket;
 import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.util.Enumeration;
+import java.time.LocalDateTime;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -24,15 +25,15 @@ public class Boletazo
 
     public static void main(String[] args)
     {
+        LOG.info("Boletazo server started at " + LocalDateTime.now().toString());
         boolean alive = true;
         ServerSocket serverSocket;
         SessionControl sc = new SessionControl(0, 10);
-        // ArrayList<SocketThread> threads = new ArrayList<SocketThread>();
         Db db = new Db();
         if (db.getConnected())
         {
             db.preLoad();
-            // initialConnection();
+            initialConnection();
             try
             {
                 serverSocket = new ServerSocket(PORT);
@@ -41,13 +42,13 @@ public class Boletazo
                     Socket socket = serverSocket.accept();
                     SocketThread thread = new SocketThread(socket, db, sc);
                     thread.start();
-                    // threads.add(t);
                 }
                 serverSocket.close();
             }
             catch (IOException e)
             {
-                LOG.error("An I/O error occurred "+e.getMessage()+"(2)");
+                LOG.error("An I/O error occurred");
+                LOG.error(e.getMessage());
             }
         }
         else
@@ -74,23 +75,24 @@ public class Boletazo
         }
         catch (UnknownHostException e)
         {
-            LOG.error(e.getMessage()+"(3)");
+            LOG.error(e.getMessage());
         }
         catch (IOException e)
         {
-            LOG.error("An I/O error ocurred (2)");
+            LOG.error("An I/O error ocurred");
             LOG.error(e.getMessage());
         }
         return false;
     }
 
     /**
-     * Get the ip from the assigned host 
+     * Get the ip from the assigned host
+     * 
      * @return ethernet's assigned ip
      */
     private static String getIP() throws UnknownHostException
     {
-        // ToDo: modificar para obtener la ip en windows
+        // TODO: modificar para obtener la ip en windows
         String system = System.getProperty("os.name");
         if (system.equals("Linux"))
         {
@@ -103,8 +105,10 @@ public class Boletazo
                 while (addresses.hasMoreElements())
                 {
                     address = addresses.nextElement();
-                    if (address instanceof Inet4Address&& !address.isLoopbackAddress()) { 
-                        LOG.info("ip assigned by InetAddres: "+InetAddress.getLocalHost().getHostAddress().toString());
+                    if (address instanceof Inet4Address && !address.isLoopbackAddress())
+                    {
+                        LOG.info(
+                                "ip assigned by InetAddres: " + InetAddress.getLocalHost().getHostAddress().toString());
                         return address.getHostAddress();
                     }
                 }
@@ -116,7 +120,7 @@ public class Boletazo
             return "127.0.0.1";
         }
         // For windows...
-        LOG.info("ip assigned by InetAddres: "+InetAddress.getLocalHost().getHostAddress().toString());
+        LOG.info("ip assigned by InetAddres: " + InetAddress.getLocalHost().getHostAddress().toString());
         return InetAddress.getLocalHost().getHostAddress().toString();
         // if you have active other ethernet interface .... unable!
     }

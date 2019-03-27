@@ -2,10 +2,11 @@ package itq.dist;
 
 public class BoletazoException extends Exception
 {
+    private static final long serialVersionUID = 1L;
+
     /**
      * no se que hace este atributo, eclipse lo declaro como quickfix
      */
-    private static final long SERIAL_VERSION_UID = 1L;
 
     private ERROR error;
 

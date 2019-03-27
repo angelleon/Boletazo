@@ -12,6 +12,7 @@ public class SessionException extends BoletazoException
      * @param INVALID_SESSION_ID
      *            equal to 1
      */
+
     public static enum ERROR {
         GENERIC_ERROR,
         INVALID_SESSION_ID,
@@ -20,11 +21,6 @@ public class SessionException extends BoletazoException
     }
 
     private ERROR error;
-
-    /**
-     * @param SERIAL_VERSION_UID
-     * @param error
-     */
 
     /**
      * @param error,

@@ -11,14 +11,14 @@ public class TimerThread extends Thread
      * @param time
      */
 
-    public TimerThread(int time)
-    {
-        this.time = time;
-    }
-    
     public TimerThread()
     {
         this(6000);
+    }
+
+    public TimerThread(int time)
+    {
+        this.time = time;
     }
 
     /**
@@ -26,7 +26,6 @@ public class TimerThread extends Thread
      * @param time
      *            the time to set
      */
-
     public void setTime(int time)
     {
         this.time = time;
