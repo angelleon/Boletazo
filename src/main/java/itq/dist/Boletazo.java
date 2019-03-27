@@ -68,9 +68,8 @@ public class Boletazo
         try
         {
             Socket socketProf = new Socket(PROF_HOST, PROF_PORT);
-            DataOutputStream dataOut = new DataOutputStream(
-                    socketProf.getOutputStream());
-            dataOut.writeUTF("" + TEAM_NUM + "," + getIP());
+            DataOutputStream dataOut = new DataOutputStream(socketProf.getOutputStream());
+            dataOut.writeUTF(" " + TEAM_NUM + "," + getIP());
             socketProf.close();
             return true;
         }
@@ -106,17 +105,22 @@ public class Boletazo
                 while (addresses.hasMoreElements())
                 {
                     address = addresses.nextElement();
-                    if (address instanceof Inet4Address
-                            && !address.isLoopbackAddress()) { return address
-                                    .getHostAddress(); }
+                    if (address instanceof Inet4Address && !address.isLoopbackAddress())
+                    {
+                        LOG.info(
+                                "ip assigned by InetAddres: " + InetAddress.getLocalHost().getHostAddress().toString());
+                        return address.getHostAddress();
+                    }
                 }
             }
             catch (SocketException e)
             {
+                LOG.error("Can't get ip for Linux (1)");
             }
             return "127.0.0.1";
         }
         // For windows...
+        LOG.info("ip assigned by InetAddres: " + InetAddress.getLocalHost().getHostAddress().toString());
         return InetAddress.getLocalHost().getHostAddress().toString();
         // if you have active other ethernet interface .... unable!
     }

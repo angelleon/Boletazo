@@ -312,9 +312,9 @@ public class Db
         }
         catch (SQLException e)
         {
-            log.error(e.getMessage());
+            LOG.error(e.getMessage());
         }
-        log.debug("ticket :" + idticket + " $" + cost);
+        LOG.debug("ticket :" + idticket + " $" + cost);
         return cost;
 
         /*
@@ -513,7 +513,6 @@ public class Db
     }
 
     /**
-
      * Search in the database all the events that had a certain cost.
      * 
      * @param date
@@ -589,6 +588,7 @@ public class Db
      * @param eventId
      * @return Event
      */
+
     public EventInfo getEventInfo(int eventId)
     {
         return new EventInfo();
@@ -633,6 +633,7 @@ public class Db
      * @param idTicket
      * @return Boleto
      */
+
     public Ticket getBoletoById(int idTicket)
     {
         return availableTickets.get(idTicket);

@@ -326,7 +326,7 @@ public class SocketThread extends Thread
      * @throws SessionException
      * @throws IOException
      */
-     
+
     private boolean getEventInfo() throws ConversationException, SessionException, DbException, IOException
     {
         currentState = STATE.GET_EVENT_INFO;
@@ -454,7 +454,6 @@ public class SocketThread extends Thread
                 reqTicketIds = new int[nRequestedTickets];
                 // desde la posicion de nRequestedTicked + nRequestTicked
                 int numPart = 4;
-
                 // array with the request idtickets
                 for (int i = 0; i < nRequestedTickets; i++)
                 {
@@ -471,6 +470,7 @@ public class SocketThread extends Thread
             return true;
         }
         return false;
+
     }
 
     /**
@@ -530,7 +530,6 @@ public class SocketThread extends Thread
      * @throws SessionException
      * @throws IOException
      */
-
     private boolean singup() throws ConversationException, SessionException, DbException, IOException
     {
         currentState = STATE.SINGUP;
@@ -589,7 +588,6 @@ public class SocketThread extends Thread
      * @throws SessionException
      * @throws IOException
      */
-     
     private boolean loginCheck() throws ConversationException, SessionException, DbException,
             IOException
     {
@@ -684,15 +682,12 @@ public class SocketThread extends Thread
     {
         currentState = STATE.PUCHARASE_COMPLETED;
         msgOut.setLength(0);
-
         msgOut.append(currentState);
-
         msgOut.append(",");
         msgOut.append(sessionId);
         msgOut.append(",");
         msgOut.append(nRequestedTickets);
         msgOut.append(",");
-
         msgOut.append("el arreglo de los tickets....");
         // TODO completar condicion
         boolean success = true;
@@ -782,6 +777,7 @@ public class SocketThread extends Thread
     }
 
     // TODO: terminar la definicion del metodo
+
     /**
      * this method makes a parsing or an equal actions depending to the type of
      * request
@@ -848,6 +844,7 @@ public class SocketThread extends Thread
      * @return
      * @throws ConversationException
      */
+
     /*
      * private int[] getArrayLengthPositions() throws ConversationException { switch
      * (currentState) { case C_START_SESSION: return new int[0]; case
@@ -864,6 +861,7 @@ public class SocketThread extends Thread
      * @throws ConversationException
      */
     @SuppressWarnings("incomplete-switch")
+
     private TYPES[] getArgumentTypes() throws ConversationException
     {
         TYPES[] type = new TYPES[getTokenNumber()];

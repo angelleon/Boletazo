@@ -7,8 +7,6 @@ public class BoletazoException extends Exception
     /**
      * no se que hace este atributo, eclipse lo declaro como quickfix
      */
-    @SuppressWarnings("unused")
-    private static final long SERIAL_VERSION_UID = 1L;
 
     private ERROR error;
 
