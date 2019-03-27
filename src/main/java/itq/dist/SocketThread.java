@@ -41,7 +41,7 @@ public class SocketThread extends Thread
     private Event[] searchResult;
     private EventInfo selectedEvent;
     private Ticket[] reservedTickets;
-    private TimerThread timer;
+    private TimerThread ticketTimer;
 
     /**
      * create an association between variable and its value
@@ -236,6 +236,7 @@ public class SocketThread extends Thread
         currentState = STATE.S_START_SESSION;
         msgOut.setLength(0);
         sessionId = sc.getNewSessionId();
+        sc.sessionTimer(sessionId);
         if (sessionId > 0)
         {
             msgOut.append(STATE.S_START_SESSION.ordinal());
@@ -259,6 +260,7 @@ public class SocketThread extends Thread
     {
         currentState = STATE.GET_EVENT_LIST;
         String rawMsg = dataIn.readUTF();
+        sc.updateSessionTimer();
         if (checkMsgIntegrity(rawMsg))
         {
             String[] valuesIn = rawMsg.split(",");
@@ -300,6 +302,7 @@ public class SocketThread extends Thread
     private boolean postEventList() throws ConversationException, IOException
     {
         currentState = STATE.POST_EVENT_LIST;
+        sc.updateSessionTimer();
         msgOut.setLength(0);
         msgOut.append(STATE.POST_EVENT_LIST.ordinal());
         msgOut.append(",");
@@ -331,6 +334,7 @@ public class SocketThread extends Thread
     {
         currentState = STATE.GET_EVENT_INFO;
         String rawMsg = dataIn.readUTF();
+        sc.updateSessionTimer();
         if (checkMsgIntegrity(rawMsg))
         {
             String[] valuesIn = rawMsg.split(",");
@@ -355,6 +359,7 @@ public class SocketThread extends Thread
     private boolean postEventInfo() throws ConversationException, SessionException, IOException
     {
         currentState = STATE.POST_EVENT_INFO;
+        sc.updateSessionTimer();
         msgOut.setLength(0);
         msgOut.append(currentState.ordinal());
         msgOut.append(",");
@@ -400,6 +405,7 @@ public class SocketThread extends Thread
             throws ConversationException, SessionException, IOException
     {
         currentState = STATE.GET_AVAILABLE_SEATS;
+        sc.updateSessionTimer();
         String rawMsg = dataIn.readUTF();
         if (checkMsgIntegrity(rawMsg))
         {
@@ -420,6 +426,7 @@ public class SocketThread extends Thread
     private boolean postAvailableSeats() throws ConversationException, IOException
     {
         currentState = STATE.POST_AVAILABLE_SEATS;
+        sc.updateSessionTimer();
         msgOut.setLength(0);
         msgOut.append(currentState.ordinal());
         return false;
@@ -440,7 +447,7 @@ public class SocketThread extends Thread
     {
         currentState = STATE.REQUEST_RESERVE_TICKETS;
         String rawMsg = dataIn.readUTF();
-
+        sc.updateSessionTimer();
         if (checkMsgIntegrity(rawMsg) && sessionId > 0)
         {
             String[] parts = rawMsg.split(",");
@@ -457,7 +464,7 @@ public class SocketThread extends Thread
                 // array with the request idtickets
                 for (int i = 0; i < nRequestedTickets; i++)
                 {
-                    timer = new TimerThread();
+                    ticketTimer = new TimerThread();
                     LOG.debug(" posicion en mensaje " + numPart + " posicion-numero de ticket " + i);
                     reqTicketIds[i] = Integer.parseInt(parts[numPart]);
                     reservedTickets[i] = db.getBoletoById(reqTicketIds[i]);
@@ -465,8 +472,8 @@ public class SocketThread extends Thread
                 }
             }
             // Starting time for pay reserved tickets
-            timer = new TimerThread(PAYMENT_TIMEOUT);
-            timer.run();
+            ticketTimer = new TimerThread(PAYMENT_TIMEOUT);
+            ticketTimer.run();
             return true;
         }
         return false;
@@ -485,6 +492,7 @@ public class SocketThread extends Thread
         currentState = STATE.CONFIRM_RESERVE_TICKETS;
         msgOut.setLength(0);
         float cost = 0;
+        sc.updateSessionTimer();
 
         if (sessionId > 0) // #ArmaTuMensaje !!(revisar esta wean en todos)
         {
@@ -534,6 +542,7 @@ public class SocketThread extends Thread
     {
         currentState = STATE.SINGUP;
         String rawMsg = dataIn.readUTF();
+        sc.updateSessionTimer();
         if (checkMsgIntegrity(rawMsg))
         {
             String[] parts = rawMsg.split(",");
@@ -563,6 +572,7 @@ public class SocketThread extends Thread
     private boolean singupStatus() throws ConversationException, DbException, IOException
     {
         currentState = STATE.SINGUP_STATUS;
+        sc.updateSessionTimer();
         msgOut.setLength(0);
         msgOut.append(currentState.ordinal());
         msgOut.append(",");
@@ -594,7 +604,7 @@ public class SocketThread extends Thread
         currentState = STATE.LOGIN_CHECK;
         // msgOut.setLength(0);
         String rawMsg = dataIn.readUTF();
-
+        sc.updateSessionTimer();
         if (checkMsgIntegrity(rawMsg) && sessionId > 0)
         {
             String[] parts = rawMsg.split(",");
@@ -617,6 +627,7 @@ public class SocketThread extends Thread
     private boolean loginStatus() throws ConversationException, IOException
     {
         currentState = STATE.LOGIN_STATUS;
+        sc.updateSessionTimer();
         msgOut.setLength(0);
         msgOut.append(currentState);
         msgOut.append(",");
@@ -644,7 +655,7 @@ public class SocketThread extends Thread
     {
         currentState = STATE.POST_PAYMENT_INFO;
         String rawMsg = dataIn.readUTF();
-
+        sc.updateSessionTimer();
         if (checkMsgIntegrity(rawMsg) && sessionId > 0)
         {
             String[] parts = rawMsg.split(",");
@@ -681,6 +692,7 @@ public class SocketThread extends Thread
             throws ConversationException, IOException
     {
         currentState = STATE.PUCHARASE_COMPLETED;
+        sc.updateSessionTimer();
         msgOut.setLength(0);
         msgOut.append(currentState);
         msgOut.append(",");
