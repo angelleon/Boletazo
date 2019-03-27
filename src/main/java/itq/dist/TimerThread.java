@@ -20,6 +20,17 @@ public class TimerThread extends Thread
     {
         this.time = time;
     }
+    
+    public TimerThread()
+    {
+        this(6000);
+    }
+
+    /**
+     * 
+     * @param time
+     *            the time to set
+     */
 
     /**
      * 

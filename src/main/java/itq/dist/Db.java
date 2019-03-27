@@ -312,9 +312,9 @@ public class Db
         }
         catch (SQLException e)
         {
-            LOG.error(e.getMessage());
+            log.error(e.getMessage());
         }
-        LOG.debug("ticket :" + idticket + " $" + cost);
+        log.debug("ticket :" + idticket + " $" + cost);
         return cost;
 
         /*
@@ -513,6 +513,7 @@ public class Db
     }
 
     /**
+
      * Search in the database all the events that had a certain cost.
      * 
      * @param date

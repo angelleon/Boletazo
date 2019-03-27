@@ -326,6 +326,7 @@ public class SocketThread extends Thread
      * @throws SessionException
      * @throws IOException
      */
+     
     private boolean getEventInfo() throws ConversationException, SessionException, DbException, IOException
     {
         currentState = STATE.GET_EVENT_INFO;
@@ -529,6 +530,7 @@ public class SocketThread extends Thread
      * @throws SessionException
      * @throws IOException
      */
+
     private boolean singup() throws ConversationException, SessionException, DbException, IOException
     {
         currentState = STATE.SINGUP;
@@ -587,6 +589,7 @@ public class SocketThread extends Thread
      * @throws SessionException
      * @throws IOException
      */
+     
     private boolean loginCheck() throws ConversationException, SessionException, DbException,
             IOException
     {

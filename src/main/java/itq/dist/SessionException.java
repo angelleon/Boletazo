@@ -2,9 +2,17 @@ package itq.dist;
 
 public class SessionException extends BoletazoException
 {
+    private static final long SERIAL_VERSION_UID = 1L;
+
     /**
+     * create 2 variables with value of 0 and 1 respectively
      * 
+     * @param GENERIC_ERROR
+     *            equal to 0
+     * @param INVALID_SESSION_ID
+     *            equal to 1
      */
+     
     private static final long serialVersionUID = 1L;
 
     /**
