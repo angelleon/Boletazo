@@ -33,6 +33,7 @@ public class SocketThread extends Thread
     private int nRequestedTickets;
     private int idEvent;
     private int[] reqTicketIds;
+    private boolean alive = true;
     // private Ticketinfo[]; // i needed one of these!!!!!!
     private String usr;
     private String pass;
@@ -99,6 +100,7 @@ public class SocketThread extends Thread
     }
 
     private STATE currentState;
+    private STATE targetClientState;
 
     /**
      * create an association between variable and its value
@@ -149,32 +151,59 @@ public class SocketThread extends Thread
 
     /**
      * This method create the sequence of the conversation between the server-client
+     * 
+     * @throws IOException
      */
+    public STATE targetState() throws IOException
+    {
+        String rawTargetState = dataIn.readUTF().split(",")[0]; // get the Operation Number
+        targetClientState = StrToState(rawTargetState);
+        return targetClientState;
+    }
+
     @Override
     public void run()
     {
         try
         {
-            cStartSession();
-            sStartSession();
-            getEventList();
-            postEventList();
-            getEventInfo();
-            postEventInfo();
-            getAvailableSeats();
-            postAvailableSeats();
-            requestReserveTickets();
-            confirmReserveTickets();
-            if (currentState == STATE.SINGUP)// this case if the client does not has a account yet
+            targetState();
+            switch (targetClientState)
             {
+            case C_START_SESSION:
+                cStartSession();
+                sStartSession();
+                break;
+            case GET_EVENT_LIST:
+                getEventList();
+                postEventList();
+                break;
+            case GET_EVENT_INFO:
+                getEventInfo();
+                postEventInfo();
+                break;
+            case GET_AVAILABLE_SEATS:
+                getAvailableSeats();
+                postAvailableSeats();
+                break;
+            case REQUEST_RESERVE_TICKETS:
+                requestReserveTickets();
+                confirmReserveTickets();
+                break;
+            case SINGUP:
                 singup();
                 singupStatus();
+                break;
+            case LOGIN_CHECK:
+                loginCheck();
+                loginStatus();
+                break;
+            case POST_PAYMENT_INFO:
+                postPaymentInfo();
+                pucharaseCompleted();
+                break;
+            default:
+                socket.close(); // Maybe here??
             }
-            loginCheck();
-            loginStatus();
-            postPaymentInfo();
-            pucharaseCompleted();
-            socket.close();
         }
         catch (ConversationException e)
         {
@@ -932,6 +961,53 @@ public class SocketThread extends Thread
             throw new ConversationException(ERROR.INCORRECT_CONVERSATION_STATE);
         }
         return type;
+    }
+
+    /**
+     * Translate the String operation number into a STATE Enumeric
+     * 
+     * @param state
+     * @return enum STATE
+     */
+    public STATE StrToState(String state)
+    {
+        switch (state)
+        {
+        case "0":
+            return STATE.C_START_SESSION;
+        case "1":
+            return STATE.S_START_SESSION;
+        case "2":
+            return STATE.GET_EVENT_LIST;
+        case "3":
+            return STATE.POST_EVENT_LIST;
+        case "4":
+            return STATE.GET_EVENT_INFO;
+        case "5":
+            return STATE.POST_EVENT_INFO;
+        case "6":
+            return STATE.GET_AVAILABLE_SEATS;
+        case "7":
+            return STATE.POST_AVAILABLE_SEATS;
+        case "8":
+            return STATE.REQUEST_RESERVE_TICKETS;
+        case "9":
+            return STATE.CONFIRM_RESERVE_TICKETS;
+        case "10":
+            return STATE.SINGUP;
+        case "11":
+            return STATE.SINGUP_STATUS;
+        case "12":
+            return STATE.LOGIN_CHECK;
+        case "13":
+            return STATE.LOGIN_STATUS;
+        case "14":
+            return STATE.POST_PAYMENT_INFO;
+        case "15":
+            return STATE.PUCHARASE_COMPLETED;
+        default:
+            return currentState;
+        }
     }
 
     /**
