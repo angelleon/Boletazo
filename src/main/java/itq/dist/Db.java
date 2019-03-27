@@ -10,6 +10,8 @@ import java.sql.SQLException;
 import java.time.LocalDate;
 import java.util.HashMap;
 
+import itq.dist.DbException.ERROR;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -394,6 +396,7 @@ public class Db
             String sectionName)
     {
         HashMap<Integer, Event> events = new HashMap<Integer, Event>();
+        Event[] results = se
         return new Event[0];
     }
 
@@ -556,6 +559,25 @@ public class Db
         catch (SQLException e)
         {
             LOG.error(e.getMessage());
+        }
+        return events;
+    }
+
+    private Event[] searchEventsByName(String name) throws DbException
+    {
+        Event[] events = new Event[0];
+        try
+        {
+            PreparedStatement ps = conn.prepareStatement(SEARCH_EVENT_BY_NAME);
+            ps.setString(1, name);
+            ResultSet result = ps.executeQuery();
+
+            int nEvents = result.last() ? result.getRow() : 0;
+            result.beforeFirst();
+        }
+        catch (SQLException e)
+        {
+            throw new DbException(ERROR.GENERIC_ERROR);
         }
         return events;
     }
