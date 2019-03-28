@@ -178,19 +178,19 @@ public class SocketThread extends Thread
         }
         catch (ConversationException e)
         {
-
+            LOG.debug(e.getMessage());
         }
         catch (SessionException e)
         {
-
+            LOG.debug(e.getMessage());
         }
         catch (DbException e)
         {
-
+            LOG.debug(e.getMessage());
         }
         catch (IOException e)
         {
-
+            LOG.debug(e.getMessage());
         }
     }
 
@@ -282,7 +282,7 @@ public class SocketThread extends Thread
                 throw new ConversationException(ERROR.VALUE_OUT_OF_RANGE);
             float cost = Float.parseFloat(valuesIn[6]);
             String sectionName = valuesIn[7];
-            searchResult = db.search(eventName, venueName, eventDate, hour, cost, sectionName);
+            searchResult = db.searchEvents(eventName, venueName, eventDate, hour, cost, sectionName);
             return true;
         }
         return false;
