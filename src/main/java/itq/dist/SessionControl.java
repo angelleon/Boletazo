@@ -10,6 +10,11 @@ public class SessionControl
     private int maxSessions;
     private int lastAssignedIndex;
 
+    private TimerThread sessionTimer;
+    // private TimerThread[] timerList = new TimerThread[2];
+    // timerList[0] = operationType 0 - timer for reserved tickets
+    // timerList[1] = operationType 1 - timer for session control
+
     /**
      * 
      * @param availableCount
@@ -95,5 +100,31 @@ public class SessionControl
     public int getMaxSessions()
     {
         return maxSessions;
+    }
+
+    public void sessionTimer(int sessionId)
+    {
+        if (!sessionTimer.isAlive())
+        {
+            sessionTimer = new TimerThread(10000, sessionId, 1);
+            sessionTimer.start();
+            sessionTimer.run();
+        }
+        else
+        {
+            // ToDo: Exception? for duplicated sessionId?
+        }
+    }
+
+    public void updateSessionTimer()
+    {
+        if (sessionTimer.isAlive())
+        {
+            sessionTimer.setUpdate(true);
+        }
+        else
+        {
+            // ToDo: Exception? for updated out of time?
+        }
     }
 }
