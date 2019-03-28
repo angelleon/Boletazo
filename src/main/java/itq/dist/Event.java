@@ -15,7 +15,7 @@ public class Event
 
     Event()
     {
-
+        this(0, "", "", LocalDate.now(), 0);
     }
 
     Event(int idEvent, String name, String description, LocalDate date, int idVenue)

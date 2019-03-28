@@ -5,9 +5,11 @@ import java.sql.Date;
 //import java.sql.*;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
+import java.sql.Statement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.HashMap;
 
 import itq.dist.DbException.ERROR;
@@ -25,6 +27,7 @@ public class Db
     private static final String URL = "jdbc:mysql://127.0.0.1:3306/Boletazo?useLegacyDatetimeCode=false&serverTimezone=UTC";
     private static final LocalDate TODAY = LocalDate.now();
 
+    // TODO comentar la condicion date >= SYSDATE()
     // Lista de querys
 
     /**
@@ -33,54 +36,75 @@ public class Db
      * (?) dentro del query iniciando con 1, TIPO depende de lo que se va a
      * reemplazar, y valor es..... supongo que el valor que se va a poner ahi
      */
-    private static final String SELECT_EVENT_AT_DATE = "SELECT *"
-            + "FROM Event"
-            + "WHERE date BETWEEN ?" // aqui se reemplaza el (?) con una fecha usando setDate(1, date)
-            + "AND DATE_ADD(?, INTERVAL 1 DAY)"; // lo mismo de arriba setDate(2, date)
+    private static final String SEARCH_EVENT_BY_DATE = "SELECT * "
+            + "FROM Event "
+            + "WHERE date BETWEEN ? " // aqui se reemplaza el (?) con una fecha usando setDate(1, date)
+            + "AND ? >= SYSDATE() "
+            + "ORDER BY date ASC"; // lo mismo de arriba setDate(2, date)
 
-    private static final String SELECT_EVENT_AT_HOUR = "SELECT * "
-            + "from Event "
-            + "WHERE date_format(date,'%H:%i') = ? ";
+    private static final String SEARCH_EVENTS_BY_HOUR = "SELECT * "
+            + "FROM Event"
+            + "WHERE HOUR(date) >= ? "
+            + "AND date >= SYADATE() "
+            + "ORDER BY date ASC";
 
     private static final String SELECT_AVAILABLE_TICKETS = "SELECT T.* "
-            + "FROM Ticket T, Status S "
+            + "FROM Ticket T, Status S, Event E "
+            + "WHERE T.idEvent = E.idEvent "
             + "WHERE T.idStatus = (SELECT idStatus "
-            + "FROM Status "
-            + "WHERE status = 'DISPONIBLE')";
-    private static final String SELECT_BY_TICKET_ID = "SELECT cost "
-            + "FROM section,ticket "
-            + "where idticket = ? "
-            + "and ticket.idsection = section.idsection ";
+            + "                    FROM Status "
+            + "                    WHERE status = 'DISPONIBLE') "
+            + "ORDER BY T.idTicket";
+
+    // TODO Verificar columnas seleccionadas
+    private static final String SELECT_BY_IDTICKET = "SELECT S.cost "
+            + "FROM Section S, Ticket t "
+            + "WHERE T.idTicket = ? "
+            + "AND T.idSection = S.idSection "
+            + "ORDER BY T.idTicket";
+
     private static final String SEARCH_EVENT_BY_NAME = "SELECT * "
             + "FROM Event "
-            + "WHERE LOWER(name) LIKE LOWER('%?%')";
+            + "WHERE LOWER(name) LIKE LOWER('%?%') "
+            + "AND date >= SYSDATE() "
+            + "ORDER BY name ASC";
 
-    private static final String SELECT_EVENT_IN_VENUE = "SELECT E.* "
+    private static final String SEARCH_EVENT_BY_VENUE_NAME = "SELECT E.* "
             + "FROM Event E, Venue V "
             + "WHERE E.idVenue = V.idVenue "
-            + "AND LOWER(V.name) LIKE LOWER('%?%')";
+            + "AND LOWER(V.name) LIKE LOWER('%?%') "
+            + "AND date >= SYSDATE() "
+            + "ORDER BY V.name ASC";
 
     private static final String SEARCH_EVENT_BY_COST = "SELECT E.*, S.name, S.cost "
-            + "FROM Event E, Section S, Section_has_Event ShE"
+            + "FROM Event E, Section S, Section_has_Event ShE "
             + "WHERE E.idEvent = ShE.idEvent "
-            + "AND ShE.idSection = S.idSection"
-            + "AND S.cost <= ?";
+            + "AND ShE.idSection = S.idSection "
+            + "AND S.cost <= ? "
+            + "AND E.date >= SYSDATE() "
+            + "ORDER BY S.cost DESC";
 
-    private static final String SEARCH_EVENT_BY_SECTION_NAME = "SELECT E.* "
+    private static final String SELECT_EVENT_BY_SECTION_NAME = "SELECT E.* "
             + "FROM Event E, Section S, Section_has_Event ShE "
             + "WHERE E.idEvent = ShE.idEvent "
             + "AND S.idSection = ShE.idSection "
-            + "AND S.name = '?'";
+            + "AND S.name = '?' "
+            + "AND E.date >= SYSDATE() "
+            + "ORDER BY S.name ASC";
 
     private static final String SELECT_AVAILABLE_SECTIONS_BY_IDEVENT = "SELECT S.* "
             + "FROM Section S, Event E, Section_has_Event ShE "
             + "WHERE ShE.idSection = S.idSection "
             + "AND E.idEvent = ShE.idEvent "
-            + "AND E.idEvent = ?";
+            + "AND E.idEvent = ? "
+            + "AND E.date >= SYSDATE() "
+            + "ORDER BY S.idSection";
 
     private static final String UPDATE_TICKET_STATUS = "UPDATE  Ticket "
-            + "SET idStatus= ? "
-            + "WHERE idTicket = ? ";
+            + "SET idStatus = (SELECT idStatus "
+            + "                FROM Status "
+            + "                WHERE LOWER(name) = LOWER(?)) "
+            + "WHERE idTicket = ?";
 
     @SuppressWarnings("unused")
     private static char mander = 'c';
@@ -137,9 +161,8 @@ public class Db
     {
         try
         {
-            PreparedStatement ps = conn
-                    .prepareStatement(SELECT_AVAILABLE_TICKETS);
-            ResultSet result = ps.executeQuery();
+            Statement st = conn.createStatement();
+            ResultSet result = st.executeQuery(SELECT_AVAILABLE_TICKETS);
 
             Integer idTicket;
             String seatNumber;
@@ -161,7 +184,7 @@ public class Db
                                     idStatus, idSection, idEvent));
                 }
             }
-            ps.close();
+            st.close();
         }
         catch (SQLException e)
         {
@@ -176,21 +199,15 @@ public class Db
      * @param date:
      * @return Event[] events that ocurr at certain date (day)
      */
-    public Event[] getEventsAtDay(LocalDate date)
+    public Event[] searchEventsByDate(LocalDate date)
     {
         Event[] events = null;
-        if (!connected)
-        {
-            events = new Event[1];
-            events[0] = new Event();
-            return events;
-        }
         int nEvents = 0;
         ResultSet result = null;
 
         try
         {
-            PreparedStatement ps = conn.prepareStatement(SELECT_EVENT_AT_DATE);
+            PreparedStatement ps = conn.prepareStatement(SEARCH_EVENT_BY_DATE);
             Date searchDate = Date.valueOf(date);
             ps.setDate(1, searchDate);
             ps.setDate(2, searchDate);
@@ -237,7 +254,7 @@ public class Db
      * 
      * @return Event[] array with events on the same time
      */
-    public Event[] getEventsAtHour(LocalDate date)
+    public Event[] getEventsAtHour(int hour)
     {
         Event[] events = null;
         if (!connected)
@@ -250,9 +267,8 @@ public class Db
         ResultSet result = null;
         try
         {
-            PreparedStatement ps = conn.prepareStatement(SELECT_EVENT_AT_HOUR);
-            Date searchDate = Date.valueOf(date);
-            ps.setDate(1, searchDate);
+            PreparedStatement ps = conn.prepareStatement(SEARCH_EVENTS_BY_HOUR);
+            ps.setInt(1, hour);
 
             result = ps.executeQuery();
 
@@ -299,15 +315,12 @@ public class Db
     {
         float cost = 0f;
         ResultSet result = null;
-        String ticket = "";
-        if (!connected) { return cost; }
-        LOG.debug("Retrived [" + idticket + "] ");
         try
         {
-            PreparedStatement ps = conn.prepareStatement(SELECT_BY_TICKET_ID);
+            PreparedStatement ps = conn.prepareStatement(SELECT_BY_IDTICKET);
             ps.setInt(1, idticket);
             result = ps.executeQuery();
-            cost = result.getFloat("cost");
+            cost = result.first() ? result.getFloat("cost") : 0f;
             ps.close();
         }
         catch (SQLException e)
@@ -316,28 +329,15 @@ public class Db
         }
         LOG.debug("ticket :" + idticket + " $" + cost);
         return cost;
-
-        /*
-         * 
-         * while (result.next()) {
-         * 
-         * String seat = result.getString("seatNumber"); int status =
-         * result.getInt("idStatus"); int section = result.getInt("idSection"); int
-         * event = result.getInt("idEvent"); ticket = idticket + "," + seat + "," +
-         * status + "," + section + "," + event; } ps.close(); return ticket; } catch
-         * (SQLException e) {
-         * 
-         * } return "";
-         */
     }
 
     /**
      * Search in the database all the events that ocurr at certain Avenue.
      * 
-     * @param Avenue
+     * @param venueName
      * @return Event[] events that ocurr on an venue
      */
-    public Event[] getEventsWhere(String Avenue)
+    public Event[] searchEventsByVenueName(String venueName)
     {
         Event[] events = null;
         if (!connected)
@@ -351,8 +351,8 @@ public class Db
 
         try
         {
-            PreparedStatement ps = conn.prepareStatement(SELECT_EVENT_IN_VENUE);
-            ps.setString(1, Avenue);
+            PreparedStatement ps = conn.prepareStatement(SEARCH_EVENT_BY_VENUE_NAME);
+            ps.setString(1, venueName);
 
             result = ps.executeQuery();
             // getting number of selected rows
@@ -392,12 +392,51 @@ public class Db
         return events;
     }
 
-    public Event[] search(String eventName, String venueName, LocalDate eventDate, int hour, float cost,
-            String sectionName)
+    public Event[] searchEvents(String eventName, String venueName, LocalDate eventDate, int hour, float cost,
+            String sectionName) throws DbException
     {
         HashMap<Integer, Event> events = new HashMap<Integer, Event>();
-        Event[] results = se
-        return new Event[0];
+        Event[] results = searchEventsByName(eventName);
+        for (Event ev : results)
+        {
+            if (!events.containsKey(ev.getIdEvent()))
+            {
+                events.put(new Integer(ev.getIdEvent()), ev);
+            }
+        }
+        results = searchEventsByVenueName(venueName);
+        for (Event ev : results)
+        {
+            if (!events.containsKey(ev.getIdEvent()))
+            {
+                events.put(new Integer(ev.getIdEvent()), ev);
+            }
+        }
+        results = getEventsAtHour(hour);
+        for (Event ev : results)
+        {
+            if (!events.containsKey(ev.getIdEvent()))
+            {
+                events.put(new Integer(ev.getIdEvent()), ev);
+            }
+        }
+        results = searchEventsByCost(cost);
+        for (Event ev : results)
+        {
+            if (!events.containsKey(ev.getIdEvent()))
+            {
+                events.put(new Integer(ev.getIdEvent()), ev);
+            }
+        }
+        results = searchEventsBySectionName(sectionName);
+
+        results = new Event[events.values().size()];
+        int i = 0;
+        for (Event ev : events.values())
+        {
+            results[i] = ev;
+        }
+        return results;
     }
 
     /**
@@ -518,7 +557,7 @@ public class Db
      * @param date
      * @return Event[] events array with all the events
      */
-    public Event[] getEventsPerCost(LocalDate date)
+    public Event[] searchEventsByCost(float cost)
     {
         Event[] events = null;
         if (!connected)
@@ -527,21 +566,24 @@ public class Db
             events[0] = new Event();
             return events;
         }
-        int nEvents = 0;
-        ResultSet result = null;
-
         try
         {
+            PreparedStatement ps = conn.prepareStatement(SEARCH_EVENT_BY_COST);
+            ps.setFloat(1, cost);
+            ResultSet result = ps.executeQuery();
+
+            int nEvents = result.last() ? result.getRow() : 0;
+            result.beforeFirst();
+            events = new Event[nEvents];
+
             Event ev;
             int idEvent = 0;
             String name = "";
             String address = "";
             String city = "";
-            float cost = 0;
-            LocalDate evDate = LocalDate.now();
             int idVenue = 0;
-            int numerator = 0;
-            PreparedStatement ps = conn.prepareStatement(SEARCH_EVENT_BY_COST);
+            int i = 0;
+
             while (result.next())
             {
                 idEvent = result.getInt("idEvent");
@@ -552,8 +594,8 @@ public class Db
                 idVenue = result.getInt("idVenue");
                 cost = result.getFloat("cost");
                 ev = new Event(idEvent, idVenue, name, address, city, cost);
-                events[numerator] = ev;
-                numerator++;
+                events[i] = ev;
+                i++;
             }
         }
         catch (SQLException e)
@@ -563,6 +605,7 @@ public class Db
         return events;
     }
 
+    // TODO terminar implementacion
     private Event[] searchEventsByName(String name) throws DbException
     {
         Event[] events = new Event[0];
@@ -574,6 +617,26 @@ public class Db
 
             int nEvents = result.last() ? result.getRow() : 0;
             result.beforeFirst();
+            events = new Event[nEvents];
+
+            int idEvent;
+            String evName;
+            String description;
+            LocalDate date;
+            int idVenue;
+
+            int i = 0;
+            while (result.next())
+            {
+                idEvent = result.getInt("idEvent");
+                evName = result.getString("name");
+                description = result.getString("description");
+                date = result.getDate("date").toLocalDate();
+                idVenue = result.getInt("idVenue");
+                events[i] = new Event(idEvent, evName, description, date, idVenue);
+                i++;
+            }
+            ps.close();
         }
         catch (SQLException e)
         {
@@ -657,6 +720,7 @@ public class Db
                 ps.executeUpdate();
                 // tenemos q volver a la guia houston...
                 LOG.info("ticket : " + idTicket + " VENDIDO ");
+                ps.close();
                 return true;
             }
             catch (SQLException e)
@@ -665,5 +729,43 @@ public class Db
             }
         }
         return false;
+    }
+
+    private Event[] searchEventsBySectionName(String name)
+    {
+        Event[] events = new Event[0];
+        try
+        {
+            PreparedStatement ps = conn.prepareStatement(SELECT_EVENT_BY_SECTION_NAME);
+            ps.setString(1, name);
+            ResultSet results = ps.executeQuery();
+
+            int nEvents = results.last() ? results.getRow() : 0;
+            results.beforeFirst();
+            events = new Event[nEvents];
+
+            int idEvent;
+            String evName;
+            String description;
+            LocalDate date;
+            int idVenue;
+
+            int i = 0;
+            while (results.next())
+            {
+                idEvent = results.getInt("idEvent");
+                evName = results.getString("name");
+                description = results.getString("description");
+                date = results.getDate("date").toLocalDate();
+                idVenue = results.getInt("idVenue");
+                events[i] = new Event(idEvent, evName, description, date, idVenue);
+                i++;
+            }
+        }
+        catch (SQLException e)
+        {
+
+        }
+        return events;
     }
 }
