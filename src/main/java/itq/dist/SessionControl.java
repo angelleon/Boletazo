@@ -1,5 +1,8 @@
 package itq.dist;
 
+import java.util.Dictionary;
+import java.util.Enumeration;
+
 public class SessionControl
 {
     private int availableCount;
@@ -11,6 +14,57 @@ public class SessionControl
     private int lastAssignedIndex;
 
     private TimerThread sessionTimer;
+    private Dictionary<String, TimerThread> dictionaryTimer = new Dictionary<String, TimerThread>() {
+
+        @Override
+        public int size()
+        {
+            // TODO Auto-generated method stub
+            return 0;
+        }
+
+        @Override
+        public TimerThread remove(Object key)
+        {
+            // TODO Auto-generated method stub
+            return null;
+        }
+
+        @Override
+        public TimerThread put(String key, TimerThread value)
+        {
+            // TODO Auto-generated method stub
+            return null;
+        }
+
+        @Override
+        public Enumeration<String> keys()
+        {
+            // TODO Auto-generated method stub
+            return null;
+        }
+
+        @Override
+        public boolean isEmpty()
+        {
+            // TODO Auto-generated method stub
+            return false;
+        }
+
+        @Override
+        public TimerThread get(Object key)
+        {
+            // TODO Auto-generated method stub
+            return null;
+        }
+
+        @Override
+        public Enumeration<TimerThread> elements()
+        {
+            // TODO Auto-generated method stub
+            return null;
+        }
+    };
     // private TimerThread[] timerList = new TimerThread[2];
     // timerList[0] = operationType 0 - timer for reserved tickets
     // timerList[1] = operationType 1 - timer for session control
@@ -79,20 +133,22 @@ public class SessionControl
             throw new SessionException();
         avalilableSessionIDs[sessionId] = true;
         availableCount++;
+        dictionaryTimer.remove(sessionId);
     }
 
     /**
+     * Check if the session ID is in the range.
      * 
      * @param sessionId
-     * @return true if session is active (sessionIs is occuped), false otherwise
+     * @return true if session on the range(sessionIs is occuped), false otherwise
      */
-    private boolean isValid(int sessionId)
+    public boolean isValid(int sessionId)
     {
         return sessionId >= startId && sessionId <= lastId;
     }
 
     // ToDo: decidir si esto es synchronized o no
-    private boolean isActive(int sessionId)
+    public boolean isActive(int sessionId)
     {
         return !avalilableSessionIDs[sessionId];
     }
@@ -102,29 +158,25 @@ public class SessionControl
         return maxSessions;
     }
 
-    public void sessionTimer(int sessionId)
+    public synchronized void sessionTimer(int sessionId)
     {
-        if (!sessionTimer.isAlive())
-        {
-            sessionTimer = new TimerThread(10000, sessionId, 1);
-            sessionTimer.start();
-            sessionTimer.run();
-        }
-        else
-        {
-            // ToDo: Exception? for duplicated sessionId?
-        }
+        // if (!sessionTimer.isAlive())
+        // {
+        sessionTimer = new TimerThread(1000000, sessionId, 1, this); // 1000 seconds of timer per session
+        sessionTimer.setDaemon(true);
+        dictionaryTimer.put("" + sessionId, sessionTimer);
+        sessionTimer.start();
+        // sessionTimer.run();
+        // }
     }
 
-    public void updateSessionTimer()
+    public void updateSessionTimer(int sessionId) // throws NullPointerException
     {
-        if (sessionTimer.isAlive())
-        {
-            sessionTimer.setUpdate(true);
-        }
-        else
-        {
-            // ToDo: Exception? for updated out of time?
-        }
+        sessionTimer = dictionaryTimer.get("" + sessionId);
+        sessionTimer.setUpdate(true);
+        // else
+        // {
+        // ToDo: Exception? for updated out of time?
+        // }
     }
 }

@@ -5,6 +5,7 @@ package itq.dist;
 
 public class TimerThread extends Thread
 {
+
     private int time;
     private int sessionId;
     private int operationType;
@@ -46,11 +47,12 @@ public class TimerThread extends Thread
      * @param sessionId
      * @param type
      */
-    public TimerThread(int time, int sessionId, int operationType)
+    public TimerThread(int time, int sessionId, int operationType, SessionControl sc)
     {
         this.time = time;
         this.sessionId = sessionId;
         this.operationType = operationType;
+        this.sc = sc;
     }
 
     /**
@@ -147,6 +149,7 @@ public class TimerThread extends Thread
         }
         catch (SessionException e)
         {
+
             // TODO Auto-generated catch block
             e.printStackTrace();
         }
