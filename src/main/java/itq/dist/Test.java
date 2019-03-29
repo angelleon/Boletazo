@@ -16,30 +16,31 @@ public class Test
     {
         Random r = new Random();
         System.out.println(InetAddress.getLocalHost().getHostAddress().toString());
-        SessionControl sc = new SessionControl(0, 40);
-        int sessionId;
+
+        SessionControl sc = new SessionControl(0, 200);
+        int[] sessionId = new int[200];
         int releasedCount = 0;
         int obtainedConunt = 0;
         for (int i = 0; i < 100; i++)
         {
-            sessionId = sc.getNewSessionId();
-            log.info("sessionId: [" + sessionId + "]");
-            if (sessionId > 0)
+            sessionId[i] = sc.getNewSessionId();
+            log.info("sessionId: [" + sessionId[i] + "]");
+            // sc.sessionTimer(sessionId[i]);
+            SocketTest myTestThread = new SocketTest(sessionId[i], sc);
+            myTestThread.start();
+            try
             {
-                obtainedConunt++;
-                if (r.nextBoolean())
+                if (i == 99)
                 {
-                    try
-                    {
-                        sc.releaseSessionId(sessionId);
-                        log.info("Released sessionId: [" + sessionId + "]");
-                        releasedCount++;
-                    }
-                    catch (SessionException e)
-                    {
-                        log.error(e.getMessage());
-                    }
+                    // sc.releaseSessionId(sessionId[i]);
+                    i = 0;
+                    Thread.sleep(1000);
                 }
+            }
+            catch (InterruptedException e)
+            {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
             }
         }
         log.info("Obtained [" + obtainedConunt + "] sessionIds");
