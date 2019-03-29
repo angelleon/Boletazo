@@ -43,7 +43,7 @@ public class Db
             + "ORDER BY date ASC"; // lo mismo de arriba setDate(2, date)
 
     private static final String SEARCH_EVENTS_BY_HOUR = "SELECT * "
-            + "FROM Event"
+            + "FROM Event "
             + "WHERE HOUR(date) >= ? "
             + "AND date >= SYADATE() "
             + "ORDER BY date ASC";
@@ -69,7 +69,7 @@ public class Db
             + "AND date >= SYSDATE() "
             + "ORDER BY name ASC";
 
-    private static final String SEARCH_EVENT_BY_VENUE_NAME = "SELECT E.* "
+    private static final String SEARCH_EVENT_BY_VENUE_NAME = "SELECT E.*, "
             + "FROM Event E, Venue V "
             + "WHERE E.idVenue = V.idVenue "
             + "AND LOWER(V.name) LIKE LOWER('%?%') "
@@ -103,7 +103,7 @@ public class Db
     private static final String UPDATE_TICKET_STATUS = "UPDATE  Ticket "
             + "SET idStatus = (SELECT idStatus "
             + "                FROM Status "
-            + "                WHERE LOWER(name) = LOWER(?)) "
+            + "                WHERE LOWER(name) = LOWER('?')) "
             + "WHERE idTicket = ?";
 
     private static final String SELECT_EVENTINFO_BY_EVENTID = "SELECT E.* "
@@ -383,7 +383,8 @@ public class Db
                 address = result.getString("address");
                 city = result.getString("city");
                 idVenue = result.getInt("idVenue");
-                ev = new Event(idEvent, idVenue, name, address, city);
+                // ev = new Event(idEvent, idVenue, name, address, city);
+                new EventInfo(idEvent, name, description, date, idVenue, participants);
                 events[i] = ev;
                 i++;
             }
