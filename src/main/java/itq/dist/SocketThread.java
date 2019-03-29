@@ -3,7 +3,10 @@ package itq.dist;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.Socket;
+import java.net.UnknownHostException;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
@@ -19,10 +22,11 @@ public class SocketThread extends Thread
     private static final int MAX_MSG_LENGTH = 1024;
     private static final int PERMIT_TICKETS = 4;
     private static final int PAYMENT_TIMEOUT = 6000;
-
+    private static final String HOST = "localhost";
+    private static final int PORT = 2000;
     private Socket socket;
-    private DataInputStream dataIn;
-    private DataOutputStream dataOut;
+   // private DataInputStream dataIn;
+   // private DataOutputStream dataOut;
     private Db db;
     private SessionControl sc;
     private int sessionId;
@@ -138,15 +142,15 @@ public class SocketThread extends Thread
         this.sc = sc;
         this.msgOut = new StringBuilder(MAX_MSG_LENGTH);
         this.currentState = STATE.C_START_SESSION;
-        try
+        /*try
         {
             dataIn = new DataInputStream(socket.getInputStream());
             dataOut = new DataOutputStream(socket.getOutputStream());
         }
         catch (IOException e)
         {
-            LOG.error(e.getMessage());
-        }
+            LOG.error("IOException "+e.getMessage());
+        }*/
     }
 
     /**
@@ -209,19 +213,20 @@ public class SocketThread extends Thread
         }
         catch (ConversationException e)
         {
-            LOG.debug(e.getMessage());
+            LOG.debug("ConversationExption "+e.getMessage());e.printStackTrace();
         }
         catch (SessionException e)
         {
-            LOG.debug(e.getMessage());
+            LOG.debug("SessionException "+e.getMessage());e.printStackTrace();
         }
         catch (DbException e)
         {
-            LOG.debug(e.getMessage());
+            LOG.debug("DBException "+e.getMessage());e.printStackTrace();
         }
         catch (IOException e)
         {
-            LOG.debug(e.getMessage());
+            LOG.debug("IOException "+e.getMessage());
+            e.printStackTrace();
         }
     }
 
@@ -229,7 +234,7 @@ public class SocketThread extends Thread
     // TODO: considerar lanzar excepciones para manejar todos los errores de la
     // conversacion dentro de un bloque catch
 
-    // La tablita .....si hay sesion tabla.. ok no..
+    // Table .....if there is active session,  table.. ok no..
 
     /**
      * The first action to send a request to the server
@@ -244,7 +249,9 @@ public class SocketThread extends Thread
      */
     private boolean cStartSession() throws ConversationException, IOException
     {
-        String rawMsg = dataIn.readUTF();
+        LOG.debug("holis :");
+        String rawMsg = reply();
+        LOG.debug(rawMsg);
         if (checkMsgIntegrity(rawMsg))
         {
             String[] valuesIn = rawMsg.split(",");
@@ -639,7 +646,7 @@ public class SocketThread extends Thread
             pass = parts[3];
             if (db.login(usr, pass)) { return true; }
         }
-        LOG.debug(" algo esta mal escrito U_U " + rawMsg);
+        LOG.debug(" something is written wrong U_U " + rawMsg);
         return false;
     }
 
@@ -969,7 +976,29 @@ public class SocketThread extends Thread
         if (Integer.parseInt(rawConversationState) != currentState.ordinal())
             throw new ConversationException(ERROR.INCORRECT_CONVERSATION_STATE);
     }
-
+    /**
+     * Open the communication with server
+     * @return outStream, to chat with server x'D
+     * @throws UnknownHostException
+     * @throws IOException
+     */
+    public DataOutputStream newMessage() throws UnknownHostException, IOException {
+        socket = new Socket(HOST,PORT);
+        OutputStream outStream = socket.getOutputStream();
+        return new DataOutputStream(outStream);     
+    }
+    /**
+     * Listen to server's response
+     * @return a string with information for the server
+     * @throws IOException if something bad happens ...
+     */
+    public String reply() throws IOException{
+        
+        socket = new Socket(HOST,PORT);
+        InputStream inStream= socket.getInputStream();
+        DataInputStream dataIn = new DataInputStream(inStream);
+        return dataIn.readUTF().toString();
+    }
     /**
      * check if the client had sent the correct idSession
      * 
