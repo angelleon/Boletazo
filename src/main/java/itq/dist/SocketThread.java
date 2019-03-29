@@ -398,17 +398,23 @@ public class SocketThread extends Thread
         msgOut.append(",");
         msgOut.append(selectedEvent.getName());
         msgOut.append(",");
-        LocalDate[] dates = selectedEvent.getDates();
-        msgOut.append(dates.length);
-        for (LocalDate d : dates)
-        {
-            msgOut.append(",");
-            msgOut.append(d.getDayOfMonth());
-            msgOut.append("-");
-            msgOut.append(d.getMonthValue());
-            msgOut.append("-");
-            msgOut.append(d.getYear());
-        }
+        // LocalDate[] dates = selectedEvent.getDates();
+        msgOut.append("1,");
+        // for (LocalDate d : dates)
+        // {
+        // msgOut.append(",");
+        // msgOut.append(d.getDayOfMonth());
+        // msgOut.append("-");
+        // msgOut.append(d.getMonthValue());
+        // msgOut.append("-");
+        // msgOut.append(d.getYear());
+        // }
+        LocalDate date = selectedEvent.getDate();
+        msgOut.append(date.getDayOfMonth());
+        msgOut.append("-");
+        msgOut.append(date.getMonthValue());
+        msgOut.append("-");
+        msgOut.append(date.getYear());
         Participant[] participants = selectedEvent.getParticipants();
         msgOut.append(participants.length);
         for (Participant p : participants)
@@ -496,7 +502,7 @@ public class SocketThread extends Thread
                     ticketTimer = new TimerThread();
                     LOG.debug(" posicion en mensaje " + numPart + " posicion-numero de ticket " + i);
                     reqTicketIds[i] = Integer.parseInt(parts[numPart]);
-                    reservedTickets[i] = db.getBoletoById(reqTicketIds[i]);
+                    reservedTickets[i] = db.getAvailableTicketById(reqTicketIds[i]);
                     numPart++;
                 }
             }
@@ -535,7 +541,7 @@ public class SocketThread extends Thread
                 if (db.consultTicketStatus(reqTicketIds[i]) == 1)
                 { // ver si puede ser reservado ....y reservarlo :V
                     db.updateTicketStatus(reqTicketIds[i], 2);
-                    cost = cost + db.getTicketById(reqTicketIds[i]);
+                    cost = cost + db.getTicketCostById(reqTicketIds[i]);
                 }
                 else
                 {
@@ -718,7 +724,7 @@ public class SocketThread extends Thread
      * @throws IOException
      */
     private boolean pucharaseCompleted()
-            throws ConversationException, IOException
+            throws ConversationException, DbException, IOException
     {
         currentState = STATE.PUCHARASE_COMPLETED;
         sc.updateSessionTimer();
