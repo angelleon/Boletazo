@@ -33,7 +33,7 @@ public class Boletazo
         if (db.getConnected())
         {
             db.preLoad();
-            initialConnection();
+           // initialConnection();
             try
             {
                 serverSocket = new ServerSocket(PORT);

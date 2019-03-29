@@ -1,5 +1,12 @@
 package itq.dist;
 
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.Socket;
+import java.net.UnknownHostException;
 import java.sql.Connection;
 import java.sql.Date;
 //import java.sql.*;
@@ -32,6 +39,11 @@ public class Db
      * (?) dentro del query iniciando con 1, TIPO depende de lo que se va a
      * reemplazar, y valor es..... supongo que el valor que se va a poner ahi
      */
+    // ResultSet result = null;
+    private static final String UPDATE_USR_INFO = "insert into UserInfo "
+            + "(email,estado) values (?,?) ";
+    private static final String UPDATE_LOG_INFO = "INSERT INTO LoginInfo "
+            + "(username,password) values (?,?) ";
     private static final String SEARCH_EVENT_BY_DATE = "SELECT * "
             + "FROM Event "
             + "WHERE date >= ? " // aqui se reemplaza el (?) con una fecha usando setDate(1, date)
@@ -397,20 +409,15 @@ public class Db
      */
     public boolean toRegister(String user, String passwd, String email, String residence) throws DbException
     {
-        // ResultSet result = null;
-        String updateUsrInfo = "insert into UserInfo "
-                + "(email,estado) values (?,?) ";
-        String updateLoginInfo = "INSERT INTO LoginInfo " +
-                "(username,password) values (?.?) ";
 
         try
         {
-            PreparedStatement ps = conn.prepareStatement(updateUsrInfo);
+            PreparedStatement ps = conn.prepareStatement(UPDATE_USR_INFO);
             ps.setString(1, email);
             ps.setString(2, residence);
             ps.executeUpdate();
 
-            ps = conn.prepareStatement(updateLoginInfo);
+            ps = conn.prepareStatement(UPDATE_LOG_INFO);
             ps.setString(1, user);
             ps.setString(2, passwd);
             ps.close();
