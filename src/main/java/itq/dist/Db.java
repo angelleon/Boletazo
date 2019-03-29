@@ -51,9 +51,9 @@ public class Db
             + "ORDER BY date ASC";
 
     private static final String SELECT_AVAILABLE_TICKETS = "SELECT T.* "
-            + "FROM Ticket T, Status S, Event "
-            + "WHERE T.idEvent = E.idEvent " 
-            + "and T.idStatus = (SELECT idStatus " //modificado where  -> and
+            + "FROM Ticket T, Status S, Event E "
+            + "WHERE T.idEvent = E.idEvent "
+            + "and  T.idStatus = (SELECT idStatus "
             + "                    FROM Status "
             + "                    WHERE status = 'DISPONIBLE') "
             + "ORDER BY T.idTicket";
@@ -402,18 +402,23 @@ public class Db
      */
     public boolean toRegister(String user, String passwd, String email, String residence) throws DbException
     {
-        
-
+        // ResultSet result = null;
+        String updateUsrInfo = "insert into UserInfo "
+                + "(email,estado) values (?,?) ";
+        String updateLoginInfo = "INSERT INTO LoginInfo " +
+                "(username,password) values (?,?) ";
         try
         {
             PreparedStatement ps = conn.prepareStatement(UPDATE_USR_INFO);
             ps.setString(1, email);
             ps.setString(2, residence);
             ps.executeUpdate();
+            ps.close();
 
             ps = conn.prepareStatement(UPDATE_LOG_INFO);
             ps.setString(1, user);
             ps.setString(2, passwd);
+            ps.executeUpdate(updateLoginInfo);
             ps.close();
             return true;
         }

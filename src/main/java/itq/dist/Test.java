@@ -38,7 +38,11 @@ public class Test
                         sc.releaseSessionId(sessionId);
                         log.info("Released sessionId: [" + sessionId + "]");
                         releasedCount++;
-                        data.searchEventsByCost(10.0F);
+                        data.preLoad();/*
+                                        * data.toRegister("@gmail", "lol", "lol", "colorado"); data.singup("@gmail",
+                                        * "lol", "lol"); data.singup("lol", "lol", "lol"); data.login("lol", "lol");
+                                        */
+                        data.toRegister("@gmail", "lol", "lol", "colorado");
                     }
                     catch (SessionException e)
                     {
