@@ -43,7 +43,7 @@ public class Db
             + "ORDER BY date ASC"; // lo mismo de arriba setDate(2, date)
 
     private static final String SEARCH_EVENTS_BY_HOUR = "SELECT * "
-            + "FROM Event"
+            + "FROM Event "
             + "WHERE HOUR(date) >= ? "
             + "AND date >= SYADATE() "
             + "ORDER BY date ASC";
@@ -69,7 +69,7 @@ public class Db
             + "AND date >= SYSDATE() "
             + "ORDER BY name ASC";
 
-    private static final String SEARCH_EVENT_BY_VENUE_NAME = "SELECT E.* "
+    private static final String SEARCH_EVENT_BY_VENUE_NAME = "SELECT E.*, "
             + "FROM Event E, Venue V "
             + "WHERE E.idVenue = V.idVenue "
             + "AND LOWER(V.name) LIKE LOWER('%?%') "
@@ -103,8 +103,12 @@ public class Db
     private static final String UPDATE_TICKET_STATUS = "UPDATE  Ticket "
             + "SET idStatus = (SELECT idStatus "
             + "                FROM Status "
-            + "                WHERE LOWER(name) = LOWER(?)) "
+            + "                WHERE LOWER(name) = LOWER('?')) "
             + "WHERE idTicket = ?";
+
+    private static final String SELECT_EVENTINFO_BY_EVENTID = "SELECT E.* "
+            + "FROM Event E, "
+            + "WHERE E.idEvent = ?";
 
     @SuppressWarnings("unused")
     private static char mander = 'c';
@@ -311,7 +315,7 @@ public class Db
      * @param idticket
      * @return float cost......
      */
-    public float getTicketById(int idticket)
+    public float getTicketCostById(int idticket)
     {
         float cost = 0f;
         ResultSet result = null;
@@ -379,7 +383,8 @@ public class Db
                 address = result.getString("address");
                 city = result.getString("city");
                 idVenue = result.getInt("idVenue");
-                ev = new Event(idEvent, idVenue, name, address, city);
+                // ev = new Event(idEvent, idVenue, name, address, city);
+                new EventInfo(idEvent, name, description, date, idVenue, participants);
                 events[i] = ev;
                 i++;
             }
@@ -654,10 +659,27 @@ public class Db
 
     public EventInfo getEventInfo(int eventId)
     {
-        return new EventInfo();
+        EventInfo evInfo = new EventInfo();
+        try
+        {
+            PreparedStatement ps = conn.prepareStatement(SELECT_EVENTINFO_BY_EVENTID);
+            ResultSet result = ps.executeQuery();
+            result.first();
+
+            int idEvent = result.getInt("idEvent");
+            String name = result.getString("name");
+            LocalDate date = result.getDate("date").toLocalDate();
+
+            evInfo = new EventInfo(idEvent, name, date, );
+        }
+        catch (SQLException e)
+        {
+            LOG.error(e.getMessage());
+        }
+        return evInfo;
     }
 
-    public Section[] getAvailabeSections()
+    public Section[] getAvailabeSections() throws DbException
     {
         Section[] sections = new Section[0];
         try
@@ -686,6 +708,8 @@ public class Db
         }
         catch (SQLException e)
         {
+            LOG.error(e.getMessage());
+            throw new DbException();
         }
         return sections;
     }
@@ -697,10 +721,15 @@ public class Db
      * @return Boleto
      */
 
-    public Ticket getBoletoById(int idTicket)
+    public Ticket getAvailableTicketById(int idTicket)
     {
         return availableTickets.get(idTicket);
     }
+
+    // TODO: esto actualmente trabaja solo con los tickets que se obtuvieron en el
+    // metodo preload()
+    // para obtener cualquier status es necesario un query, de lo contrario eliminar
+    // este ToDo
 
     public int consultTicketStatus(int idTicket)
     {
@@ -708,7 +737,7 @@ public class Db
         return -1;
     }
 
-    public boolean updateTicketStatus(int idTicket, int status)
+    public boolean updateTicketStatus(int idTicket, int status) throws DbException
     {
         if (availableTickets.containsKey(idTicket))
         {
@@ -726,12 +755,13 @@ public class Db
             catch (SQLException e)
             {
                 LOG.error(e.getMessage());
+                throw new DbException();
             }
         }
         return false;
     }
 
-    private Event[] searchEventsBySectionName(String name)
+    private Event[] searchEventsBySectionName(String name) throws DbException
     {
         Event[] events = new Event[0];
         try
@@ -764,7 +794,8 @@ public class Db
         }
         catch (SQLException e)
         {
-
+            LOG.error(e.getMessage());
+            throw new DbException();
         }
         return events;
     }

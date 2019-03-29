@@ -129,11 +129,16 @@ public class SessionControl
 
     public synchronized void releaseSessionId(int sessionId) throws SessionException
     {
-        if (!isValid(sessionId) || !isActive(sessionId))
+        if (!isValid(sessionId))
             throw new SessionException();
         avalilableSessionIDs[sessionId] = true;
         availableCount++;
         dictionaryTimer.remove(sessionId);
+    }
+
+    public synchronized boolean isValid(int sessionId)
+    {
+        return isInRange(sessionId) && isActive(sessionId);
     }
 
     /**
@@ -142,13 +147,14 @@ public class SessionControl
      * @param sessionId
      * @return true if session on the range(sessionIs is occuped), false otherwise
      */
-    public boolean isValid(int sessionId)
+
+    private boolean isInRange(int sessionId)
     {
         return sessionId >= startId && sessionId <= lastId;
     }
 
     // ToDo: decidir si esto es synchronized o no
-    public boolean isActive(int sessionId)
+    private synchronized boolean isActive(int sessionId)
     {
         return !avalilableSessionIDs[sessionId];
     }
