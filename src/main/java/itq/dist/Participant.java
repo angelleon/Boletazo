@@ -2,24 +2,28 @@ package itq.dist;
 
 public class Participant
 {
+    int idParticipant;
     String name;
     String description;
 
     /**
+     * @param idParticipant
+     *            the id to set
      * @param name
-     * @param description
-     */
-
-    /**
-     * @param name
-     *            the capacity to set
+     *            the name to set
      * @param description
      *            the description to set
      */
-    Participant(String name, String description)
+    Participant(int idParticipant, String name, String description)
     {
+        this.idParticipant = idParticipant;
         this.name = name;
         this.description = description;
+    }
+
+    public int getIdParticipant()
+    {
+        return idParticipant;
     }
 
     /**
