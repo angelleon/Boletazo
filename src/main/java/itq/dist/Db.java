@@ -44,13 +44,13 @@ public class Db
     private static final String SEARCH_EVENTS_BY_HOUR = "SELECT * "
             + "FROM Event"
             + "WHERE HOUR(date) >= ? "
-            + "AND date >= SYADATE() "
+            + "AND date >= SYSDATE() "
             + "ORDER BY date ASC";
 
     private static final String SELECT_AVAILABLE_TICKETS = "SELECT T.* "
             + "FROM Ticket T, Status S, Event E "
             + "WHERE T.idEvent = E.idEvent "
-            + "WHERE T.idStatus = (SELECT idStatus "
+            + "and  T.idStatus = (SELECT idStatus "
             + "                    FROM Status "
             + "                    WHERE status = 'DISPONIBLE') "
             + "ORDER BY T.idTicket";
@@ -447,7 +447,7 @@ public class Db
     {
         ResultSet result = null;
         String userRegistered = "select count(iduser) "
-                + "from UserInfo"
+                + "from UserInfo "
                 + "where email = ? ";
         try
         {
@@ -489,7 +489,7 @@ public class Db
         String updateUsrInfo = "insert into UserInfo "
                 + "(email,estado) values (?,?) ";
         String updateLoginInfo = "INSERT INTO LoginInfo " +
-                "(username,password) values (?.?) ";
+                "(username,password) values (?,?) ";
 
         try
         {
@@ -497,10 +497,12 @@ public class Db
             ps.setString(1, email);
             ps.setString(2, residence);
             ps.executeUpdate();
+            ps.close();
 
             ps = conn.prepareStatement(updateLoginInfo);
             ps.setString(1, user);
             ps.setString(2, passwd);
+            ps.executeUpdate(updateLoginInfo);
             ps.close();
             return true;
         }
