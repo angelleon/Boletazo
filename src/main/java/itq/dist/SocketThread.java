@@ -7,7 +7,6 @@ import java.io.OutputStream;
 //import java.io.InputStream;
 //import java.io.OutputStream;
 import java.net.Socket;
-import java.net.UnknownHostException;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
@@ -607,6 +606,7 @@ public class SocketThread extends Thread
     private boolean singupStatus() throws ConversationException, DbException, IOException
     {
         currentConversationState = STATE.SINGUP_STATUS;
+        targetConversationState = STATE.SINGUP_STATUS;
         msgOut.setLength(0);
         msgOut.append(targetConversationState.ordinal());
         msgOut.append(",");
