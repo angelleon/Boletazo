@@ -28,19 +28,20 @@ public class Boletazo
         LOG.info("Boletazo server started at " + LocalDateTime.now().toString());
         boolean alive = true;
         ServerSocket serverSocket;
-        SessionControl sc = new SessionControl(0, 10);
+        SessionControl anonymousSc = new SessionControl(0, 10);
+        SessionControl sessionControl = new SessionControl(10, 10);
         Db db = new Db();
         if (db.getConnected())
         {
             db.preLoad();
-           // initialConnection();
+            // initialConnection();
             try
             {
                 serverSocket = new ServerSocket(PORT);
                 while (alive)
                 {
                     Socket socket = serverSocket.accept();
-                    SocketThread thread = new SocketThread(socket, db, sc);
+                    SocketThread thread = new SocketThread(socket, db, sessionControl, anonymousSc);
                     thread.start();
                 }
                 serverSocket.close();

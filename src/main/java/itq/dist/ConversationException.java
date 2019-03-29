@@ -1,12 +1,13 @@
 package itq.dist;
 
+import itq.dist.SocketThread.STATE;
+
 public class ConversationException extends BoletazoException
 {
-
     /**
      * 
      */
-    private static final long SERIAL_VERSION_UID = 1L;
+    private static final long serialVersionUID = 1L;
 
     public static enum ERROR {
         GENERIC_ERROR,
@@ -20,7 +21,7 @@ public class ConversationException extends BoletazoException
 
     private ERROR error;
 
-    ConversationException(ERROR error)
+    ConversationException(ERROR error, STATE conversationState)
     {
         super();
         this.error = error;
@@ -28,7 +29,7 @@ public class ConversationException extends BoletazoException
 
     ConversationException()
     {
-        this(ERROR.GENERIC_ERROR);
+        this(ERROR.GENERIC_ERROR, STATE.C_START_SESSION);
     }
 
     /**
