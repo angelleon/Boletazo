@@ -490,7 +490,7 @@ public class SocketThread extends Thread
                     ticketTimer = new TimerThread();
                     LOG.debug(" posicion en mensaje " + numPart + " posicion-numero de ticket " + i);
                     reqTicketIds[i] = Integer.parseInt(parts[numPart]);
-                    reservedTickets[i] = db.getBoletoById(reqTicketIds[i]);
+                    reservedTickets[i] = db.getAvailableTicketById(reqTicketIds[i]);
                     numPart++;
                 }
             }
@@ -528,7 +528,7 @@ public class SocketThread extends Thread
                 if (db.consultTicketStatus(reqTicketIds[i]) == 1)
                 { // ver si puede ser reservado ....y reservarlo :V
                     db.updateTicketStatus(reqTicketIds[i], 2);
-                    cost = cost + db.getTicketById(reqTicketIds[i]);
+                    cost = cost + db.getTicketCostById(reqTicketIds[i]);
                 }
                 else
                 {
@@ -706,7 +706,7 @@ public class SocketThread extends Thread
      * @throws IOException
      */
     private boolean pucharaseCompleted()
-            throws ConversationException, IOException
+            throws ConversationException, DbException, IOException
     {
         currentState = STATE.PUCHARASE_COMPLETED;
         msgOut.setLength(0);
