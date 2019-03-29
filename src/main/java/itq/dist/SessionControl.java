@@ -7,67 +7,15 @@ public class SessionControl
 {
     private int availableCount;
     private boolean[] avalilableSessionIDs;
-    private int startId; // First id, session ids will be in closed range [startId, startID +
+    private int startId; // First id, session ids will be in closed set [startId, startID +
                          // MAX_SESSIONS - 1]
+    private int sessionTimeout;
+
     private int lastId;
     private int maxSessions;
     private int lastAssignedIndex;
 
-    private TimerThread sessionTimer;
-    private Dictionary<String, TimerThread> dictionaryTimer = new Dictionary<String, TimerThread>() {
-
-        @Override
-        public int size()
-        {
-            // TODO Auto-generated method stub
-            return 0;
-        }
-
-        @Override
-        public TimerThread remove(Object key)
-        {
-            // TODO Auto-generated method stub
-            return null;
-        }
-
-        @Override
-        public TimerThread put(String key, TimerThread value)
-        {
-            // TODO Auto-generated method stub
-            return null;
-        }
-
-        @Override
-        public Enumeration<String> keys()
-        {
-            // TODO Auto-generated method stub
-            return null;
-        }
-
-        @Override
-        public boolean isEmpty()
-        {
-            // TODO Auto-generated method stub
-            return false;
-        }
-
-        @Override
-        public TimerThread get(Object key)
-        {
-            // TODO Auto-generated method stub
-            return null;
-        }
-
-        @Override
-        public Enumeration<TimerThread> elements()
-        {
-            // TODO Auto-generated method stub
-            return null;
-        }
-    };
-    // private TimerThread[] timerList = new TimerThread[2];
-    // timerList[0] = operationType 0 - timer for reserved tickets
-    // timerList[1] = operationType 1 - timer for session control
+    private SessionTimer[] sessionTimers;
 
     /**
      * 
@@ -79,12 +27,13 @@ public class SessionControl
      * @param lastAssignedIndex
      */
 
-    SessionControl(int startId, int maxSessions)
+    SessionControl(int startId, int maxSessions, int sessionTimeout)
     {
         this.startId = startId;
         this.maxSessions = maxSessions;
         lastId = startId + maxSessions - 1;
         avalilableSessionIDs = new boolean[maxSessions];
+        sessionTimers = new SessionTimer[maxSessions];
         availableCount = maxSessions;
         lastAssignedIndex = 0;
         for (int i = 0; i < avalilableSessionIDs.length; i++)
@@ -95,11 +44,12 @@ public class SessionControl
 
     SessionControl()
     {
-        this(0, 1024);
+        this(0, 1024, 3000);
     }
 
     public synchronized int getNewSessionId()
     {
+        int sessionId = -1;
         if (availableCount > 0)
         {
             // Algoritmo que asigna los ids de forma circular
@@ -110,7 +60,9 @@ public class SessionControl
                     avalilableSessionIDs[i] = false;
                     availableCount--;
                     lastAssignedIndex = i;
-                    return startId + i;
+                    sessionId = startId + i;
+                    sessionTimers[i] = new SessionTimer(sessionTimeout, sessionId, this);
+                    return sessionId;
                 }
             }
             for (int i = 0; i < lastAssignedIndex; i++)
@@ -120,11 +72,15 @@ public class SessionControl
                     avalilableSessionIDs[i] = false;
                     availableCount--;
                     lastAssignedIndex = i;
-                    return startId + i;
+                    sessionId = startId + i;
+                    SessionTimer timer = new SessionTimer(sessionTimeout, sessionId, this);
+                    sessionTimers[i] = timer;
+                    timer.start();
+                    break;
                 }
             }
         }
-        return -1;
+        return sessionId;
     }
 
     public synchronized void releaseSessionId(int sessionId) throws SessionException
@@ -132,8 +88,8 @@ public class SessionControl
         if (!isValid(sessionId))
             throw new SessionException();
         avalilableSessionIDs[sessionId] = true;
+        sessionTimers[sessionId] = null;
         availableCount++;
-        dictionaryTimer.remove(sessionId);
     }
 
     public synchronized boolean isValid(int sessionId)
@@ -164,19 +120,13 @@ public class SessionControl
         return maxSessions;
     }
 
-    public synchronized void sessionTimer(int sessionId)
-    {
-        sessionTimer = new TimerThread(10000000, sessionId, 1, this); // 10,000 seconds of timer per session, WIP (work
-                                                                      // in progress)
-        sessionTimer.setDaemon(true);
-        dictionaryTimer.put("" + sessionId, sessionTimer);
-        sessionTimer.start();
-    }
-
     public void updateSessionTimer(int sessionId) // throws NullPointerException
     {
-        // OnProcessToResolve - WIP (Work in progress)
-        sessionTimer = dictionaryTimer.get("" + sessionId);
-        sessionTimer.setUpdate(true);
+        sessionTimers[sessionIdToIndex(sessionId)].reset();
+    }
+
+    private int sessionIdToIndex(int sessionId)
+    {
+        return sessionId - startId;
     }
 }
