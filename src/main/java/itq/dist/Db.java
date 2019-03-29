@@ -403,6 +403,11 @@ public class Db
      */
     public boolean toRegister(String user, String passwd, String email, String residence) throws DbException
     {
+        // ResultSet result = null;
+        String updateUsrInfo = "insert into UserInfo "
+                + "(email,estado) values (?,?) ";
+        String updateLoginInfo = "INSERT INTO LoginInfo " +
+                "(username,password) values (?,?) ";
 
         try
         {
@@ -410,10 +415,12 @@ public class Db
             ps.setString(1, email);
             ps.setString(2, residence);
             ps.executeUpdate();
+            ps.close();
 
             ps = conn.prepareStatement(UPDATE_LOG_INFO);
             ps.setString(1, user);
             ps.setString(2, passwd);
+            ps.executeUpdate(updateLoginInfo);
             ps.close();
             return true;
         }
@@ -585,7 +592,8 @@ public class Db
 
     public int consultTicketStatus(int idTicket)
     {
-        if (availableTickets.containsKey(idTicket)) { return availableTickets.get(idTicket).getIdStatus(); }
+        if (availableTickets.containsKey(idTicket))
+        { return availableTickets.get(idTicket).getIdStatus(); }
         return -1;
     }
 
