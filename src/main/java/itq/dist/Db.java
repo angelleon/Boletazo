@@ -131,7 +131,7 @@ public class Db
         }
         catch (SQLException e)
         {
-            LOG.error("An error occurred when trying to connect to DB");
+            LOG.error("An error occurred while tried to connect to DB");
             LOG.error(e.getMessage());
         }
         catch (ClassNotFoundException e)
@@ -192,8 +192,8 @@ public class Db
         }
         catch (SQLException e)
         {
-            LOG.error("");
-            LOG.error(e.getMessage());
+            LOG.error("An error has ocurr while tried to obtein a loanding of each tickets information ");
+            LOG.error(e.getMessage());<>
         }
     }
 
