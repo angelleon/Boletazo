@@ -24,7 +24,6 @@ public class Db
     private static final String USR = "boletazodev";
     private static final String PASSWD = "contrapass";
     private static final String URL = "jdbc:mysql://127.0.0.1:3306/Boletazo?useLegacyDatetimeCode=false&serverTimezone=UTC";
-    private static final LocalDate TODAY = LocalDate.now();
 
     // TODO comentar la condicion date >= SYSDATE()
     // Lista de querys
@@ -37,42 +36,43 @@ public class Db
      */
     private static final String SEARCH_EVENT_BY_DATE = "SELECT * "
             + "FROM Event "
-            + "WHERE date BETWEEN ? " // aqui se reemplaza el (?) con una fecha usando setDate(1, date)
-            + "AND ? >= SYSDATE() "
+            + "WHERE date >= ? " // aqui se reemplaza el (?) con una fecha usando setDate(1, date)
+            // + "AND ? >= SYSDATE() "
             + "ORDER BY date ASC"; // lo mismo de arriba setDate(2, date)
 
     private static final String SEARCH_EVENTS_BY_HOUR = "SELECT * "
             + "FROM Event "
             + "WHERE HOUR(date) >= ? "
-            + "AND date >= SYADATE() "
+            // + "AND date >= SYADATE() "
             + "ORDER BY date ASC";
 
     private static final String SELECT_AVAILABLE_TICKETS = "SELECT T.* "
             + "FROM Ticket T, Status S, Event E "
             + "WHERE T.idEvent = E.idEvent "
-            + "WHERE T.idStatus = (SELECT idStatus "
-            + "                    FROM Status "
-            + "                    WHERE status = 'DISPONIBLE') "
+            + "AND T.idStatus = (SELECT idStatus "
+            + "                  FROM Status "
+            + "                  WHERE status = 'DISPONIBLE') "
+            // + "AND E.date >= SYADATE() "
             + "ORDER BY T.idTicket";
 
     // TODO Verificar columnas seleccionadas
     private static final String SELECT_BY_IDTICKET = "SELECT S.cost "
             + "FROM Section S, Ticket t "
             + "WHERE T.idTicket = ? "
-            + "AND T.idSection = S.idSection "
+            // + "AND T.idSection = S.idSection "
             + "ORDER BY T.idTicket";
 
     private static final String SEARCH_EVENT_BY_NAME = "SELECT * "
             + "FROM Event "
             + "WHERE LOWER(name) LIKE LOWER('%?%') "
-            + "AND date >= SYSDATE() "
+            // + "AND date >= SYSDATE() "
             + "ORDER BY name ASC";
 
     private static final String SEARCH_EVENT_BY_VENUE_NAME = "SELECT E.*, "
             + "FROM Event E, Venue V "
             + "WHERE E.idVenue = V.idVenue "
             + "AND LOWER(V.name) LIKE LOWER('%?%') "
-            + "AND date >= SYSDATE() "
+            // + "AND date >= SYSDATE() "
             + "ORDER BY V.name ASC";
 
     private static final String SEARCH_EVENT_BY_COST = "SELECT E.*, S.name, S.cost "
@@ -80,7 +80,7 @@ public class Db
             + "WHERE E.idEvent = ShE.idEvent "
             + "AND ShE.idSection = S.idSection "
             + "AND S.cost <= ? "
-            + "AND E.date >= SYSDATE() "
+            // + "AND E.date >= SYSDATE() "
             + "ORDER BY S.cost DESC";
 
     private static final String SELECT_EVENT_BY_SECTION_NAME = "SELECT E.* "
@@ -88,7 +88,7 @@ public class Db
             + "WHERE E.idEvent = ShE.idEvent "
             + "AND S.idSection = ShE.idSection "
             + "AND S.name = '?' "
-            + "AND E.date >= SYSDATE() "
+            // + "AND E.date >= SYSDATE() "
             + "ORDER BY S.name ASC";
 
     private static final String SELECT_AVAILABLE_SECTIONS_BY_IDEVENT = "SELECT S.* "
@@ -96,7 +96,7 @@ public class Db
             + "WHERE ShE.idSection = S.idSection "
             + "AND E.idEvent = ShE.idEvent "
             + "AND E.idEvent = ? "
-            + "AND E.date >= SYSDATE() "
+            // + "AND E.date >= SYSDATE() "
             + "ORDER BY S.idSection";
 
     private static final String UPDATE_TICKET_STATUS = "UPDATE  Ticket "
@@ -105,9 +105,18 @@ public class Db
             + "                WHERE LOWER(name) = LOWER('?')) "
             + "WHERE idTicket = ?";
 
-    private static final String SELECT_EVENTINFO_BY_EVENTID = "SELECT E.* "
+    // TODO: terminar statement
+    private static final String SELECT_EVENT_BY_EVENTID = "SELECT E.* "
             + "FROM Event E, "
             + "WHERE E.idEvent = ?";
+
+    private static final String SELECT_PARTICIPANT_BY_IDEVENT = "SELECT P.* "
+            + "FROM Participant P, Event E, Event_has_Participant EhP "
+            + "WHERE EhP.idEvent = E.idEvent "
+            + "AND EhP.idParticipant = P.idParticipant "
+            + "AND E.idEvent = ? "
+            // + "AND E.date >= SYSDATE() "
+            + "";
 
     @SuppressWarnings("unused")
     private static char mander = 'c';
@@ -202,11 +211,9 @@ public class Db
      * @param date:
      * @return Event[] events that ocurr at certain date (day)
      */
-    public Event[] searchEventsByDate(LocalDate date)
+    public EventInfo[] searchEventsByDate(LocalDate date) throws DbException
     {
-        Event[] events = null;
-        int nEvents = 0;
-        ResultSet result = null;
+        EventInfo[] events = new EventInfo[0];
 
         try
         {
@@ -214,41 +221,14 @@ public class Db
             Date searchDate = Date.valueOf(date);
             ps.setDate(1, searchDate);
             ps.setDate(2, searchDate);
-            result = ps.executeQuery();
-
-            // getting number of selected rows
-            nEvents = result.last() ? result.getRow() : 0;
-            int i = 0;
-            events = new Event[nEvents];
-            result.beforeFirst();
-
-            Event ev;
-            int idEvent = 0;
-            String name = "";
-            String description = "";
-            LocalDate evDate = LocalDate.now();
-            int idVenue = 0;
-
-            // Iterate over rows returned by the query
-            // Populating array
-            while (result.next())
-            {
-                idEvent = result.getInt("idEvent");
-                name = result.getString("name");
-                description = result.getString("description");
-                evDate = result.getDate("date").toLocalDate();
-                idVenue = result.getInt("idVenue");
-                ev = new Event(idEvent, name, description, evDate, idVenue);
-                events[i] = ev;
-                i++;
-            }
+            events = buildEventInfoArray(ps.executeQuery());
             ps.close();
         }
         catch (SQLException e)
         {
             LOG.error(e.getMessage());
+            throw new DbException();
         }
-        LOG.debug("Retrived [" + nEvents + "] events");
         return events;
     }
 
@@ -257,54 +237,21 @@ public class Db
      * 
      * @return Event[] array with events on the same time
      */
-    public Event[] getEventsAtHour(int hour)
+    public EventInfo[] getEventsAtHour(int hour) throws DbException
     {
-        Event[] events = null;
-        if (!connected)
-        {
-            events = new Event[1];
-            events[0] = new Event();
-            return events;
-        }
-        int nEvents = 0;
-        ResultSet result = null;
+        EventInfo[] events = new EventInfo[0];
         try
         {
             PreparedStatement ps = conn.prepareStatement(SEARCH_EVENTS_BY_HOUR);
             ps.setInt(1, hour);
-
-            result = ps.executeQuery();
-
-            // getting number of selected rows
-            nEvents = result.last() ? result.getRow() : 0;
-            events = new Event[nEvents];
-            int i = 0;
-            result.beforeFirst();
-
-            Event ev;
-            int idEvent = 0;
-            String name = "";
-            String description = "";
-            LocalDate evDate = LocalDate.now();
-            int idVenue = 0;
-
-            // Iterate over rows returned by the query
-            // Populating array
-            while (result.next())
-            {
-                idEvent = result.getInt("idEvent");
-                name = result.getString("name");
-                ev = new Event(idEvent, name, description, evDate, idVenue);
-                events[i] = ev;
-                i++;
-            }
+            events = buildEventInfoArray(ps.executeQuery());
             ps.close();
         }
         catch (SQLException e)
         {
             LOG.error(e.getMessage());
         }
-        LOG.debug("Retrived [" + nEvents + "] events");
+        LOG.debug("Retrived [" + events.length + "] events");
         return events;
     }
 
@@ -340,68 +287,31 @@ public class Db
      * @param venueName
      * @return Event[] events that ocurr on an venue
      */
-    public Event[] searchEventsByVenueName(String venueName)
+    public EventInfo[] searchEventsByVenueName(String venueName) throws DbException
     {
-        Event[] events = null;
-        if (!connected)
-        {
-            events = new Event[1];
-            events[0] = new Event();
-            return events;
-        }
-        int nEvents = 0;
-        ResultSet result = null;
-
+        EventInfo[] events = new EventInfo[0];
         try
         {
             PreparedStatement ps = conn.prepareStatement(SEARCH_EVENT_BY_VENUE_NAME);
             ps.setString(1, venueName);
-
-            result = ps.executeQuery();
-            // getting number of selected rows
-            nEvents = result.last() ? result.getRow() : 0;
-            int i = 0;
-            events = new Event[nEvents];
-            result.beforeFirst();
-
-            Event ev;
-            int idEvent = 0;
-            int idVenue = 0;
-            String name = "";
-            String address = "";
-            String city = "";
-            LocalDate evDate = LocalDate.now();
-
-            // Iterate over rows returned by the query
-            // Populating array
-            while (result.next())
-            {
-                idEvent = result.getInt("idEvent");
-                idVenue = result.getInt("idAvenue");
-                name = result.getString("name");
-                address = result.getString("address");
-                city = result.getString("city");
-                idVenue = result.getInt("idVenue");
-                // ev = new Event(idEvent, idVenue, name, address, city);
-                new EventInfo(idEvent, name, description, date, idVenue, participants);
-                events[i] = ev;
-                i++;
-            }
+            events = buildEventInfoArray(ps.executeQuery());
+            ps.close();
         }
         catch (SQLException e)
         {
             LOG.error(e.getMessage());
         }
-        LOG.debug("Retrived [" + nEvents + "] events");
+        LOG.debug("Retrived [" + events.length + "] events");
         return events;
     }
 
-    public Event[] searchEvents(String eventName, String venueName, LocalDate eventDate, int hour, float cost,
+    public EventInfo[] searchEvents(String eventName, String venueName, LocalDate eventDate, int hour, float cost,
             String sectionName) throws DbException
     {
-        HashMap<Integer, Event> events = new HashMap<Integer, Event>();
-        Event[] results = searchEventsByName(eventName);
-        for (Event ev : results)
+        HashMap<Integer, EventInfo> events = new HashMap<Integer, EventInfo>();
+        EventInfo[] results = new EventInfo[0];
+        results = searchEventsByName(eventName);
+        for (EventInfo ev : results)
         {
             if (!events.containsKey(ev.getIdEvent()))
             {
@@ -409,7 +319,7 @@ public class Db
             }
         }
         results = searchEventsByVenueName(venueName);
-        for (Event ev : results)
+        for (EventInfo ev : results)
         {
             if (!events.containsKey(ev.getIdEvent()))
             {
@@ -417,7 +327,7 @@ public class Db
             }
         }
         results = getEventsAtHour(hour);
-        for (Event ev : results)
+        for (EventInfo ev : results)
         {
             if (!events.containsKey(ev.getIdEvent()))
             {
@@ -425,7 +335,7 @@ public class Db
             }
         }
         results = searchEventsByCost(cost);
-        for (Event ev : results)
+        for (EventInfo ev : results)
         {
             if (!events.containsKey(ev.getIdEvent()))
             {
@@ -434,9 +344,9 @@ public class Db
         }
         results = searchEventsBySectionName(sectionName);
 
-        results = new Event[events.values().size()];
+        results = new EventInfo[events.values().size()];
         int i = 0;
-        for (Event ev : events.values())
+        for (EventInfo ev : events.values())
         {
             results[i] = ev;
         }
@@ -448,11 +358,11 @@ public class Db
      * 
      * @return false: user has been registered before
      */
-    public boolean singup(String email, String usr, String passwd)
+    public boolean singup(String email, String usr, String passwd) throws DbException
     {
         ResultSet result = null;
         String userRegistered = "select count(iduser) "
-                + "from UserInfo"
+                + "from UserInfo "
                 + "where email = ? ";
         try
         {
@@ -474,9 +384,8 @@ public class Db
         catch (SQLException e)
         {
             LOG.error(e.getMessage());
+            throw new DbException();
         }
-
-        return false;
     }
 
     /**
@@ -488,7 +397,7 @@ public class Db
      *            user password...
      * @return true: correct update on UserInfo,LoginInfo
      */
-    public boolean toRegister(String user, String passwd, String email, String residence)
+    public boolean toRegister(String user, String passwd, String email, String residence) throws DbException
     {
         // ResultSet result = null;
         String updateUsrInfo = "insert into UserInfo "
@@ -512,9 +421,8 @@ public class Db
         catch (SQLException e)
         {
             LOG.error(e.getMessage());
+            throw new DbException();
         }
-
-        return false;
     }
 
     /**
@@ -524,7 +432,7 @@ public class Db
      * @param password
      * @return true: the user exist false : the user require registration
      */
-    public boolean login(String usr, String pass)
+    public boolean login(String usr, String pass) throws DbException
     {
         String userExist = "select idlogin "
                 + "from LoginInfo "
@@ -549,7 +457,8 @@ public class Db
         }
         catch (SQLException e)
         {
-            LOG.error(e.getMessage());
+            LOG.debug(e.getMessage());
+            throw new DbException();
         }
         return false;
 
@@ -561,90 +470,39 @@ public class Db
      * @param date
      * @return Event[] events array with all the events
      */
-    public Event[] searchEventsByCost(float cost)
+    public EventInfo[] searchEventsByCost(float cost) throws DbException
     {
-        Event[] events = null;
-        if (!connected)
-        {
-            events = new Event[1];
-            events[0] = new Event();
-            return events;
-        }
+        EventInfo[] events = new EventInfo[0];
         try
         {
             PreparedStatement ps = conn.prepareStatement(SEARCH_EVENT_BY_COST);
             ps.setFloat(1, cost);
-            ResultSet result = ps.executeQuery();
-
-            int nEvents = result.last() ? result.getRow() : 0;
-            result.beforeFirst();
-            events = new Event[nEvents];
-
-            Event ev;
-            int idEvent = 0;
-            String name = "";
-            String address = "";
-            String city = "";
-            int idVenue = 0;
-            int i = 0;
-
-            while (result.next())
-            {
-                idEvent = result.getInt("idEvent");
-                idVenue = result.getInt("idAvenue");
-                name = result.getString("name");
-                address = result.getString("address");
-                city = result.getString("city");
-                idVenue = result.getInt("idVenue");
-                cost = result.getFloat("cost");
-                ev = new Event(idEvent, idVenue, name, address, city, cost);
-                events[i] = ev;
-                i++;
-            }
+            events = buildEventInfoArray(ps.executeQuery());
+            ps.close();
         }
         catch (SQLException e)
         {
-            LOG.error(e.getMessage());
+            LOG.debug(e.getMessage());
+            throw new DbException();
         }
         return events;
     }
 
     // TODO terminar implementacion
-    private Event[] searchEventsByName(String name) throws DbException
+    private EventInfo[] searchEventsByName(String name) throws DbException
     {
-        Event[] events = new Event[0];
+        EventInfo[] events = new EventInfo[0];
         try
         {
             PreparedStatement ps = conn.prepareStatement(SEARCH_EVENT_BY_NAME);
             ps.setString(1, name);
-            ResultSet result = ps.executeQuery();
-
-            int nEvents = result.last() ? result.getRow() : 0;
-            result.beforeFirst();
-            events = new Event[nEvents];
-
-            int idEvent;
-            String evName;
-            String description;
-            LocalDate date;
-            int idVenue;
-
-            int i = 0;
-            while (result.next())
-            {
-                idEvent = result.getInt("idEvent");
-                evName = result.getString("name");
-                description = result.getString("description");
-                date = result.getDate("date").toLocalDate();
-                idVenue = result.getInt("idVenue");
-                events[i] = new Event(idEvent, evName, description, date, idVenue);
-                i++;
-            }
+            events = buildEventInfoArray(ps.executeQuery());
             ps.close();
         }
         catch (SQLException e)
         {
-            throw new DbException(ERROR.GENERIC_ERROR);
+            LOG.debug(e.getMessage());
+            throw new DbException();
         }
         return events;
     }
@@ -656,24 +514,20 @@ public class Db
      * @return Event
      */
 
-    public EventInfo getEventInfo(int eventId)
+    public EventInfo getEventInfoByIdEvent(int idEvent) throws DbException
     {
         EventInfo evInfo = new EventInfo();
         try
         {
-            PreparedStatement ps = conn.prepareStatement(SELECT_EVENTINFO_BY_EVENTID);
-            ResultSet result = ps.executeQuery();
-            result.first();
-
-            int idEvent = result.getInt("idEvent");
-            String name = result.getString("name");
-            LocalDate date = result.getDate("date").toLocalDate();
-
-            evInfo = new EventInfo(idEvent, name, date, );
+            PreparedStatement ps = conn.prepareStatement(SELECT_EVENT_BY_EVENTID);
+            ps.setInt(1, idEvent);
+            EventInfo[] ev = buildEventInfoArray(ps.executeQuery());
+            evInfo = ev[0];
         }
         catch (SQLException e)
         {
-            LOG.error(e.getMessage());
+            LOG.debug(e.getMessage());
+            throw new DbException();
         }
         return evInfo;
     }
@@ -707,7 +561,7 @@ public class Db
         }
         catch (SQLException e)
         {
-            LOG.error(e.getMessage());
+            LOG.debug(e.getMessage());
             throw new DbException();
         }
         return sections;
@@ -753,31 +607,83 @@ public class Db
             }
             catch (SQLException e)
             {
-                LOG.error(e.getMessage());
+                LOG.debug(e.getMessage());
                 throw new DbException();
             }
         }
         return false;
     }
 
-    private Event[] searchEventsBySectionName(String name) throws DbException
+    private EventInfo[] searchEventsBySectionName(String name) throws DbException
     {
-        Event[] events = new Event[0];
+        EventInfo[] events = new EventInfo[0];
         try
         {
             PreparedStatement ps = conn.prepareStatement(SELECT_EVENT_BY_SECTION_NAME);
             ps.setString(1, name);
+            events = buildEventInfoArray(ps.executeQuery());
+            ps.close();
+        }
+        catch (SQLException e)
+        {
+            LOG.debug(e.getMessage());
+            throw new DbException();
+        }
+        return events;
+    }
+
+    private Participant[] getParticipantByIdEvent(int idEvent) throws DbException
+    {
+        Participant[] participants = new Participant[0];
+        try
+        {
+            PreparedStatement ps = conn.prepareStatement(SELECT_PARTICIPANT_BY_IDEVENT);
+            ps.setInt(1, idEvent);
             ResultSet results = ps.executeQuery();
 
+            int nParticipants = results.next() ? results.getRow() : 0;
+            participants = new Participant[nParticipants];
+            results.beforeFirst();
+
+            int idParticipant;
+            String name;
+            String description;
+
+            int i = 0;
+            while (results.next())
+            {
+                idParticipant = results.getInt("idParticipant");
+                name = results.getString("name");
+                description = results.getString("description");
+                participants[i] = new Participant(idParticipant, name, description);
+                i++;
+            }
+
+            ps.close();
+        }
+        catch (SQLException e)
+        {
+            LOG.debug(e.getMessage());
+            throw new DbException();
+        }
+        return participants;
+    }
+
+    private EventInfo[] buildEventInfoArray(ResultSet results) throws DbException
+    {
+        EventInfo[] events;
+        try
+        {
             int nEvents = results.last() ? results.getRow() : 0;
             results.beforeFirst();
-            events = new Event[nEvents];
+            events = new EventInfo[nEvents];
 
             int idEvent;
             String evName;
             String description;
             LocalDate date;
             int idVenue;
+            Participant[] participants;
 
             int i = 0;
             while (results.next())
@@ -787,7 +693,8 @@ public class Db
                 description = results.getString("description");
                 date = results.getDate("date").toLocalDate();
                 idVenue = results.getInt("idVenue");
-                events[i] = new Event(idEvent, evName, description, date, idVenue);
+                participants = getParticipantByIdEvent(idEvent);
+                events[i] = new EventInfo(idEvent, evName, description, date, idVenue, participants);
                 i++;
             }
         }
