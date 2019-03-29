@@ -21,6 +21,7 @@ public class Test
         int[] sessionId = new int[200];
         int releasedCount = 0;
         int obtainedConunt = 0;
+        Db data = new Db();//
         for (int i = 0; i < 100; i++)
         {
             sessionId[i] = sc.getNewSessionId();
@@ -32,9 +33,17 @@ public class Test
             {
                 if (i == 99)
                 {
-                    // sc.releaseSessionId(sessionId[i]);
-                    i = 0;
-                    Thread.sleep(1000);
+                    try
+                    {
+                        sc.releaseSessionId(sessionId);
+                        log.info("Released sessionId: [" + sessionId + "]");
+                        releasedCount++;
+                        data.searchEventsByCost(10.0F);
+                    }
+                    catch (SessionException e)
+                    {
+                        log.error(e.getMessage());
+                    }
                 }
             }
             catch (InterruptedException e)

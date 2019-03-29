@@ -5,17 +5,16 @@ import java.sql.Date;
 //import java.sql.*;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
-import java.sql.Statement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.HashMap;
-
-import itq.dist.DbException.ERROR;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+
+import itq.dist.DbException.ERROR;
 
 public class Db
 {
@@ -193,7 +192,7 @@ public class Db
         catch (SQLException e)
         {
             LOG.error("An error has ocurr while tried to obtein a loanding of each tickets information ");
-            LOG.error(e.getMessage());<>
+            LOG.error(e.getMessage());// <>
         }
     }
 
