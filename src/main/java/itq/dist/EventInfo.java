@@ -29,7 +29,8 @@ public class EventInfo extends Event
         return name;
     }
 
-    public LocalDate getDates()
+    @Override
+    public LocalDate getDate()
     {
         return date;
     }

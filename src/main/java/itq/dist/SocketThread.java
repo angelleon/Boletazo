@@ -204,8 +204,9 @@ public class SocketThread extends Thread
                 pucharaseCompleted();
                 break;
             default:
-                socket.close(); // Maybe here??
+                throw new ConversationException();
             }
+            socket.close();
         }
         catch (ConversationException e)
         {
@@ -368,7 +369,7 @@ public class SocketThread extends Thread
             checkConversationState(valuesIn[0]);
             checkSessionId(valuesIn[1]);
             idEvent = Integer.parseInt(valuesIn[2]);
-            selectedEvent = db.getEventInfo(idEvent);
+            selectedEvent = db.getEventInfoByIdEvent(idEvent);
         }
         return false;
     }
@@ -649,7 +650,7 @@ public class SocketThread extends Thread
      * @throws ConversationException
      * @throws IOException
      */
-    private boolean loginStatus() throws ConversationException, IOException
+    private boolean loginStatus() throws ConversationException, DbException, IOException
     {
         currentState = STATE.LOGIN_STATUS;
         msgOut.setLength(0);
