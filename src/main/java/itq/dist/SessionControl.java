@@ -160,23 +160,17 @@ public class SessionControl
 
     public synchronized void sessionTimer(int sessionId)
     {
-        // if (!sessionTimer.isAlive())
-        // {
-        sessionTimer = new TimerThread(1000000, sessionId, 1, this); // 1000 seconds of timer per session
+        sessionTimer = new TimerThread(10000000, sessionId, 1, this); // 10,000 seconds of timer per session, WIP (work
+                                                                      // in progress)
         sessionTimer.setDaemon(true);
         dictionaryTimer.put("" + sessionId, sessionTimer);
         sessionTimer.start();
-        // sessionTimer.run();
-        // }
     }
 
     public void updateSessionTimer(int sessionId) // throws NullPointerException
     {
+        // OnProcessToResolve - WIP (Work in progress)
         sessionTimer = dictionaryTimer.get("" + sessionId);
         sessionTimer.setUpdate(true);
-        // else
-        // {
-        // ToDo: Exception? for updated out of time?
-        // }
     }
 }

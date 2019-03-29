@@ -167,6 +167,8 @@ public class SocketThread extends Thread
         try
         {
             targetState();
+
+            // sc.updateSessionTimer(sessionId); (WIP) - Work in progress
             switch (targetClientState)
             {
             case C_START_SESSION:
@@ -265,7 +267,6 @@ public class SocketThread extends Thread
         currentState = STATE.S_START_SESSION;
         msgOut.setLength(0);
         sessionId = sc.getNewSessionId();
-        sc.sessionTimer(sessionId);
         if (sessionId > 0)
         {
             msgOut.append(STATE.S_START_SESSION.ordinal());
@@ -289,7 +290,6 @@ public class SocketThread extends Thread
     {
         currentState = STATE.GET_EVENT_LIST;
         String rawMsg = dataIn.readUTF();
-        sc.updateSessionTimer(sessionId);
         if (checkMsgIntegrity(rawMsg))
         {
             String[] valuesIn = rawMsg.split(",");
@@ -331,7 +331,6 @@ public class SocketThread extends Thread
     private boolean postEventList() throws ConversationException, IOException
     {
         currentState = STATE.POST_EVENT_LIST;
-        sc.updateSessionTimer(sessionId);
         msgOut.setLength(0);
         msgOut.append(STATE.POST_EVENT_LIST.ordinal());
         msgOut.append(",");
@@ -363,7 +362,6 @@ public class SocketThread extends Thread
     {
         currentState = STATE.GET_EVENT_INFO;
         String rawMsg = dataIn.readUTF();
-        sc.updateSessionTimer(sessionId);
         if (checkMsgIntegrity(rawMsg))
         {
             String[] valuesIn = rawMsg.split(",");
@@ -388,7 +386,6 @@ public class SocketThread extends Thread
     private boolean postEventInfo() throws ConversationException, SessionException, IOException
     {
         currentState = STATE.POST_EVENT_INFO;
-        sc.updateSessionTimer(sessionId);
         msgOut.setLength(0);
         msgOut.append(currentState.ordinal());
         msgOut.append(",");
@@ -434,7 +431,6 @@ public class SocketThread extends Thread
             throws ConversationException, SessionException, IOException
     {
         currentState = STATE.GET_AVAILABLE_SEATS;
-        sc.updateSessionTimer(sessionId);
         String rawMsg = dataIn.readUTF();
         if (checkMsgIntegrity(rawMsg))
         {
@@ -455,7 +451,6 @@ public class SocketThread extends Thread
     private boolean postAvailableSeats() throws ConversationException, IOException
     {
         currentState = STATE.POST_AVAILABLE_SEATS;
-        sc.updateSessionTimer(sessionId);
         msgOut.setLength(0);
         msgOut.append(currentState.ordinal());
         return false;
@@ -476,7 +471,6 @@ public class SocketThread extends Thread
     {
         currentState = STATE.REQUEST_RESERVE_TICKETS;
         String rawMsg = dataIn.readUTF();
-        sc.updateSessionTimer(sessionId);
         if (checkMsgIntegrity(rawMsg) && sessionId > 0)
         {
             String[] parts = rawMsg.split(",");
@@ -521,7 +515,6 @@ public class SocketThread extends Thread
         currentState = STATE.CONFIRM_RESERVE_TICKETS;
         msgOut.setLength(0);
         float cost = 0;
-        sc.updateSessionTimer(sessionId);
 
         if (sessionId > 0) // #ArmaTuMensaje !!(revisar esta wean en todos)
         {
@@ -571,7 +564,6 @@ public class SocketThread extends Thread
     {
         currentState = STATE.SINGUP;
         String rawMsg = dataIn.readUTF();
-        sc.updateSessionTimer(sessionId);
         if (checkMsgIntegrity(rawMsg))
         {
             String[] parts = rawMsg.split(",");
@@ -601,7 +593,6 @@ public class SocketThread extends Thread
     private boolean singupStatus() throws ConversationException, DbException, IOException
     {
         currentState = STATE.SINGUP_STATUS;
-        sc.updateSessionTimer(sessionId);
         msgOut.setLength(0);
         msgOut.append(currentState.ordinal());
         msgOut.append(",");
@@ -633,7 +624,6 @@ public class SocketThread extends Thread
         currentState = STATE.LOGIN_CHECK;
         // msgOut.setLength(0);
         String rawMsg = dataIn.readUTF();
-        sc.updateSessionTimer(sessionId);
         if (checkMsgIntegrity(rawMsg) && sessionId > 0)
         {
             String[] parts = rawMsg.split(",");
@@ -656,7 +646,6 @@ public class SocketThread extends Thread
     private boolean loginStatus() throws ConversationException, IOException
     {
         currentState = STATE.LOGIN_STATUS;
-        sc.updateSessionTimer(sessionId);
         msgOut.setLength(0);
         msgOut.append(currentState);
         msgOut.append(",");
@@ -684,7 +673,6 @@ public class SocketThread extends Thread
     {
         currentState = STATE.POST_PAYMENT_INFO;
         String rawMsg = dataIn.readUTF();
-        sc.updateSessionTimer(sessionId);
         if (checkMsgIntegrity(rawMsg) && sessionId > 0)
         {
             String[] parts = rawMsg.split(",");
@@ -721,7 +709,6 @@ public class SocketThread extends Thread
             throws ConversationException, IOException
     {
         currentState = STATE.PUCHARASE_COMPLETED;
-        sc.updateSessionTimer(sessionId);
         msgOut.setLength(0);
         msgOut.append(currentState);
         msgOut.append(",");
