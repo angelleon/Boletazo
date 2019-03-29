@@ -420,6 +420,15 @@ public class Db
      */
     public boolean toRegister(String user, String passwd, String email, String residence) throws DbException
     {
+<<<<<<< HEAD
+=======
+        // ResultSet result = null;
+        String updateUsrInfo = "insert into UserInfo "
+                + "(email,estado) values (?,?) ";
+        String updateLoginInfo = "INSERT INTO LoginInfo " +
+                "(username,password) values (?,?) ";
+
+>>>>>>> solucion a varias consultas SQL
         try
         {
             PreparedStatement ps = conn.prepareStatement(UPDATE_USR_INFO);
@@ -431,7 +440,11 @@ public class Db
             ps = conn.prepareStatement(UPDATE_LOG_INFO);
             ps.setString(1, user);
             ps.setString(2, passwd);
+<<<<<<< HEAD
             // ps.executeUpdate(updateLoginInfo);
+=======
+            ps.executeUpdate(updateLoginInfo);
+>>>>>>> solucion a varias consultas SQL
             ps.close();
             return true;
         }
@@ -603,11 +616,17 @@ public class Db
 
     public int consultTicketStatus(int idTicket)
     {
+<<<<<<< HEAD
         Integer idT = Integer.valueOf(idTicket);
         if (availableTickets
                 .containsKey(idT))
         { return availableTickets.get(idT).getIdStatus(); }
         return 3;
+=======
+        if (availableTickets.containsKey(idTicket))
+        { return availableTickets.get(idTicket).getIdStatus(); }
+        return -1;
+>>>>>>> solucion a varias consultas SQL
     }
 
     public boolean updateTicketStatus(int idTicket, String status) throws DbException
