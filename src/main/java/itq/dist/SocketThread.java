@@ -364,17 +364,23 @@ public class SocketThread extends Thread
         msgOut.append(",");
         msgOut.append(selectedEvent.getName());
         msgOut.append(",");
-        LocalDate[] dates = selectedEvent.getDates();
-        msgOut.append(dates.length);
-        for (LocalDate d : dates)
-        {
-            msgOut.append(",");
-            msgOut.append(d.getDayOfMonth());
-            msgOut.append("-");
-            msgOut.append(d.getMonthValue());
-            msgOut.append("-");
-            msgOut.append(d.getYear());
-        }
+        // LocalDate[] dates = selectedEvent.getDates();
+        msgOut.append("1,");
+        // for (LocalDate d : dates)
+        // {
+        // msgOut.append(",");
+        // msgOut.append(d.getDayOfMonth());
+        // msgOut.append("-");
+        // msgOut.append(d.getMonthValue());
+        // msgOut.append("-");
+        // msgOut.append(d.getYear());
+        // }
+        LocalDate date = selectedEvent.getDate();
+        msgOut.append(date.getDayOfMonth());
+        msgOut.append("-");
+        msgOut.append(date.getMonthValue());
+        msgOut.append("-");
+        msgOut.append(date.getYear());
         Participant[] participants = selectedEvent.getParticipants();
         msgOut.append(participants.length);
         for (Participant p : participants)
