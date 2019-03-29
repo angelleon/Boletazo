@@ -22,14 +22,16 @@ public class Boletazo
     private static final String PROF_HOST = "localhost";
     private static final int PROF_PORT = 5000;
     private static final int TEAM_NUM = 3;
+    private static final int ANONYMOUS_SESSION_TIMEOUT = 5000;
+    private static final int SESSION_TIMEOUT = 3000;
 
     public static void main(String[] args)
     {
         LOG.info("Boletazo server started at " + LocalDateTime.now().toString());
         boolean alive = true;
         ServerSocket serverSocket;
-        SessionControl anonymousSc = new SessionControl(0, 10);
-        SessionControl sessionControl = new SessionControl(10, 10);
+        SessionControl anonymousSc = new SessionControl(0, 10, SESSION_TIMEOUT);
+        SessionControl sessionControl = new SessionControl(10, 10, ANONYMOUS_SESSION_TIMEOUT);
         Db db = new Db();
         if (db.getConnected())
         {
