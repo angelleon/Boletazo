@@ -820,8 +820,7 @@ public class SocketThread extends Thread
     // TODO: terminar la definicion del metodo
 
     /**
-     * this method makes a parsing or an equal actions depending to the type of
-     * request
+     * this method check and ensure depending to the type of request
      * 
      * @param token
      * @param types
@@ -850,6 +849,7 @@ public class SocketThread extends Thread
     }
 
     /**
+     * number of tokens
      * 
      * @return the next number that corresponds to the variable name
      */
@@ -881,8 +881,9 @@ public class SocketThread extends Thread
     // TODO: evaluar la utilidad real de este metodo
     // tal vez se pueden usar constantes en su lugar
     /**
+     * retorna la posicion donde se encuentra la cantidad de tokens
      * 
-     * @return
+     * @return an Array
      * @throws ConversationException
      */
 
@@ -897,6 +898,7 @@ public class SocketThread extends Thread
      */
 
     /**
+     * indica que tipo de dato se espera en cada posicion del mensaje
      * 
      * @return
      * @throws ConversationException
@@ -964,53 +966,7 @@ public class SocketThread extends Thread
     }
 
     /**
-     * Translate the String operation number into a STATE Enumeric
-     * 
-     * @param state
-     * @return enum STATE
-     */
-    public STATE StrToState(String state)
-    {
-        switch (state)
-        {
-        case "0":
-            return STATE.C_START_SESSION;
-        case "1":
-            return STATE.S_START_SESSION;
-        case "2":
-            return STATE.GET_EVENT_LIST;
-        case "3":
-            return STATE.POST_EVENT_LIST;
-        case "4":
-            return STATE.GET_EVENT_INFO;
-        case "5":
-            return STATE.POST_EVENT_INFO;
-        case "6":
-            return STATE.GET_AVAILABLE_SEATS;
-        case "7":
-            return STATE.POST_AVAILABLE_SEATS;
-        case "8":
-            return STATE.REQUEST_RESERVE_TICKETS;
-        case "9":
-            return STATE.CONFIRM_RESERVE_TICKETS;
-        case "10":
-            return STATE.SINGUP;
-        case "11":
-            return STATE.SINGUP_STATUS;
-        case "12":
-            return STATE.LOGIN_CHECK;
-        case "13":
-            return STATE.LOGIN_STATUS;
-        case "14":
-            return STATE.POST_PAYMENT_INFO;
-        case "15":
-            return STATE.PUCHARASE_COMPLETED;
-        default:
-            return currentState;
-        }
-    }
-
-    /**
+     * check if the message by the client has been received correctly
      * 
      * @param rawConversationState
      * @throws ConversationException
@@ -1022,6 +978,7 @@ public class SocketThread extends Thread
     }
 
     /**
+     * check if the client had sent the correct idSession
      * 
      * @param rawSessionId
      * @throws SessionException
