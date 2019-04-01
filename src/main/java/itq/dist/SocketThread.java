@@ -145,6 +145,7 @@ public class SocketThread extends Thread
 
         this.msgOut = new StringBuilder(MAX_MSG_LENGTH);
         this.targetConversationState = STATE.C_START_SESSION;
+        this.currentConversationState = STATE.C_START_SESSION;
         try
         {
             dataIn = new DataInputStream(socket.getInputStream());
@@ -161,9 +162,9 @@ public class SocketThread extends Thread
      * 
      * @throws IOException
      */
-    public STATE targetState() throws IOException
+    public STATE targetState() throws ConversationException, IOException
     {
-        targetConversationState = stateToStr(rawTokensIn[0]);
+        targetConversationState = parseRawState(rawTokensIn[0]);
         return targetConversationState;
     }
 
@@ -173,6 +174,7 @@ public class SocketThread extends Thread
         try
         {
             readRawMsg();
+            dataOut = new DataOutputStream(socket.getOutputStream());
             targetState();
             checkMsgIntegrity();
             switch (targetConversationState)
@@ -272,15 +274,11 @@ public class SocketThread extends Thread
         currentConversationState = STATE.S_START_SESSION;
         msgOut.setLength(0);
         sessionId = sessionControl.getNewSessionId();
-        if (sessionId > 0)
-        {
-            msgOut.append(STATE.S_START_SESSION.ordinal());
-            msgOut.append(",");
-            msgOut.append(sessionId);
-            dataOut.writeUTF(msgOut.toString());
-            return true;
-        }
-        return false;
+        msgOut.append(STATE.S_START_SESSION.ordinal());
+        msgOut.append(",");
+        msgOut.append(sessionId);
+        dataOut.writeUTF(msgOut.toString());
+        return true;
     }
 
     /**
@@ -923,47 +921,49 @@ public class SocketThread extends Thread
     /**
      * Translate the String operation number into a STATE Enumeric
      * 
-     * @param state
+     * @param rawState
      * @return enum STATE
      */
-    public STATE stateToStr(String state)
+    public STATE parseRawState(String rawState) throws ConversationException
     {
+        int state = Integer.parseInt(rawState);
         switch (state)
         {
-        case "0":
+        case 0:
             return STATE.C_START_SESSION;
-        case "1":
+        case 1:
             return STATE.S_START_SESSION;
-        case "2":
+        case 2:
             return STATE.GET_EVENT_LIST;
-        case "3":
+        case 3:
             return STATE.POST_EVENT_LIST;
-        case "4":
+        case 4:
             return STATE.GET_EVENT_INFO;
-        case "5":
+        case 5:
             return STATE.POST_EVENT_INFO;
-        case "6":
+        case 6:
             return STATE.GET_AVAILABLE_SEATS;
-        case "7":
+        case 7:
             return STATE.POST_AVAILABLE_SEATS;
-        case "8":
+        case 8:
             return STATE.REQUEST_RESERVE_TICKETS;
-        case "9":
+        case 9:
             return STATE.CONFIRM_RESERVE_TICKETS;
-        case "10":
+        case 10:
             return STATE.SINGUP;
-        case "11":
+        case 11:
             return STATE.SINGUP_STATUS;
-        case "12":
+        case 12:
             return STATE.LOGIN_CHECK;
-        case "13":
+        case 13:
             return STATE.LOGIN_STATUS;
-        case "14":
+        case 14:
             return STATE.POST_PAYMENT_INFO;
-        case "15":
+        case 15:
             return STATE.PUCHARASE_COMPLETED;
         default:
-            return targetConversationState;
+            throw new ConversationException(ConversationException.ERROR.INCORRECT_CONVERSATION_STATE,
+                    currentConversationState);
         }
     }
 
@@ -994,7 +994,8 @@ public class SocketThread extends Thread
     private void readRawMsg() throws IOException
     {
         rawMsg = dataIn.readUTF();
+        LOG.debug("Read [" + rawMsg + "] from client [" + socket.getInetAddress() + "]");
         rawTokensIn = rawMsg.split(",");
-        dataOut = new DataOutputStream(socket.getOutputStream());
+        // dataOut = new DataOutputStream(socket.getOutputStream());
     }
 }
