@@ -25,11 +25,13 @@ public class DbException extends BoletazoException
 
     DbException()
     {
-        this(ERROR.GENERIC_ERROR);
+        super();
+        this.error = ERROR.GENERIC_ERROR;
     }
 
     DbException(ERROR error)
     {
+        super(BoletazoException.ERROR.SPECIFIC_ERROR);
         this.error = error;
     }
 
