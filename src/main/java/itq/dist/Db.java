@@ -60,9 +60,9 @@ public class Db
 
     // TODO Verificar columnas seleccionadas
     private static final String SELECT_BY_IDTICKET = "SELECT S.cost "
-            + "FROM Section S, Ticket t "
+            + "FROM Section S, Ticket T "
             + "WHERE T.idTicket = ? "
-            // + "AND T.idSection = S.idSection "
+            + "AND T.idSection = S.idSection "
             + "ORDER BY T.idTicket";
 
     private static final String SEARCH_EVENT_BY_NAME = "SELECT * "
@@ -105,7 +105,7 @@ public class Db
     private static final String UPDATE_TICKET_STATUS = "UPDATE  Ticket "
             + "SET idStatus = (SELECT idStatus "
             + "                FROM Status "
-            + "                WHERE LOWER(name) = LOWER('?')) "
+            + "                WHERE LOWER(status) = LOWER(?)) "
             + "WHERE idTicket = ?";
 
     // TODO: terminar statement
@@ -352,6 +352,7 @@ public class Db
         for (EventInfo ev : events.values())
         {
             results[i] = ev;
+            i++;
         }
         return results;
     }
@@ -591,17 +592,17 @@ public class Db
     public int consultTicketStatus(int idTicket)
     {
         if (availableTickets.containsKey(idTicket)) { return availableTickets.get(idTicket).getIdStatus(); }
-        return -1;
+        return 3;
     }
 
-    public boolean updateTicketStatus(int idTicket, int status) throws DbException
+    public boolean updateTicketStatus(int idTicket, String status) throws DbException
     {
         if (availableTickets.containsKey(idTicket))
         {
             try
             {
                 PreparedStatement ps = conn.prepareStatement(UPDATE_TICKET_STATUS);
-                ps.setInt(1, status);
+                ps.setString(1, status);
                 ps.setInt(2, idTicket);
                 ps.executeUpdate();
                 // tenemos q volver a la guia houston...
@@ -675,7 +676,7 @@ public class Db
 
     private EventInfo[] buildEventInfoArray(ResultSet results) throws DbException
     {
-        EventInfo[] events;
+        EventInfo[] events = new EventInfo[0];
         try
         {
             int nEvents = results.last() ? results.getRow() : 0;
@@ -699,6 +700,7 @@ public class Db
                 idVenue = results.getInt("idVenue");
                 participants = getParticipantByIdEvent(idEvent);
                 events[i] = new EventInfo(idEvent, evName, description, date, idVenue, participants);
+                LOG.debug(events[i]);
                 i++;
             }
         }
