@@ -344,8 +344,10 @@ public class SocketThread extends Thread
         msgOut.append(",");
         msgOut.append(searchResult.length);
         msgOut.append(",");
-        for (Event ev : searchResult)
+        LOG.debug(searchResult);
+        for (EventInfo ev : searchResult)
         {
+            LOG.debug(ev.toString());
             msgOut.append(ev.getIdEvent());
             msgOut.append(",");
             msgOut.append(ev.getName());
@@ -520,12 +522,12 @@ public class SocketThread extends Thread
         {
             if (db.consultTicketStatus(reqTicketIds[i]) == 1)
             { // ver si puede ser reservado ....y reservarlo :V
-                db.updateTicketStatus(reqTicketIds[i], 2);
+                db.updateTicketStatus(reqTicketIds[i], "reservado");
                 cost = cost + db.getTicketCostById(reqTicketIds[i]);
             }
             else
             {
-                LOG.info(" No se puede obtener el estado del ticket");
+                LOG.info("Requested ticket [" + reqTicketIds[i] + "] is not available");
             }
         }
         msgOut.append(cost);
@@ -700,7 +702,7 @@ public class SocketThread extends Thread
         boolean success = true;
         for (int i = 0; i < reqTicketIds.length; i++)
         {
-            if (db.updateTicketStatus(reqTicketIds[i], 3)) // && reservedTickets[i].)
+            if (db.updateTicketStatus(reqTicketIds[i], "vendido")) // && reservedTickets[i].)
             {
                 msgOut.append("0");
             }
@@ -739,7 +741,7 @@ public class SocketThread extends Thread
         {
             try
             {
-                switch (targetConversationState)
+                switch (currentConversationState)
                 {
                 case C_START_SESSION:
                 case GET_EVENT_LIST:
@@ -758,7 +760,10 @@ public class SocketThread extends Thread
                     for (; contFirst < nTokens; contFirst++)
                     {
                         if (types[contFirst] == TYPES.ARRAY)
+                        {
+                            LOG.debug("breaking loop");
                             break;
+                        }
                         correct = correct && checkArgument(rawTokensIn[contFirst], types[contFirst]);
                     }
                     int arrayLength = Integer.parseInt(rawTokensIn[contFirst]);
