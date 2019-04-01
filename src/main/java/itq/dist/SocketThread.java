@@ -606,7 +606,6 @@ public class SocketThread extends Thread
     private boolean singupStatus() throws ConversationException, DbException, IOException
     {
         currentConversationState = STATE.SINGUP_STATUS;
-        targetConversationState = STATE.SINGUP_STATUS;
         msgOut.setLength(0);
         msgOut.append(targetConversationState.ordinal());
         msgOut.append(",");
