@@ -28,7 +28,7 @@ public class SessionException extends BoletazoException
      */
     SessionException(ERROR error)
     {
-        super();
+        super(BoletazoException.ERROR.SPECIFIC_ERROR);
         this.error = error;
     }
 
@@ -37,7 +37,8 @@ public class SessionException extends BoletazoException
      */
     SessionException()
     {
-        this(ERROR.GENERIC_ERROR);
+        super();
+        this.error = ERROR.GENERIC_ERROR;
     }
 
     /**
