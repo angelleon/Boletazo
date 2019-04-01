@@ -12,6 +12,7 @@ public class BoletazoException extends Exception
 
     public static enum ERROR {
         GENERIC_ERROR,
+        SPECIFIC_ERROR,
         IP_PROBLEM,
         CONNECTION_ERROR,
         INCONSCISTENT_MESSAGE,
@@ -35,7 +36,7 @@ public class BoletazoException extends Exception
     @Override
     public String getMessage()
     {
-        return super.getMessage() + "\n" + errorToStr(error);
+        return errorToStr(error);
     }
 
     /**
@@ -58,6 +59,8 @@ public class BoletazoException extends Exception
             return "Bad format message for incoming connection";
         case ONLOAD_DATABASE:
             return "Database on load charge, request incomplete";
+        case SPECIFIC_ERROR:
+            return "";
         default:
             return "";
         }
