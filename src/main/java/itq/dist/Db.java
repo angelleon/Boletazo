@@ -66,14 +66,14 @@ public class Db
 
     private static final String SEARCH_EVENT_BY_NAME = "SELECT * "
             + "FROM Event "
-            + "WHERE LOWER(name) LIKE LOWER('%?%') "
+            + "WHERE LOWER(name) LIKE LOWER(?) "
             // + "AND date >= SYSDATE() "
             + "ORDER BY name ASC";
 
-    private static final String SEARCH_EVENT_BY_VENUE_NAME = "SELECT E.*, "
+    private static final String SEARCH_EVENT_BY_VENUE_NAME = "SELECT E.* "
             + "FROM Event E, Venue V "
             + "WHERE E.idVenue = V.idVenue "
-            + "AND LOWER(V.name) LIKE LOWER('%?%') "
+            + "AND LOWER(V.name) LIKE LOWER(?) "
             // + "AND date >= SYSDATE() "
             + "ORDER BY V.name ASC";
 
@@ -89,7 +89,7 @@ public class Db
             + "FROM Event E, Section S, Section_has_Event ShE "
             + "WHERE E.idEvent = ShE.idEvent "
             + "AND S.idSection = ShE.idSection "
-            + "AND S.name = '?' "
+            + "AND S.name = ? "
             // + "AND E.date >= SYSDATE() "
             + "ORDER BY S.name ASC";
 
@@ -109,7 +109,7 @@ public class Db
 
     // TODO: terminar statement
     private static final String SELECT_EVENT_BY_EVENTID = "SELECT E.* "
-            + "FROM Event E, "
+            + "FROM Event E "
             + "WHERE E.idEvent = ?";
 
     private static final String SELECT_PARTICIPANT_BY_IDEVENT = "SELECT P.* "
@@ -295,7 +295,7 @@ public class Db
         try
         {
             PreparedStatement ps = conn.prepareStatement(SEARCH_EVENT_BY_VENUE_NAME);
-            ps.setString(1, venueName);
+            ps.setString(1, "%" + venueName + "%");
             events = buildEventInfoArray(ps.executeQuery());
             ps.close();
         }
@@ -431,23 +431,23 @@ public class Db
      */
     public boolean login(String usr, String pass) throws DbException
     {
-        String userExist = "select idlogin "
-                + "from LoginInfo "
-                + "where username = ? "
-                + "and password = ? ";
+        String userExist = "SELECT idlogin "
+                + "FROM LoginInfo "
+                + "WHERE username = ? "
+                + "AND password = ? ";
         try
         {
             ResultSet result = null;
             PreparedStatement ps = conn.prepareStatement(userExist);
             ps.setString(1, usr);
             ps.setString(2, pass);
-            ps.executeUpdate();
             result = ps.executeQuery();
 
             int users = result.last() ? result.getRow() : 0;
             if (users > 0)
             {
                 // login
+                ps.close();
                 return true;
             }
             ps.close();
@@ -492,7 +492,7 @@ public class Db
         try
         {
             PreparedStatement ps = conn.prepareStatement(SEARCH_EVENT_BY_NAME);
-            ps.setString(1, name);
+            ps.setString(1, "%" + name + "%");
             events = buildEventInfoArray(ps.executeQuery());
             ps.close();
         }
