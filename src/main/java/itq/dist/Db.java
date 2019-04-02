@@ -51,12 +51,12 @@ public class Db
             + "ORDER BY date ASC";
 
     private static final String SELECT_AVAILABLE_TICKETS = "SELECT T.* "
-            + "FROM Ticket T, Status S, Event E "
+            + "FROM Ticket T, Event E "
             + "WHERE T.idEvent = E.idEvent "
             + "AND T.idStatus = (SELECT idStatus "
             + "                  FROM Status "
             + "                  WHERE status = 'DISPONIBLE') "
-            // + "AND E.date >= SYADATE() "
+            // + "AND E.date >= SYSDATE() "
             + "ORDER BY T.idTicket";
 
     // TODO Verificar columnas seleccionadas
@@ -188,7 +188,7 @@ public class Db
 
             while (result.next())
             {
-                idTicket = result.getInt("idTicket");
+                idTicket = Integer.valueOf(result.getInt("idTicket"));
                 idStatus = result.getInt("idStatus");
                 idSection = result.getInt("idSection");
                 idEvent = result.getInt("idEvent");
@@ -593,8 +593,10 @@ public class Db
 
     public int consultTicketStatus(int idTicket)
     {
-        if (availableTickets.containsKey(idTicket))
-        { return availableTickets.get(idTicket).getIdStatus(); }
+        Integer idT = Integer.valueOf(idTicket);
+        if (availableTickets
+                .containsKey(idT))
+        { return availableTickets.get(idT).getIdStatus(); }
         return 3;
     }
 
