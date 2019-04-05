@@ -49,7 +49,7 @@ public class Db
             + "ORDER BY date ASC";
 
     private static final String SELECT_AVAILABLE_TICKETS = "SELECT T.* "
-            + "FROM Ticket T, Status S, Event E "
+            + "FROM Ticket T, Event E "
             + "WHERE T.idEvent = E.idEvent "
             + "AND T.idStatus = (SELECT idStatus "
             + "                  FROM Status "
@@ -59,21 +59,21 @@ public class Db
 
     // TODO Verificar columnas seleccionadas
     private static final String SELECT_BY_IDTICKET = "SELECT S.cost "
-            + "FROM Section S, Ticket t "
+            + "FROM Section S, Ticket T "
             + "WHERE T.idTicket = ? "
-            // + "AND T.idSection = S.idSection "
+            + "AND T.idSection = S.idSection "
             + "ORDER BY T.idTicket";
 
     private static final String SEARCH_EVENT_BY_NAME = "SELECT * "
             + "FROM Event "
-            + "WHERE LOWER(name) LIKE LOWER('%?%') "
+            + "WHERE LOWER(name) LIKE LOWER(?) "
             // + "AND date >= SYSDATE() "
             + "ORDER BY name ASC";
 
-    private static final String SEARCH_EVENT_BY_VENUE_NAME = "SELECT E.*, "
+    private static final String SEARCH_EVENT_BY_VENUE_NAME = "SELECT E.* "
             + "FROM Event E, Venue V "
             + "WHERE E.idVenue = V.idVenue "
-            + "AND LOWER(V.name) LIKE LOWER('%?%') "
+            + "AND LOWER(V.name) LIKE LOWER(?) "
             // + "AND date >= SYSDATE() "
             + "ORDER BY V.name ASC";
 
@@ -89,7 +89,7 @@ public class Db
             + "FROM Event E, Section S, Section_has_Event ShE "
             + "WHERE E.idEvent = ShE.idEvent "
             + "AND S.idSection = ShE.idSection "
-            + "AND S.name = '?' "
+            + "AND S.name = ? "
             // + "AND E.date >= SYSDATE() "
             + "ORDER BY S.name ASC";
 
@@ -104,12 +104,12 @@ public class Db
     private static final String UPDATE_TICKET_STATUS = "UPDATE  Ticket "
             + "SET idStatus = (SELECT idStatus "
             + "                FROM Status "
-            + "                WHERE LOWER(name) = LOWER('?')) "
+            + "                WHERE LOWER(status) = LOWER(?)) "
             + "WHERE idTicket = ?";
 
     // TODO: terminar statement
     private static final String SELECT_EVENT_BY_EVENTID = "SELECT E.* "
-            + "FROM Event E, "
+            + "FROM Event E "
             + "WHERE E.idEvent = ?";
 
     private static final String SELECT_PARTICIPANT_BY_IDEVENT = "SELECT P.* "
@@ -126,7 +126,7 @@ public class Db
     private Connection conn;
     private boolean connected;
 
-    // Estructuras para almacenamiento temporal de informaciÃ³n
+    // Estructuras para almacenamiento temporal de información
     protected HashMap<Integer, Ticket> availableTickets;
 
     Db()
@@ -190,11 +190,12 @@ public class Db
                 idStatus = result.getInt("idStatus");
                 idSection = result.getInt("idSection");
                 idEvent = result.getInt("idEvent");
+               // LOG.debug(idTicket+"-"+idEvent+"-"+idStatus+"-"+idSection);
                 if (!availableTickets.containsKey(idTicket))
                 {
                     seatNumber = result.getString("seatNumber");
                     availableTickets.put(idTicket,
-                            new Ticket(idTicket.intValue(), seatNumber,
+                            new Ticket(Integer.valueOf(idTicket), seatNumber,
                                     idStatus, idSection, idEvent));
                 }
             }
@@ -295,7 +296,7 @@ public class Db
         try
         {
             PreparedStatement ps = conn.prepareStatement(SEARCH_EVENT_BY_VENUE_NAME);
-            ps.setString(1, venueName);
+            ps.setString(1, "%" + venueName + "%");
             events = buildEventInfoArray(ps.executeQuery());
             ps.close();
         }
@@ -351,6 +352,7 @@ public class Db
         for (EventInfo ev : events.values())
         {
             results[i] = ev;
+            i++;
         }
         return results;
     }
@@ -431,23 +433,23 @@ public class Db
      */
     public boolean login(String usr, String pass) throws DbException
     {
-        String userExist = "select idlogin "
-                + "from LoginInfo "
-                + "where username = ? "
-                + "and password = ? ";
+        String userExist = "SELECT idlogin "
+                + "FROM LoginInfo "
+                + "WHERE username = ? "
+                + "AND password = ? ";
         try
         {
             ResultSet result = null;
             PreparedStatement ps = conn.prepareStatement(userExist);
             ps.setString(1, usr);
             ps.setString(2, pass);
-            ps.executeUpdate();
             result = ps.executeQuery();
 
             int users = result.last() ? result.getRow() : 0;
             if (users > 0)
             {
                 // login
+                ps.close();
                 return true;
             }
             ps.close();
@@ -492,7 +494,7 @@ public class Db
         try
         {
             PreparedStatement ps = conn.prepareStatement(SEARCH_EVENT_BY_NAME);
-            ps.setString(1, name);
+            ps.setString(1, "%" + name + "%");
             events = buildEventInfoArray(ps.executeQuery());
             ps.close();
         }
@@ -584,17 +586,17 @@ public class Db
     public int consultTicketStatus(int idTicket)
     {
         if (availableTickets.containsKey(idTicket)) { return availableTickets.get(idTicket).getIdStatus(); }
-        return -1;
+        return 3;
     }
 
-    public boolean updateTicketStatus(int idTicket, int status) throws DbException
+    public boolean updateTicketStatus(int idTicket, String status) throws DbException
     {
         if (availableTickets.containsKey(idTicket))
         {
             try
             {
                 PreparedStatement ps = conn.prepareStatement(UPDATE_TICKET_STATUS);
-                ps.setInt(1, status);
+                ps.setString(1, status);
                 ps.setInt(2, idTicket);
                 ps.executeUpdate();
                 // tenemos q volver a la guia houston...
@@ -668,7 +670,7 @@ public class Db
 
     private EventInfo[] buildEventInfoArray(ResultSet results) throws DbException
     {
-        EventInfo[] events;
+        EventInfo[] events = new EventInfo[0];
         try
         {
             int nEvents = results.last() ? results.getRow() : 0;
@@ -692,6 +694,7 @@ public class Db
                 idVenue = results.getInt("idVenue");
                 participants = getParticipantByIdEvent(idEvent);
                 events[i] = new EventInfo(idEvent, evName, description, date, idVenue, participants);
+                LOG.debug(events[i]);
                 i++;
             }
         }
