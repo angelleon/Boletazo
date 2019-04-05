@@ -609,10 +609,8 @@ public class Db
 
     public int consultTicketStatus(int idTicket)
     {
-        Integer idT = Integer.valueOf(idTicket);
-        if (availableTickets
-                .containsKey(idT))
-        { return availableTickets.get(idT).getIdStatus(); }
+        if (availableTickets.containsKey(idTicket))
+        { return availableTickets.get(idTicket).getIdStatus(); }
         return 3;
     }
 
