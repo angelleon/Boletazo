@@ -27,6 +27,20 @@ public class Boletazo
 
     public static void main(String[] args)
     {
+        Db db = new Db();
+        if (db.getConnected())
+        {
+            db.preLoad();
+            // initialConnection();
+            
+        }
+        else
+        {
+            LOG.error("Can not connect to DataBase");
+        }
+        LOG.info("Exiting...");
+        
+        /*
         LOG.info("Boletazo server started at " + LocalDateTime.now().toString());
         boolean alive = true;
         ServerSocket serverSocket;
@@ -60,7 +74,8 @@ public class Boletazo
         }
         LOG.info("Exiting...");
     }
-
+*/
+}
     /**
      * Connects to professor server to send IP and port of this service
      * 
