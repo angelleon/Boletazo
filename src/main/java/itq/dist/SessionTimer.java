@@ -26,9 +26,10 @@ public class SessionTimer extends TimerThread
             {
                 Thread.sleep(updateTime);
                 elapsedTime += updateTime;
-                update.setState(elapsedTime >= timeout);
+                update.setState(elapsedTime < timeout);
             }
             sessionControl.releaseSessionId(sessionId);
+            LOG.debug("Session timer [" + sessionId + "]");
         }
         catch (InterruptedException e)
         {
@@ -38,5 +39,10 @@ public class SessionTimer extends TimerThread
         {
             LOG.error(e.getMessage());
         }
+    }
+
+    public void stopTimer()
+    {
+        update.unset();
     }
 }

@@ -280,7 +280,7 @@ public class SocketThread extends Thread
     {
         currentConversationState = STATE.S_START_SESSION;
         msgOut.setLength(0);
-        sessionId = sessionControl.getNewSessionId();
+        sessionId = anonymousSc.getNewSessionId();
         msgOut.append(STATE.S_START_SESSION.ordinal());
         msgOut.append(",");
         msgOut.append(sessionId);
@@ -301,6 +301,7 @@ public class SocketThread extends Thread
         currentConversationState = STATE.GET_EVENT_LIST;
         // String rawMsg = dataIn.readUTF();
         // String[] rawTokensIn = rawMsg.split(",");
+        checkSessionId(rawTokensIn[1]);
         String eventName = rawTokensIn[2];
         String venueName = rawTokensIn[3];
         String rawDate = rawTokensIn[4];
@@ -369,6 +370,7 @@ public class SocketThread extends Thread
     private boolean getEventInfo() throws ConversationException, SessionException, DbException, IOException
     {
         currentConversationState = STATE.GET_EVENT_INFO;
+        checkSessionId(rawTokensIn[1]);
         String[] rawTokensIn = rawMsg.split(",");
         reqIdEvent = Integer.parseInt(rawTokensIn[2]);
         selectedEvent = db.getEventInfoByIdEvent(reqIdEvent);
@@ -439,6 +441,7 @@ public class SocketThread extends Thread
             throws ConversationException, SessionException, IOException
     {
         currentConversationState = STATE.GET_AVAILABLE_SEATS;
+        checkSessionId(rawTokensIn[1]);
         reqIdEvent = Integer.parseInt(rawTokensIn[2]);
         return false;
     }
@@ -471,6 +474,7 @@ public class SocketThread extends Thread
             throws ConversationException, SessionException, DbException, IOException
     {
         currentConversationState = STATE.REQUEST_RESERVE_TICKETS;
+        checkSessionId(rawTokensIn[1]);
         // String rawMsg = dataIn.readUTF();
         // String[] parts = rawMsg.split(",");
         // int opcode = Integer.parseInt(parts[0]);
@@ -556,6 +560,7 @@ public class SocketThread extends Thread
     private boolean singup() throws ConversationException, SessionException, DbException, IOException
     {
         currentConversationState = STATE.SINGUP;
+        checkSessionId(rawTokensIn[1]);
         String rawMsg = dataIn.readUTF();
         String[] parts = rawMsg.split(",");
         // int opcode = Integer.parseInt(parts[0]);
@@ -612,6 +617,7 @@ public class SocketThread extends Thread
             IOException
     {
         currentConversationState = STATE.LOGIN_CHECK;
+        checkSessionId(rawTokensIn[1]);
         String[] parts = rawMsg.split(",");
         sessionId = Integer.parseInt(parts[1]);
         usr = parts[2];
@@ -633,6 +639,7 @@ public class SocketThread extends Thread
         msgOut.setLength(0);
         msgOut.append(targetConversationState);
         msgOut.append(",");
+        sessionId = sessionControl.getNewSessionId();
         msgOut.append(sessionId);
         msgOut.append(",");
         if (db.login(usr, pass))
@@ -656,6 +663,7 @@ public class SocketThread extends Thread
     private boolean postPaymentInfo() throws ConversationException, SessionException, IOException
     {
         currentConversationState = STATE.POST_PAYMENT_INFO;
+        checkSessionId(rawTokensIn[1]);
         String rawMsg = dataIn.readUTF();
         String[] parts = rawMsg.split(",");
         sessionId = Integer.parseInt(parts[1]);
@@ -1002,8 +1010,32 @@ public class SocketThread extends Thread
     private void checkSessionId(String rawSessionId) throws SessionException
     {
         int sessionId = Integer.parseInt(rawSessionId);
-        if (!sessionControl.isValid(sessionId))
-            throw new SessionException(SessionException.ERROR.INVALID_SESSION_ID);
+        switch (currentConversationState)
+        {
+        case GET_EVENT_LIST:
+        case GET_EVENT_INFO:
+        case GET_AVAILABLE_SEATS:
+        case CONFIRM_RESERVE_TICKETS:
+        case REQUEST_RESERVE_TICKETS:
+        case SINGUP:
+        case LOGIN_CHECK:
+            if (!anonymousSc.isValid(sessionId))
+                throw new SessionException(SessionException.ERROR.INVALID_SESSION_ID);
+        case POST_PAYMENT_INFO:
+            if (!sessionControl.isValid(sessionId))
+                throw new SessionException(SessionException.ERROR.INVALID_SESSION_ID);
+        case C_START_SESSION:
+        case LOGIN_STATUS:
+        case POST_AVAILABLE_SEATS:
+        case POST_EVENT_INFO:
+        case POST_EVENT_LIST:
+        case PUCHARASE_COMPLETED:
+        case SINGUP_STATUS:
+        case S_START_SESSION:
+            break;
+        default:
+            break;
+        }
     }
 
     private void readRawMsg() throws IOException
