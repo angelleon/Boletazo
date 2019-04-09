@@ -55,14 +55,14 @@ public class SessionException extends BoletazoException
      * @param error
      * @return if true return a ,message for session error, if false return nothing
      */
-    private String errorToStr(ERROR error)
+    private static String errorToStr(ERROR error)
     {
         switch (error)
         {
         case GENERIC_ERROR:
             return "Session exception for Boletazo software";
         case INVALID_SESSION_ID:
-            return "Session ID is not a numeric ID";
+            return "Session ID is not in valid range or is not registered as started";
         case OUT_OF_RANGE_ID:
             return "The ID sending by the user is not in the software limits";
         case SUPPLY_ID_REQUEST:

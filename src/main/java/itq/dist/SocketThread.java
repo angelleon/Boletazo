@@ -639,6 +639,7 @@ public class SocketThread extends Thread
         msgOut.setLength(0);
         msgOut.append(targetConversationState);
         msgOut.append(",");
+        sessionId = sessionControl.getNewSessionId();
         msgOut.append(sessionId);
         msgOut.append(",");
         if (db.login(usr, pass))

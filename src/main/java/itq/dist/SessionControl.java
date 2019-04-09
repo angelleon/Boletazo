@@ -121,6 +121,8 @@ public class SessionControl
     private synchronized boolean isActive(int sessionId)
     {
         int index = sessionIdToIndex(sessionId);
+        LOG.debug("available sessionId [" + sessionId + "]: [l" + avalilableSessionIDs[index] + "]\nalive timer ["
+                + sessionTimers[index].isAlive() + "]");
         return !avalilableSessionIDs[index] && sessionTimers[index].isAlive();
     }
 
