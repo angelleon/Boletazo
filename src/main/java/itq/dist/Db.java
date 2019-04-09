@@ -185,7 +185,7 @@ public class Db
             int idStatus;
             int idSection;
             int idEvent;
-
+            int count = 0;
             while (result.next())
             {
                 idTicket = Integer.valueOf(result.getInt("idTicket"));
@@ -199,8 +199,10 @@ public class Db
                     availableTickets.put(idTicket,
                             new Ticket(Integer.valueOf(idTicket), seatNumber,
                                     idStatus, idSection, idEvent));
+                    count++;
                 }
             }
+            LOG.info("Preloading [" + count + "] tickets");
             st.close();
         }
         catch (SQLException e)

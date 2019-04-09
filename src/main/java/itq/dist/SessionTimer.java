@@ -39,4 +39,9 @@ public class SessionTimer extends TimerThread
             LOG.error(e.getMessage());
         }
     }
+
+    public void stopTimer()
+    {
+        update.unset();
+    }
 }

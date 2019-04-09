@@ -1,14 +1,16 @@
 package itq.dist;
 
-import java.util.Dictionary;
-import java.util.Enumeration;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 public class SessionControl
 {
+    private static final Logger LOG = LogManager.getLogger(SessionControl.class);
+
     private int availableCount;
     private boolean[] avalilableSessionIDs;
     private int startId; // First id, session ids will be in closed set [startId, startID +
-                         // MAX_SESSIONS - 1]
+                         // maxSessions - 1]
     private int sessionTimeout;
 
     private int lastId;
@@ -61,7 +63,10 @@ public class SessionControl
                     availableCount--;
                     lastAssignedIndex = i;
                     sessionId = startId + i;
-                    sessionTimers[i] = new SessionTimer(sessionTimeout, sessionId, this);
+                    SessionTimer timer = new SessionTimer(sessionTimeout, sessionId, this);
+                    sessionTimers[i] = timer;
+                    timer.start();
+                    LOG.info("Retrived new sessionId [" + sessionId + "]");
                     return sessionId;
                 }
             }
@@ -76,7 +81,8 @@ public class SessionControl
                     SessionTimer timer = new SessionTimer(sessionTimeout, sessionId, this);
                     sessionTimers[i] = timer;
                     timer.start();
-                    break;
+                    LOG.info("Retrived new sessionId [" + sessionId + "]");
+                    return sessionId;
                 }
             }
         }
@@ -87,9 +93,11 @@ public class SessionControl
     {
         if (!isValid(sessionId))
             throw new SessionException();
-        avalilableSessionIDs[sessionId] = true;
-        sessionTimers[sessionId] = null;
+        int index = sessionIdToIndex(sessionId);
+        avalilableSessionIDs[index] = true;
+        sessionTimers[index] = null;
         availableCount++;
+        LOG.info("Released sessionId [" + sessionId + "]");
     }
 
     public synchronized boolean isValid(int sessionId)
@@ -112,7 +120,8 @@ public class SessionControl
     // ToDo: decidir si esto es synchronized o no
     private synchronized boolean isActive(int sessionId)
     {
-        return !avalilableSessionIDs[sessionId];
+        int index = sessionIdToIndex(sessionId);
+        return !avalilableSessionIDs[index] && sessionTimers[index].isAlive();
     }
 
     public int getMaxSessions()
@@ -125,6 +134,13 @@ public class SessionControl
         sessionTimers[sessionIdToIndex(sessionId)].reset();
     }
 
+    /**
+     * Convert from sessionId to respective index inside availableSessionIds and
+     * sessionTimers arrays
+     * 
+     * @param sessionId
+     * @return index of sessionId and sessionTimer inside arrays
+     */
     private int sessionIdToIndex(int sessionId)
     {
         return sessionId - startId;
