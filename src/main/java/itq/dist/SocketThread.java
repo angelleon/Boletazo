@@ -7,6 +7,7 @@ import java.io.OutputStream;
 //import java.io.InputStream;
 //import java.io.OutputStream;
 import java.net.Socket;
+import java.net.UnknownHostException;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
@@ -24,8 +25,10 @@ public class SocketThread extends Thread
     private static final int MAX_MSG_LENGTH = 1024;
     public static final int PERMITED_TICKETS = 4;
     private static final int PAYMENT_TIMEOUT = 6000;
-    private static final int EMAIL_PORT = 2020;
-    private static final String EMAIL_IP = "25.7.186.37";
+    private static final int EMAIL_PORT = 2020;<<<<<<<HEAD
+    private static final String EMAIL_IP = "25.7.186.37";=======
+    private static final String EMAIL_IP = "localhost";>>>>>>>ADDED-
+    EmailSender function
 
     private Socket socket;
     private Db db;
