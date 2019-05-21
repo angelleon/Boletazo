@@ -7,7 +7,7 @@ import java.util.Random;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-//separate class from the proyect for tests 
+//separate class from the project for tests 
 public class Test
 {
     private static final Logger log = LogManager.getLogger(Test.class);
@@ -21,6 +21,7 @@ public class Test
         int[] sessionId = new int[200];
         int releasedCount = 0;
         int obtainedConunt = 0;
+        Db data = new Db();//
         for (int i = 0; i < 100; i++)
         {
             sessionId[i] = sc.getNewSessionId();

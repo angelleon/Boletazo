@@ -4,14 +4,16 @@ import java.sql.Connection;
 import java.sql.Date;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
-import java.sql.Statement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.time.LocalDate;
 import java.util.HashMap;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+
+import itq.dist.DbException.ERROR;
 
 public class Db
 {
@@ -54,7 +56,7 @@ public class Db
             + "AND T.idStatus = (SELECT idStatus "
             + "                  FROM Status "
             + "                  WHERE status = 'DISPONIBLE') "
-            // + "AND E.date >= SYADATE() "
+            // + "AND E.date >= SYSDATE() "
             + "ORDER BY T.idTicket";
 
     // TODO Verificar columnas seleccionadas
@@ -126,7 +128,7 @@ public class Db
     private Connection conn;
     private boolean connected;
 
-    // Estructuras para almacenamiento temporal de información
+    // Estructuras para almacenamiento temporal de informaciï¿½n
     protected HashMap<Integer, Ticket> availableTickets;
 
     Db()
@@ -141,7 +143,7 @@ public class Db
         }
         catch (SQLException e)
         {
-            LOG.error("An error occurred when trying to connect to DB");
+            LOG.error("An error occurred while tried to connect to DB");
             LOG.error(e.getMessage());
         }
         catch (ClassNotFoundException e)
@@ -183,10 +185,10 @@ public class Db
             int idStatus;
             int idSection;
             int idEvent;
-
+            int count = 0;
             while (result.next())
             {
-                idTicket = result.getInt("idTicket");
+                idTicket = Integer.valueOf(result.getInt("idTicket"));
                 idStatus = result.getInt("idStatus");
                 idSection = result.getInt("idSection");
                 idEvent = result.getInt("idEvent");
@@ -197,14 +199,16 @@ public class Db
                     availableTickets.put(idTicket,
                             new Ticket(Integer.valueOf(idTicket), seatNumber,
                                     idStatus, idSection, idEvent));
+                    count++;
                 }
             }
+            LOG.info("Preloading [" + count + "] tickets");
             st.close();
         }
         catch (SQLException e)
         {
-            LOG.error("");
-            LOG.error(e.getMessage());
+            LOG.error("An error has ocurr while tried to obtein a loanding of each tickets information ");
+            LOG.error(e.getMessage());// <>
         }
     }
 
@@ -403,17 +407,18 @@ public class Db
      */
     public boolean toRegister(String user, String passwd, String email, String residence) throws DbException
     {
-
         try
         {
             PreparedStatement ps = conn.prepareStatement(UPDATE_USR_INFO);
             ps.setString(1, email);
             ps.setString(2, residence);
             ps.executeUpdate();
+            ps.close();
 
             ps = conn.prepareStatement(UPDATE_LOG_INFO);
             ps.setString(1, user);
             ps.setString(2, passwd);
+            ps.executeUpdate(updateLoginInfo);
             ps.close();
             return true;
         }
@@ -585,7 +590,9 @@ public class Db
 
     public int consultTicketStatus(int idTicket)
     {
-        if (availableTickets.containsKey(idTicket)) { return availableTickets.get(idTicket).getIdStatus(); }
+        Integer idT = Integer.valueOf(idTicket);
+        if (availableTickets
+                .containsKey(idT)) { return availableTickets.get(idT).getIdStatus(); }
         return 3;
     }
 
