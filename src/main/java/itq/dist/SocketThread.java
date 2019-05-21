@@ -3,6 +3,8 @@ package itq.dist;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+//import java.io.InputStream;
+//import java.io.OutputStream;
 import java.net.Socket;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
@@ -21,25 +23,28 @@ public class SocketThread extends Thread
     private static final int PAYMENT_TIMEOUT = 6000;
 
     private Socket socket;
+    private Db db;
+    private SessionControl sessionControl;
+    private SessionControl anonymousSc;
+
     private DataInputStream dataIn;
     private DataOutputStream dataOut;
-    private Db db;
-    private SessionControl sc;
-    private int sessionId;
     private StringBuilder msgOut;
 
-    // TODO: declarar esto dentro de los metodos correspondientes
-    // la informacion del login debe estar el menor tiempo posible en memoria
+    String rawMsg;
+    String[] rawTokensIn;
+    private int sessionId;
+
     private int nRequestedTickets;
-    private int idEvent;
+    private int reqIdEvent;
     private int[] reqTicketIds;
-    private boolean alive = true;
-    // private Ticketinfo[]; // i needed one of these!!!!!!
+
     private String usr;
     private String pass;
     private String email;
     private String stateResidence;
-    private Event[] searchResult;
+
+    private EventInfo[] searchResult;
     private EventInfo selectedEvent;
     private Ticket[] reservedTickets;
     private TimerThread ticketTimer;
@@ -80,7 +85,7 @@ public class SocketThread extends Thread
      * @param PUCHARASE_COMPLETED
      *            equal to 15
      */
-    private static enum STATE {
+    public static enum STATE {
         C_START_SESSION,
         S_START_SESSION,
         GET_EVENT_LIST,
@@ -99,8 +104,8 @@ public class SocketThread extends Thread
         PUCHARASE_COMPLETED
     }
 
-    private STATE currentState;
-    private STATE targetClientState;
+    private STATE targetConversationState;
+    private STATE currentConversationState;
 
     /**
      * create an association between variable and its value
@@ -131,21 +136,24 @@ public class SocketThread extends Thread
      *            Socket is the socket, db is the data base already loaded and sc is
      *            the control of the session client
      */
-    SocketThread(Socket socket, Db db, SessionControl sc)
+    SocketThread(Socket socket, Db db, SessionControl sessionControl, SessionControl anonymousSc)
     {
         this.socket = socket;
         this.db = db;
-        this.sc = sc;
+        this.sessionControl = sessionControl;
+        this.anonymousSc = anonymousSc;
+
         this.msgOut = new StringBuilder(MAX_MSG_LENGTH);
-        this.currentState = STATE.C_START_SESSION;
+        this.targetConversationState = STATE.C_START_SESSION;
+        this.currentConversationState = STATE.C_START_SESSION;
         try
         {
             dataIn = new DataInputStream(socket.getInputStream());
-            dataOut = new DataOutputStream(socket.getOutputStream());
+            // dataOut = new DataOutputStream(socket.getOutputStream());
         }
         catch (IOException e)
         {
-            LOG.error(e.getMessage());
+            LOG.error("IOException " + e.getMessage());
         }
     }
 
@@ -154,11 +162,11 @@ public class SocketThread extends Thread
      * 
      * @throws IOException
      */
-    public STATE targetState() throws IOException
+    public STATE targetState() throws ConversationException, IOException
     {
-        String rawTargetState = dataIn.readUTF().split(",")[0]; // get the Operation Number
-        targetClientState = StrToState(rawTargetState);
-        return targetClientState;
+        targetConversationState = parseRawState(rawTokensIn[0]);
+        LOG.debug("Getting target state [" + targetConversationState + "] from raw message [" + rawMsg + "]");
+        return targetConversationState;
     }
 
     @Override
@@ -166,60 +174,74 @@ public class SocketThread extends Thread
     {
         try
         {
-            targetState();
-            switch (targetClientState)
+            try
             {
-            case C_START_SESSION:
-                cStartSession();
-                sStartSession();
-                break;
-            case GET_EVENT_LIST:
-                getEventList();
-                postEventList();
-                break;
-            case GET_EVENT_INFO:
-                getEventInfo();
-                postEventInfo();
-                break;
-            case GET_AVAILABLE_SEATS:
-                getAvailableSeats();
-                postAvailableSeats();
-                break;
-            case REQUEST_RESERVE_TICKETS:
-                requestReserveTickets();
-                confirmReserveTickets();
-                break;
-            case SINGUP:
-                singup();
-                singupStatus();
-                break;
-            case LOGIN_CHECK:
-                loginCheck();
-                loginStatus();
-                break;
-            case POST_PAYMENT_INFO:
-                postPaymentInfo();
-                pucharaseCompleted();
-                break;
-            default:
-                socket.close(); // Maybe here??
+                readRawMsg();
+                dataOut = new DataOutputStream(socket.getOutputStream());
+                targetState();
+                checkMsgIntegrity();
+                switch (targetConversationState)
+                {
+                case C_START_SESSION:
+                    cStartSession();
+                    sStartSession();
+                    break;
+                case GET_EVENT_LIST:
+                    getEventList();
+                    postEventList();
+                    break;
+                case GET_EVENT_INFO:
+                    getEventInfo();
+                    postEventInfo();
+                    break;
+                case GET_AVAILABLE_SEATS:
+                    getAvailableSeats();
+                    postAvailableSeats();
+                    break;
+                case REQUEST_RESERVE_TICKETS:
+                    requestReserveTickets();
+                    confirmReserveTickets();
+                    break;
+                case SINGUP:
+                    singup();
+                    singupStatus();
+                    break;
+                case LOGIN_CHECK:
+                    loginCheck();
+                    loginStatus();
+                    break;
+                case POST_PAYMENT_INFO:
+                    postPaymentInfo();
+                    pucharaseCompleted();
+                    break;
+                default:
+                    throw new ConversationException();
+                }
             }
-        }
-        catch (ConversationException e)
-        {
-            LOG.debug(e.getMessage());
-        }
-        catch (SessionException e)
-        {
-            LOG.debug(e.getMessage());
-        }
-        catch (DbException e)
-        {
-            LOG.debug(e.getMessage());
+            catch (ConversationException e)
+            {
+                LOG.debug("ConversationException " + e.getMessage());
+                e.printStackTrace();
+            }
+            catch (SessionException e)
+            {
+                LOG.debug("SessionException " + e.getMessage());
+                e.printStackTrace();
+            }
+            catch (DbException e)
+            {
+                LOG.debug("DbException " + e.getMessage());
+                e.printStackTrace();
+            }
+            finally
+            {
+                socket.close();
+            }
         }
         catch (IOException e)
         {
-            LOG.debug(e.getMessage());
+            LOG.debug("IOException " + e.getMessage());
+            e.printStackTrace();
         }
     }
 
@@ -227,7 +249,7 @@ public class SocketThread extends Thread
     // TODO: considerar lanzar excepciones para manejar todos los errores de la
     // conversacion dentro de un bloque catch
 
-    // La tablita .....si hay sesion tabla.. ok no..
+    // Table .....if there is active session, table.. ok no..
 
     /**
      * The first action to send a request to the server
@@ -242,14 +264,8 @@ public class SocketThread extends Thread
      */
     private boolean cStartSession() throws ConversationException, IOException
     {
-        String rawMsg = dataIn.readUTF();
-        if (checkMsgIntegrity(rawMsg))
-        {
-            String[] valuesIn = rawMsg.split(",");
-            checkConversationState(valuesIn[0]);
-            return true;
-        }
-        return false;
+        currentConversationState = STATE.C_START_SESSION;
+        return true;
     }
 
     /**
@@ -262,19 +278,14 @@ public class SocketThread extends Thread
      */
     private boolean sStartSession() throws ConversationException, IOException
     {
-        currentState = STATE.S_START_SESSION;
+        currentConversationState = STATE.S_START_SESSION;
         msgOut.setLength(0);
-        sessionId = sc.getNewSessionId();
-        sc.sessionTimer(sessionId);
-        if (sessionId > 0)
-        {
-            msgOut.append(STATE.S_START_SESSION.ordinal());
-            msgOut.append(",");
-            msgOut.append(sessionId);
-            dataOut.writeUTF(msgOut.toString());
-            return true;
-        }
-        return false;
+        sessionId = anonymousSc.getNewSessionId();
+        msgOut.append(STATE.S_START_SESSION.ordinal());
+        msgOut.append(",");
+        msgOut.append(sessionId);
+        dataOut.writeUTF(msgOut.toString());
+        return true;
     }
 
     /**
@@ -287,36 +298,32 @@ public class SocketThread extends Thread
      */
     private boolean getEventList() throws ConversationException, SessionException, DbException, IOException
     {
-        currentState = STATE.GET_EVENT_LIST;
-        String rawMsg = dataIn.readUTF();
-        sc.updateSessionTimer();
-        if (checkMsgIntegrity(rawMsg))
+        currentConversationState = STATE.GET_EVENT_LIST;
+        // String rawMsg = dataIn.readUTF();
+        // String[] rawTokensIn = rawMsg.split(",");
+        checkSessionId(rawTokensIn[1]);
+        String eventName = rawTokensIn[2];
+        String venueName = rawTokensIn[3];
+        String rawDate = rawTokensIn[4];
+        DateTimeFormatter format = DateTimeFormatter.ofPattern("dd-MM-yyyy");
+        LocalDate eventDate;
+        try
         {
-            String[] valuesIn = rawMsg.split(",");
-            checkConversationState(valuesIn[0]);
-            checkSessionId(valuesIn[1]);
-            String eventName = valuesIn[2];
-            String venueName = valuesIn[3];
-            String rawDate = valuesIn[4];
-            DateTimeFormatter format = DateTimeFormatter.ofPattern("dd-MM-YYYY");
-            LocalDate eventDate;
-            try
-            {
-                eventDate = LocalDate.parse(rawDate, format);
-            }
-            catch (DateTimeParseException e)
-            {
-                throw new ConversationException(ERROR.INCORRECT_DATE_FORMAT);
-            }
-            int hour = Integer.parseInt(valuesIn[5]);
-            if (hour < 0 || hour > 23)
-                throw new ConversationException(ERROR.VALUE_OUT_OF_RANGE);
-            float cost = Float.parseFloat(valuesIn[6]);
-            String sectionName = valuesIn[7];
-            searchResult = db.searchEvents(eventName, venueName, eventDate, hour, cost, sectionName);
-            return true;
+            eventDate = LocalDate.parse(rawDate, format);
         }
-        return false;
+        catch (DateTimeParseException e)
+        {
+            LOG.debug(rawDate);
+            LOG.debug(e.getMessage());
+            throw new ConversationException(ERROR.INCORRECT_DATE_FORMAT, currentConversationState);
+        }
+        int hour = Integer.parseInt(rawTokensIn[5]);
+        if (hour < 0 || hour > 23)
+            throw new ConversationException(ERROR.VALUE_OUT_OF_RANGE, currentConversationState);
+        float cost = Float.parseFloat(rawTokensIn[6]);
+        String sectionName = rawTokensIn[7];
+        searchResult = db.searchEvents(eventName, venueName, eventDate, hour, cost, sectionName);
+        return true;
     }
 
     /**
@@ -330,8 +337,7 @@ public class SocketThread extends Thread
      */
     private boolean postEventList() throws ConversationException, IOException
     {
-        currentState = STATE.POST_EVENT_LIST;
-        sc.updateSessionTimer();
+        currentConversationState = STATE.POST_EVENT_LIST;
         msgOut.setLength(0);
         msgOut.append(STATE.POST_EVENT_LIST.ordinal());
         msgOut.append(",");
@@ -339,8 +345,10 @@ public class SocketThread extends Thread
         msgOut.append(",");
         msgOut.append(searchResult.length);
         msgOut.append(",");
-        for (Event ev : searchResult)
+        LOG.debug(searchResult);
+        for (EventInfo ev : searchResult)
         {
+            LOG.debug(ev.toString());
             msgOut.append(ev.getIdEvent());
             msgOut.append(",");
             msgOut.append(ev.getName());
@@ -361,18 +369,12 @@ public class SocketThread extends Thread
 
     private boolean getEventInfo() throws ConversationException, SessionException, DbException, IOException
     {
-        currentState = STATE.GET_EVENT_INFO;
-        String rawMsg = dataIn.readUTF();
-        sc.updateSessionTimer();
-        if (checkMsgIntegrity(rawMsg))
-        {
-            String[] valuesIn = rawMsg.split(",");
-            checkConversationState(valuesIn[0]);
-            checkSessionId(valuesIn[1]);
-            idEvent = Integer.parseInt(valuesIn[2]);
-            selectedEvent = db.getEventInfo(idEvent);
-        }
-        return false;
+        currentConversationState = STATE.GET_EVENT_INFO;
+        checkSessionId(rawTokensIn[1]);
+        String[] rawTokensIn = rawMsg.split(",");
+        reqIdEvent = Integer.parseInt(rawTokensIn[2]);
+        selectedEvent = db.getEventInfoByIdEvent(reqIdEvent);
+        return true;
     }
 
     /**
@@ -387,10 +389,9 @@ public class SocketThread extends Thread
      */
     private boolean postEventInfo() throws ConversationException, SessionException, IOException
     {
-        currentState = STATE.POST_EVENT_INFO;
-        sc.updateSessionTimer();
+        currentConversationState = STATE.POST_EVENT_INFO;
         msgOut.setLength(0);
-        msgOut.append(currentState.ordinal());
+        msgOut.append(targetConversationState.ordinal());
         msgOut.append(",");
         msgOut.append(sessionId);
         msgOut.append(",");
@@ -398,17 +399,23 @@ public class SocketThread extends Thread
         msgOut.append(",");
         msgOut.append(selectedEvent.getName());
         msgOut.append(",");
-        LocalDate[] dates = selectedEvent.getDates();
-        msgOut.append(dates.length);
-        for (LocalDate d : dates)
-        {
-            msgOut.append(",");
-            msgOut.append(d.getDayOfMonth());
-            msgOut.append("-");
-            msgOut.append(d.getMonthValue());
-            msgOut.append("-");
-            msgOut.append(d.getYear());
-        }
+        // LocalDate[] dates = selectedEvent.getDates();
+        msgOut.append("1,");
+        // for (LocalDate d : dates)
+        // {
+        // msgOut.append(",");
+        // msgOut.append(d.getDayOfMonth());
+        // msgOut.append("-");
+        // msgOut.append(d.getMonthValue());
+        // msgOut.append("-");
+        // msgOut.append(d.getYear());
+        // }
+        LocalDate date = selectedEvent.getDate();
+        msgOut.append(date.getDayOfMonth());
+        msgOut.append("-");
+        msgOut.append(date.getMonthValue());
+        msgOut.append("-");
+        msgOut.append(date.getYear());
         Participant[] participants = selectedEvent.getParticipants();
         msgOut.append(participants.length);
         for (Participant p : participants)
@@ -433,16 +440,9 @@ public class SocketThread extends Thread
     private boolean getAvailableSeats()
             throws ConversationException, SessionException, IOException
     {
-        currentState = STATE.GET_AVAILABLE_SEATS;
-        sc.updateSessionTimer();
-        String rawMsg = dataIn.readUTF();
-        if (checkMsgIntegrity(rawMsg))
-        {
-            String[] valuesIn = rawMsg.split(",");
-            checkConversationState(valuesIn[0]);
-            checkSessionId(valuesIn[1]);
-            idEvent = Integer.parseInt(valuesIn[2]);
-        }
+        currentConversationState = STATE.GET_AVAILABLE_SEATS;
+        checkSessionId(rawTokensIn[1]);
+        reqIdEvent = Integer.parseInt(rawTokensIn[2]);
         return false;
     }
 
@@ -454,10 +454,9 @@ public class SocketThread extends Thread
      */
     private boolean postAvailableSeats() throws ConversationException, IOException
     {
-        currentState = STATE.POST_AVAILABLE_SEATS;
-        sc.updateSessionTimer();
+        currentConversationState = STATE.POST_AVAILABLE_SEATS;
         msgOut.setLength(0);
-        msgOut.append(currentState.ordinal());
+        msgOut.append(targetConversationState.ordinal());
         return false;
     }
 
@@ -474,39 +473,35 @@ public class SocketThread extends Thread
     private boolean requestReserveTickets()
             throws ConversationException, SessionException, DbException, IOException
     {
-        currentState = STATE.REQUEST_RESERVE_TICKETS;
-        String rawMsg = dataIn.readUTF();
-        sc.updateSessionTimer();
-        if (checkMsgIntegrity(rawMsg) && sessionId > 0)
+        currentConversationState = STATE.REQUEST_RESERVE_TICKETS;
+        checkSessionId(rawTokensIn[1]);
+        // String rawMsg = dataIn.readUTF();
+        // String[] parts = rawMsg.split(",");
+        // int opcode = Integer.parseInt(parts[0]);
+        sessionId = Integer.parseInt(rawTokensIn[1]);
+        reqIdEvent = Integer.parseInt(rawTokensIn[2]);
+        nRequestedTickets = Integer.parseInt(rawTokensIn[3]);
+        // see if the nRequestedTickets is equal or less than permit_Ticket
+        if (nRequestedTickets <= PERMIT_TICKETS)
         {
-            String[] parts = rawMsg.split(",");
-            // int opcode = Integer.parseInt(parts[0]);
-            sessionId = Integer.parseInt(parts[1]);
-            idEvent = Integer.parseInt(parts[2]);
-            nRequestedTickets = Integer.parseInt(parts[3]);
-            // see if the nRequestedTickets is equal or less than permit_Ticket
-            if (nRequestedTickets <= PERMIT_TICKETS)
+            reservedTickets = new Ticket[nRequestedTickets];
+            reqTicketIds = new int[nRequestedTickets];
+            // desde la posicion de nRequestedTicked + nRequestTicked
+            int numPart = 4;
+            // array with the request idtickets
+            for (int i = 0; i < nRequestedTickets; i++)
             {
-                reqTicketIds = new int[nRequestedTickets];
-                // desde la posicion de nRequestedTicked + nRequestTicked
-                int numPart = 4;
-                // array with the request idtickets
-                for (int i = 0; i < nRequestedTickets; i++)
-                {
-                    ticketTimer = new TimerThread();
-                    LOG.debug(" posicion en mensaje " + numPart + " posicion-numero de ticket " + i);
-                    reqTicketIds[i] = Integer.parseInt(parts[numPart]);
-                    reservedTickets[i] = db.getBoletoById(reqTicketIds[i]);
-                    numPart++;
-                }
+                ticketTimer = new TimerThread();
+                LOG.debug(" posicion en mensaje " + numPart + " posicion-numero de ticket " + i);
+                reqTicketIds[i] = Integer.parseInt(rawTokensIn[numPart]);
+                reservedTickets[i] = db.getAvailableTicketById(reqTicketIds[i]);
+                numPart++;
             }
-            // Starting time for pay reserved tickets
-            ticketTimer = new TimerThread(PAYMENT_TIMEOUT);
-            ticketTimer.run();
-            return true;
         }
-        return false;
-
+        // Starting time for pay reserved tickets
+        ticketTimer = new TimerThread(PAYMENT_TIMEOUT);
+        ticketTimer.run();
+        return true;
     }
 
     /**
@@ -518,45 +513,40 @@ public class SocketThread extends Thread
     private boolean confirmReserveTickets()
             throws ConversationException, DbException, IOException
     {
-        currentState = STATE.CONFIRM_RESERVE_TICKETS;
+        currentConversationState = STATE.CONFIRM_RESERVE_TICKETS;
         msgOut.setLength(0);
         float cost = 0;
-        sc.updateSessionTimer();
 
-        if (sessionId > 0) // #ArmaTuMensaje !!(revisar esta wean en todos)
+        msgOut.append(targetConversationState);
+        msgOut.append(",");
+        msgOut.append(sessionId);
+        // todo los tickets fueron rerservados
+        msgOut.append(",");
+        for (int i = 0; i < reqTicketIds.length; i++)
         {
-            msgOut.append(currentState);
-            msgOut.append(",");
-            msgOut.append(sessionId);
-            // todo los tickets fueron rerservados
-            msgOut.append(",");
-            for (int i = 0; i < reqTicketIds.length; i++)
-            {
-                if (db.consultTicketStatus(reqTicketIds[i]) == 1)
-                { // ver si puede ser reservado ....y reservarlo :V
-                    db.updateTicketStatus(reqTicketIds[i], 2);
-                    cost = cost + db.getTicketById(reqTicketIds[i]);
-                }
-                else
-                {
-                    LOG.info(" No se puede obtener el estado del ticket");
-                }
+            if (db.consultTicketStatus(reqTicketIds[i]) == 1)
+            { // ver si puede ser reservado ....y reservarlo :V
+                db.updateTicketStatus(reqTicketIds[i], "reservado");
+                cost = cost + db.getTicketCostById(reqTicketIds[i]);
             }
-            msgOut.append(cost);
-            msgOut.append(",");
-            msgOut.append(nRequestedTickets);
-            // details of each ticket
-            for (int i = 0; i < reqTicketIds.length; i++)
+            else
             {
-                msgOut.append(",");
-                msgOut.append(reqTicketIds[i]);
-                // sacar por aca un arreglo de cada ticket con su detalle?, #nunca se usa
-                // despues
+                LOG.info("Requested ticket [" + reqTicketIds[i] + "] is not available");
             }
-            dataOut.writeUTF(msgOut.toString());
-            return true;
         }
-        return false;
+        msgOut.append(cost);
+        msgOut.append(",");
+        msgOut.append(nRequestedTickets);
+        // details of each ticket
+        for (int i = 0; i < reqTicketIds.length; i++)
+        {
+            msgOut.append(",");
+            msgOut.append(reqTicketIds[i]);
+            // sacar por aca un arreglo de cada ticket con su detalle?, #nunca se usa
+            // despues
+        }
+        dataOut.writeUTF(msgOut.toString());
+        return true;
     }
 
     /**
@@ -569,25 +559,22 @@ public class SocketThread extends Thread
      */
     private boolean singup() throws ConversationException, SessionException, DbException, IOException
     {
-        currentState = STATE.SINGUP;
+        currentConversationState = STATE.SINGUP;
+        checkSessionId(rawTokensIn[1]);
         String rawMsg = dataIn.readUTF();
-        sc.updateSessionTimer();
-        if (checkMsgIntegrity(rawMsg))
+        String[] parts = rawMsg.split(",");
+        // int opcode = Integer.parseInt(parts[0]);
+        sessionId = Integer.parseInt(parts[1]);
+        usr = parts[2];
+        pass = parts[3];
+        email = parts[4];
+        stateResidence = parts[5];
+        if (db.singup(email, usr, pass))
         {
-            String[] parts = rawMsg.split(",");
-            // int opcode = Integer.parseInt(parts[0]);
-            sessionId = Integer.parseInt(parts[1]);
-            usr = parts[2];
-            pass = parts[3];
-            email = parts[4];
-            stateResidence = parts[5];
-            if (db.singup(email, usr, pass))
-            {
-                LOG.info("usuario registrado: " + usr + " - " + email);
-                return true;
-            }
-            LOG.error("no se puede registrar " + rawMsg);
+            LOG.info("usuario registrado: " + usr + " - " + email);
+            return true;
         }
+        LOG.error("no se puede registrar " + rawMsg);
         return false;
     }
 
@@ -600,10 +587,9 @@ public class SocketThread extends Thread
      */
     private boolean singupStatus() throws ConversationException, DbException, IOException
     {
-        currentState = STATE.SINGUP_STATUS;
-        sc.updateSessionTimer();
+        currentConversationState = STATE.SINGUP_STATUS;
         msgOut.setLength(0);
-        msgOut.append(currentState.ordinal());
+        msgOut.append(targetConversationState.ordinal());
         msgOut.append(",");
         msgOut.append(sessionId);
         msgOut.append(",");
@@ -630,20 +616,14 @@ public class SocketThread extends Thread
     private boolean loginCheck() throws ConversationException, SessionException, DbException,
             IOException
     {
-        currentState = STATE.LOGIN_CHECK;
-        // msgOut.setLength(0);
-        String rawMsg = dataIn.readUTF();
-        sc.updateSessionTimer();
-        if (checkMsgIntegrity(rawMsg) && sessionId > 0)
-        {
-            String[] parts = rawMsg.split(",");
-            checkConversationState(parts[0]);
-            sessionId = Integer.parseInt(parts[1]);
-            usr = parts[2];
-            pass = parts[3];
-            if (db.login(usr, pass)) { return true; }
-        }
-        LOG.debug(" algo esta mal escrito U_U " + rawMsg);
+        currentConversationState = STATE.LOGIN_CHECK;
+        checkSessionId(rawTokensIn[1]);
+        String[] parts = rawMsg.split(",");
+        sessionId = Integer.parseInt(parts[1]);
+        usr = parts[2];
+        pass = parts[3];
+        if (db.login(usr, pass)) { return true; }
+        LOG.debug(" something is written wrong U_U " + rawMsg);
         return false;
     }
 
@@ -653,13 +633,13 @@ public class SocketThread extends Thread
      * @throws ConversationException
      * @throws IOException
      */
-    private boolean loginStatus() throws ConversationException, IOException
+    private boolean loginStatus() throws ConversationException, DbException, IOException
     {
-        currentState = STATE.LOGIN_STATUS;
-        sc.updateSessionTimer();
+        currentConversationState = STATE.LOGIN_STATUS;
         msgOut.setLength(0);
-        msgOut.append(currentState);
+        msgOut.append(targetConversationState);
         msgOut.append(",");
+        sessionId = sessionControl.getNewSessionId();
         msgOut.append(sessionId);
         msgOut.append(",");
         if (db.login(usr, pass))
@@ -682,29 +662,25 @@ public class SocketThread extends Thread
      */
     private boolean postPaymentInfo() throws ConversationException, SessionException, IOException
     {
-        currentState = STATE.POST_PAYMENT_INFO;
+        currentConversationState = STATE.POST_PAYMENT_INFO;
+        checkSessionId(rawTokensIn[1]);
         String rawMsg = dataIn.readUTF();
-        sc.updateSessionTimer();
-        if (checkMsgIntegrity(rawMsg) && sessionId > 0)
+        String[] parts = rawMsg.split(",");
+        sessionId = Integer.parseInt(parts[1]);
+        String numberCard = parts[2];
+        if (numberCard.length() == 20)
         {
-            String[] parts = rawMsg.split(",");
-            checkConversationState(parts[0]);
-            sessionId = Integer.parseInt(parts[1]);
-            String numberCard = parts[2];
-            if (numberCard.length() == 20)
+            String date = parts[3];
+            String cvv = parts[4];
+            String type = parts[5];
+            if (type.equals("VISA") || type.equals("MASTERCARD"))
             {
-                String date = parts[3];
-                String cvv = parts[4];
-                String type = parts[5];
-                if (type.equals("VISA") || type.equals("MASTERCARD"))
-                {
-                    LOG.info("Compra por :" + numberCard + "," + date + "," + cvv + "," + type);
-                    return true;
-                }
-                LOG.error("tipo tarjeta incorrecta ");
+                LOG.info("Compra por :" + numberCard + "," + date + "," + cvv + "," + type);
+                return true;
             }
-            LOG.error("longuitud tarjeta incorrecta ");
+            LOG.error("tipo tarjeta incorrecta ");
         }
+        LOG.error("longuitud tarjeta incorrecta ");
         return false;
     }
 
@@ -718,12 +694,11 @@ public class SocketThread extends Thread
      * @throws IOException
      */
     private boolean pucharaseCompleted()
-            throws ConversationException, IOException
+            throws ConversationException, DbException, IOException
     {
-        currentState = STATE.PUCHARASE_COMPLETED;
-        sc.updateSessionTimer();
+        currentConversationState = STATE.PUCHARASE_COMPLETED;
         msgOut.setLength(0);
-        msgOut.append(currentState);
+        msgOut.append(targetConversationState);
         msgOut.append(",");
         msgOut.append(sessionId);
         msgOut.append(",");
@@ -734,7 +709,7 @@ public class SocketThread extends Thread
         boolean success = true;
         for (int i = 0; i < reqTicketIds.length; i++)
         {
-            if (db.updateTicketStatus(reqTicketIds[i], 3)) // && reservedTickets[i].)
+            if (db.updateTicketStatus(reqTicketIds[i], "vendido")) // && reservedTickets[i].)
             {
                 msgOut.append("0");
             }
@@ -757,23 +732,23 @@ public class SocketThread extends Thread
      *         happening in other case return false
      * @throws ConversationException
      */
-    private boolean checkMsgIntegrity(String rawMsg) throws ConversationException
+    private boolean checkMsgIntegrity() throws ConversationException
     {
         boolean correct = false;
-        String[] valuesIn = rawMsg.split(",");
+        // String[] rawTokensIn = rawMsg.split(",");
         int nTokens = getTokenNumber();
         // int[] arrayLengths = getArrayLengthPositions();
-        int valuesLen = valuesIn.length;
+        int valuesLen = rawTokensIn.length;
         TYPES[] types = getArgumentTypes();
         if (valuesLen < nTokens)
         {
-            throw new ConversationException(ERROR.NOT_ENOUGH_ARGUMENTS);
+            throw new ConversationException(ERROR.NOT_ENOUGH_ARGUMENTS, currentConversationState);
         }
         else
         {
             try
             {
-                switch (currentState)
+                switch (currentConversationState)
                 {
                 case C_START_SESSION:
                 case GET_EVENT_LIST:
@@ -784,7 +759,7 @@ public class SocketThread extends Thread
                 case POST_PAYMENT_INFO:
                     for (int i = 0; i < nTokens; i++)
                     {
-                        correct = correct && checkArgument(valuesIn[i], types[i]);
+                        correct = correct && checkArgument(rawTokensIn[i], types[i]);
                     }
                     break;
                 case REQUEST_RESERVE_TICKETS:
@@ -792,26 +767,30 @@ public class SocketThread extends Thread
                     for (; contFirst < nTokens; contFirst++)
                     {
                         if (types[contFirst] == TYPES.ARRAY)
+                        {
+                            LOG.debug("breaking loop");
                             break;
-                        correct = correct && checkArgument(valuesIn[contFirst], types[contFirst]);
+                        }
+                        correct = correct && checkArgument(rawTokensIn[contFirst], types[contFirst]);
                     }
-                    int arrayLength = Integer.parseInt(valuesIn[contFirst]);
+                    int arrayLength = Integer.parseInt(rawTokensIn[contFirst]);
                     for (int contSecond = 0; contSecond < arrayLength; contSecond++)
                     {
-                        correct = correct && checkArgument(valuesIn[contFirst], TYPES.INT);
+                        correct = correct && checkArgument(rawTokensIn[contFirst], TYPES.INT);
                         contFirst++;
-                        correct = correct && checkArgument(valuesIn[contFirst], TYPES.INT);
+                        correct = correct && checkArgument(rawTokensIn[contFirst], TYPES.INT);
                         contFirst++;
                     }
-                    if (contFirst < valuesLen) { throw new ConversationException(ERROR.TO_MANY_ARGUMENTS); }
+                    if (contFirst < valuesLen) { throw new ConversationException(ERROR.NOT_ENOUGH_ARGUMENTS,
+                            currentConversationState); }
                     break;
                 default:
-                    throw new ConversationException(ERROR.INCORRECT_CONVERSATION_STATE);
+                    throw new ConversationException(ERROR.INCORRECT_CONVERSATION_STATE, currentConversationState);
                 }
             }
             catch (NumberFormatException e)
             {
-                throw new ConversationException(ERROR.INCORRECT_NUMBER_FORMAT);
+                throw new ConversationException(ERROR.INCORRECT_NUMBER_FORMAT, currentConversationState);
             }
         }
         return correct;
@@ -855,7 +834,7 @@ public class SocketThread extends Thread
      */
     private int getTokenNumber()
     {
-        switch (currentState)
+        switch (currentConversationState)
         {
         case C_START_SESSION:
             return 2;
@@ -889,7 +868,7 @@ public class SocketThread extends Thread
 
     /*
      * private int[] getArrayLengthPositions() throws ConversationException { switch
-     * (currentState) { case C_START_SESSION: return new int[0]; case
+     * (targetClientState) { case C_START_SESSION: return new int[0]; case
      * GET_EVENT_LIST: return new int[0]; case GET_EVENT_INFO: return new int[0];
      * case GET_AVAILABLE_SEATS: return new int[0]; case REQUEST_RESERVE_TICKETS:
      * return new int[] {3}; case SINGUP: return new int[0]; case LOGIN_CHECK:
@@ -904,11 +883,10 @@ public class SocketThread extends Thread
      * @throws ConversationException
      */
     @SuppressWarnings("incomplete-switch")
-
     private TYPES[] getArgumentTypes() throws ConversationException
     {
         TYPES[] type = new TYPES[getTokenNumber()];
-        switch (currentState)
+        switch (currentConversationState)
         {
         case C_START_SESSION:
             type[0] = TYPES.INT;
@@ -960,22 +938,71 @@ public class SocketThread extends Thread
             type[6] = TYPES.STRING;
             break;
         default:
-            throw new ConversationException(ERROR.INCORRECT_CONVERSATION_STATE);
+            throw new ConversationException(ERROR.INCORRECT_CONVERSATION_STATE, currentConversationState);
         }
         return type;
     }
 
     /**
-     * check if the message by the client has been received correctly
+     * Translate the String operation number into a STATE Enumeric
+     * 
+     * @param rawState
+     * @return enum STATE
+     */
+    public STATE parseRawState(String rawState) throws ConversationException
+    {
+        int state = Integer.parseInt(rawState);
+        switch (state)
+        {
+        case 0:
+            return STATE.C_START_SESSION;
+        case 1:
+            return STATE.S_START_SESSION;
+        case 2:
+            return STATE.GET_EVENT_LIST;
+        case 3:
+            return STATE.POST_EVENT_LIST;
+        case 4:
+            return STATE.GET_EVENT_INFO;
+        case 5:
+            return STATE.POST_EVENT_INFO;
+        case 6:
+            return STATE.GET_AVAILABLE_SEATS;
+        case 7:
+            return STATE.POST_AVAILABLE_SEATS;
+        case 8:
+            return STATE.REQUEST_RESERVE_TICKETS;
+        case 9:
+            return STATE.CONFIRM_RESERVE_TICKETS;
+        case 10:
+            return STATE.SINGUP;
+        case 11:
+            return STATE.SINGUP_STATUS;
+        case 12:
+            return STATE.LOGIN_CHECK;
+        case 13:
+            return STATE.LOGIN_STATUS;
+        case 14:
+            return STATE.POST_PAYMENT_INFO;
+        case 15:
+            return STATE.PUCHARASE_COMPLETED;
+        default:
+            throw new ConversationException(ConversationException.ERROR.INCORRECT_CONVERSATION_STATE,
+                    currentConversationState);
+        }
+    }
+
+    /**
      * 
      * @param rawConversationState
      * @throws ConversationException
      */
-    private void checkConversationState(String rawConversationState) throws ConversationException
-    {
-        if (Integer.parseInt(rawConversationState) != currentState.ordinal())
-            throw new ConversationException(ERROR.INCORRECT_CONVERSATION_STATE);
-    }
+    // private void checkConversationState(String rawConversationState) throws
+    // ConversationException
+    // {
+    // if (Integer.parseInt(rawConversationState) != targetClientState.ordinal())
+    // throw new ConversationException(ERROR.INCORRECT_CONVERSATION_STATE);
+    // }
 
     /**
      * check if the client had sent the correct idSession
@@ -985,7 +1012,40 @@ public class SocketThread extends Thread
      */
     private void checkSessionId(String rawSessionId) throws SessionException
     {
-        if (Integer.parseInt(rawSessionId) != sessionId)
-            throw new SessionException(SessionException.ERROR.INVALID_SESSION_ID);
+        int sessionId = Integer.parseInt(rawSessionId);
+        switch (currentConversationState)
+        {
+        case GET_EVENT_LIST:
+        case GET_EVENT_INFO:
+        case GET_AVAILABLE_SEATS:
+        case CONFIRM_RESERVE_TICKETS:
+        case REQUEST_RESERVE_TICKETS:
+        case SINGUP:
+        case LOGIN_CHECK:
+            if (!anonymousSc.isValid(sessionId))
+                throw new SessionException(SessionException.ERROR.INVALID_SESSION_ID);
+        case POST_PAYMENT_INFO:
+            if (!sessionControl.isValid(sessionId))
+                throw new SessionException(SessionException.ERROR.INVALID_SESSION_ID);
+        case C_START_SESSION:
+        case LOGIN_STATUS:
+        case POST_AVAILABLE_SEATS:
+        case POST_EVENT_INFO:
+        case POST_EVENT_LIST:
+        case PUCHARASE_COMPLETED:
+        case SINGUP_STATUS:
+        case S_START_SESSION:
+            break;
+        default:
+            break;
+        }
+    }
+
+    private void readRawMsg() throws IOException
+    {
+        rawMsg = dataIn.readUTF();
+        LOG.debug("Read [" + rawMsg + "] from client [" + socket.getInetAddress() + "]");
+        rawTokensIn = rawMsg.split(",");
+        // dataOut = new DataOutputStream(socket.getOutputStream());
     }
 }

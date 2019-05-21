@@ -1,19 +1,23 @@
 package itq.dist;
 
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+
 public class SessionControl
 {
+    private static final Logger LOG = LogManager.getLogger(SessionControl.class);
+
     private int availableCount;
     private boolean[] avalilableSessionIDs;
-    private int startId; // First id, session ids will be in closed range [startId, startID +
-                         // MAX_SESSIONS - 1]
+    private int startId; // First id, session ids will be in closed set [startId, startID +
+                         // maxSessions - 1]
+    private int sessionTimeout;
+
     private int lastId;
     private int maxSessions;
     private int lastAssignedIndex;
 
-    private TimerThread sessionTimer;
-    // private TimerThread[] timerList = new TimerThread[2];
-    // timerList[0] = operationType 0 - timer for reserved tickets
-    // timerList[1] = operationType 1 - timer for session control
+    private SessionTimer[] sessionTimers;
 
     /**
      * 
@@ -25,12 +29,13 @@ public class SessionControl
      * @param lastAssignedIndex
      */
 
-    SessionControl(int startId, int maxSessions)
+    SessionControl(int startId, int maxSessions, int sessionTimeout)
     {
         this.startId = startId;
         this.maxSessions = maxSessions;
         lastId = startId + maxSessions - 1;
         avalilableSessionIDs = new boolean[maxSessions];
+        sessionTimers = new SessionTimer[maxSessions];
         availableCount = maxSessions;
         lastAssignedIndex = 0;
         for (int i = 0; i < avalilableSessionIDs.length; i++)
@@ -41,11 +46,12 @@ public class SessionControl
 
     SessionControl()
     {
-        this(0, 1024);
+        this(0, 1024, 3000);
     }
 
     public synchronized int getNewSessionId()
     {
+        int sessionId = -1;
         if (availableCount > 0)
         {
             // Algoritmo que asigna los ids de forma circular
@@ -56,7 +62,12 @@ public class SessionControl
                     avalilableSessionIDs[i] = false;
                     availableCount--;
                     lastAssignedIndex = i;
-                    return startId + i;
+                    sessionId = startId + i;
+                    SessionTimer timer = new SessionTimer(sessionTimeout, sessionId, this);
+                    sessionTimers[i] = timer;
+                    timer.start();
+                    LOG.info("Retrived new sessionId [" + sessionId + "]");
+                    return sessionId;
                 }
             }
             for (int i = 0; i < lastAssignedIndex; i++)
@@ -66,35 +77,53 @@ public class SessionControl
                     avalilableSessionIDs[i] = false;
                     availableCount--;
                     lastAssignedIndex = i;
-                    return startId + i;
+                    sessionId = startId + i;
+                    SessionTimer timer = new SessionTimer(sessionTimeout, sessionId, this);
+                    sessionTimers[i] = timer;
+                    timer.start();
+                    LOG.info("Retrived new sessionId [" + sessionId + "]");
+                    return sessionId;
                 }
             }
         }
-        return -1;
+        return sessionId;
     }
 
     public synchronized void releaseSessionId(int sessionId) throws SessionException
     {
-        if (!isValid(sessionId) || !isActive(sessionId))
+        if (!isValid(sessionId))
             throw new SessionException();
-        avalilableSessionIDs[sessionId] = true;
+        int index = sessionIdToIndex(sessionId);
+        avalilableSessionIDs[index] = true;
+        sessionTimers[index] = null;
         availableCount++;
+        LOG.info("Released sessionId [" + sessionId + "]");
+    }
+
+    public synchronized boolean isValid(int sessionId)
+    {
+        return isInRange(sessionId) && isActive(sessionId);
     }
 
     /**
+     * Check if the session ID is in the range.
      * 
      * @param sessionId
-     * @return true if session is active (sessionIs is occuped), false otherwise
+     * @return true if session on the range(sessionIs is occuped), false otherwise
      */
-    private boolean isValid(int sessionId)
+
+    private boolean isInRange(int sessionId)
     {
         return sessionId >= startId && sessionId <= lastId;
     }
 
     // ToDo: decidir si esto es synchronized o no
-    private boolean isActive(int sessionId)
+    private synchronized boolean isActive(int sessionId)
     {
-        return !avalilableSessionIDs[sessionId];
+        int index = sessionIdToIndex(sessionId);
+        LOG.debug("available sessionId [" + sessionId + "]: [l" + avalilableSessionIDs[index] + "]\nalive timer ["
+                + sessionTimers[index].isAlive() + "]");
+        return !avalilableSessionIDs[index] && sessionTimers[index].isAlive();
     }
 
     public int getMaxSessions()
@@ -102,29 +131,20 @@ public class SessionControl
         return maxSessions;
     }
 
-    public void sessionTimer(int sessionId)
+    public void updateSessionTimer(int sessionId) // throws NullPointerException
     {
-        if (!sessionTimer.isAlive())
-        {
-            sessionTimer = new TimerThread(10000, sessionId, 1);
-            sessionTimer.start();
-            sessionTimer.run();
-        }
-        else
-        {
-            // ToDo: Exception? for duplicated sessionId?
-        }
+        sessionTimers[sessionIdToIndex(sessionId)].reset();
     }
 
-    public void updateSessionTimer()
+    /**
+     * Convert from sessionId to respective index inside availableSessionIds and
+     * sessionTimers arrays
+     * 
+     * @param sessionId
+     * @return index of sessionId and sessionTimer inside arrays
+     */
+    private int sessionIdToIndex(int sessionId)
     {
-        if (sessionTimer.isAlive())
-        {
-            sessionTimer.setUpdate(true);
-        }
-        else
-        {
-            // ToDo: Exception? for updated out of time?
-        }
+        return sessionId - startId;
     }
 }

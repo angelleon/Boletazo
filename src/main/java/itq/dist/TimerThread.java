@@ -3,26 +3,28 @@
  */
 package itq.dist;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 public class TimerThread extends Thread
 {
-    private int time;
-    private int sessionId;
-    private int operationType;
-    private boolean update = false;
-    private SessionControl sc;
+    private static final Logger LOG = LogManager.getLogger(TimerThread.class);
+    protected static final int updateTime = 500;
+    protected int elapsedTime;
+
+    protected int timeout;
+    protected Flag update;
 
     /**
      * Default timer with a timer defined in 10 seconds and used by the reserved
      * tickets control
      * 
-     * @param time
+     * @param timeout
      */
 
     public TimerThread()
     {
-        this.time = 10000;
-        this.sessionId = 0;
-        this.operationType = 0;
+        this(5000);
     }
 
     /**
@@ -32,25 +34,12 @@ public class TimerThread extends Thread
      * @param sessionId
      * @param operationType
      */
-    public TimerThread(int time)
+    public TimerThread(int timeout)
     {
-        this.time = time;
-        this.sessionId = 0;
-        this.operationType = 0;
-    }
-
-    /**
-     * General Used for Session Timer Control avoiding away from keyboard users
-     * 
-     * @param time
-     * @param sessionId
-     * @param type
-     */
-    public TimerThread(int time, int sessionId, int operationType)
-    {
-        this.time = time;
-        this.sessionId = sessionId;
-        this.operationType = operationType;
+        super();
+        this.timeout = timeout;
+        update = new Flag(true);
+        elapsedTime = 0;
     }
 
     /**
@@ -61,7 +50,7 @@ public class TimerThread extends Thread
      */
     public void setTime(int time)
     {
-        this.time = time;
+        this.timeout = time;
     }
 
     /**
@@ -71,84 +60,29 @@ public class TimerThread extends Thread
      */
     public void setUpdate(boolean update)
     {
-        this.update = update;
-    }
-
-    /**
-     * set sessionId
-     * 
-     * @param sessionId
-     */
-    public void setSessionID(int sessionId)
-    {
-        this.sessionId = sessionId;
-    }
-
-    /**
-     * get the sessionId
-     * 
-     * @return sessionId
-     */
-    public int getSessionId()
-    {
-        return sessionId;
+        this.update.setState(update);
     }
 
     @Override
     public void run()
     {
-        switch (operationType)
-        {
-        case 0:
-            timerTicketPurchase();
-            break;
-        case 1:
-            timerSessionControl();
-            break;
-        }
-    }
-
-    /**
-     * this method tries to create a counter to control the process of choose and
-     * buy a ticket by a client
-     */
-    public void timerTicketPurchase()
-    {
         try
         {
-            Thread.sleep(time); // Tiempo de espera para la compra
-        }
-        catch (InterruptedException e)
-        {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }
-    }
-
-    /**
-     * this method tries to create a counter to control the process of session
-     * control to avoid away from keyboard users
-     */
-    public void timerSessionControl()
-    {
-        try
-        {
-            while (update)
+            while (update.isSet())
             {
-                update = false;
-                Thread.sleep(time);
+                Thread.sleep(updateTime);
+                elapsedTime += updateTime;
+                update.setState(elapsedTime >= timeout);
             }
-            sc.releaseSessionId(sessionId);
         }
         catch (InterruptedException e)
         {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
+            LOG.error(e.getMessage());
         }
-        catch (SessionException e)
-        {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }
+    }
+
+    public void reset()
+    {
+        elapsedTime = 0;
     }
 }
