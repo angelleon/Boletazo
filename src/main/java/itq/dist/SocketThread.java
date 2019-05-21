@@ -799,8 +799,7 @@ public class SocketThread extends Thread
     // TODO: terminar la definicion del metodo
 
     /**
-     * this method makes a parsing or an equal actions depending to the type of
-     * request
+     * this method check and ensure depending to the type of request
      * 
      * @param token
      * @param types
@@ -829,6 +828,7 @@ public class SocketThread extends Thread
     }
 
     /**
+     * number of tokens
      * 
      * @return the next number that corresponds to the variable name
      */
@@ -860,8 +860,9 @@ public class SocketThread extends Thread
     // TODO: evaluar la utilidad real de este metodo
     // tal vez se pueden usar constantes en su lugar
     /**
+     * retorna la posicion donde se encuentra la cantidad de tokens
      * 
-     * @return
+     * @return an Array
      * @throws ConversationException
      */
 
@@ -876,6 +877,7 @@ public class SocketThread extends Thread
      */
 
     /**
+     * indica que tipo de dato se espera en cada posicion del mensaje
      * 
      * @return
      * @throws ConversationException
@@ -1003,6 +1005,7 @@ public class SocketThread extends Thread
     // }
 
     /**
+     * check if the client had sent the correct idSession
      * 
      * @param rawSessionId
      * @throws SessionException

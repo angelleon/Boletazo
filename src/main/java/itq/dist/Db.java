@@ -4,14 +4,16 @@ import java.sql.Connection;
 import java.sql.Date;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
-import java.sql.Statement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.time.LocalDate;
 import java.util.HashMap;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+
+import itq.dist.DbException.ERROR;
 
 public class Db
 {
@@ -141,7 +143,7 @@ public class Db
         }
         catch (SQLException e)
         {
-            LOG.error("An error occurred when trying to connect to DB");
+            LOG.error("An error occurred while tried to connect to DB");
             LOG.error(e.getMessage());
         }
         catch (ClassNotFoundException e)
@@ -204,8 +206,8 @@ public class Db
         }
         catch (SQLException e)
         {
-            LOG.error("");
-            LOG.error(e.getMessage());
+            LOG.error("An error has ocurr while tried to obtein a loanding of each tickets information ");
+            LOG.error(e.getMessage());// <>
         }
     }
 
@@ -404,17 +406,18 @@ public class Db
      */
     public boolean toRegister(String user, String passwd, String email, String residence) throws DbException
     {
-
         try
         {
             PreparedStatement ps = conn.prepareStatement(UPDATE_USR_INFO);
             ps.setString(1, email);
             ps.setString(2, residence);
             ps.executeUpdate();
+            ps.close();
 
             ps = conn.prepareStatement(UPDATE_LOG_INFO);
             ps.setString(1, user);
             ps.setString(2, passwd);
+            ps.executeUpdate(updateLoginInfo);
             ps.close();
             return true;
         }
