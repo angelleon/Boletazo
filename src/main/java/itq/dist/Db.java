@@ -128,7 +128,7 @@ public class Db
     private Connection conn;
     private boolean connected;
 
-    // Estructuras para almacenamiento temporal de información
+    // Estructuras para almacenamiento temporal de informaci�n
     protected HashMap<Integer, Ticket> availableTickets;
 
     Db()
@@ -192,11 +192,12 @@ public class Db
                 idStatus = result.getInt("idStatus");
                 idSection = result.getInt("idSection");
                 idEvent = result.getInt("idEvent");
+               // LOG.debug(idTicket+"-"+idEvent+"-"+idStatus+"-"+idSection);
                 if (!availableTickets.containsKey(idTicket))
                 {
                     seatNumber = result.getString("seatNumber");
                     availableTickets.put(idTicket,
-                            new Ticket(idTicket.intValue(), seatNumber,
+                            new Ticket(Integer.valueOf(idTicket), seatNumber,
                                     idStatus, idSection, idEvent));
                     count++;
                 }
