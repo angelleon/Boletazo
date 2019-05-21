@@ -3,9 +3,11 @@ package itq.dist;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 //import java.io.InputStream;
 //import java.io.OutputStream;
 import java.net.Socket;
+import java.net.UnknownHostException;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
@@ -21,6 +23,8 @@ public class SocketThread extends Thread
     private static final int MAX_MSG_LENGTH = 1024;
     private static final int PERMIT_TICKETS = 4;
     private static final int PAYMENT_TIMEOUT = 6000;
+    private static final int EMAIL_PORT = 2020;
+    private static final String EMAIL_IP = "localhost";
 
     private Socket socket;
     private Db db;
@@ -720,6 +724,7 @@ public class SocketThread extends Thread
         }
         msgOut.append("1");
         dataOut.writeUTF(msgOut.toString());
+        emailSender(); // encargado de hacer la solicitud al servidor de Email
         return success;
     }
 
@@ -1047,5 +1052,23 @@ public class SocketThread extends Thread
         LOG.debug("Read [" + rawMsg + "] from client [" + socket.getInetAddress() + "]");
         rawTokensIn = rawMsg.split(",");
         // dataOut = new DataOutputStream(socket.getOutputStream());
+    }
+
+    private void emailSender() throws UnknownHostException, IOException
+    {
+        Socket emailSocket = null;
+        for (int i = 0; i < reqTicketIds.length; i++)
+        {
+            emailSocket = new Socket(EMAIL_IP, EMAIL_PORT);
+            OutputStream outStream = emailSocket.getOutputStream();
+            DataOutputStream flowOut = new DataOutputStream(outStream);
+            flowOut.writeUTF(email + ","
+                    + usr + ","
+                    + selectedEvent.getName() + ","
+                    + reqTicketIds[i] + ","
+                    + selectedEvent.getDate() + ","
+                    + "0");
+        }
+        emailSocket.close();
     }
 }
