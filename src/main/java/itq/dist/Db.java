@@ -20,7 +20,7 @@ public class Db
     // Informacion necesaria para conectarse a mysql
     private static final String USR = "boletazodev";
     private static final String PASSWD = "contrapass";
-    private static final String URL = "jdbc:mysql://127.0.0.1:3306/Boletazo?useLegacyDatetimeCode=false&serverTimezone=UTC";
+    private static final String URL = "jdbc:mysql://172.16.9.203:3306/Boletazo?useLegacyDatetimeCode=false&serverTimezone=UTC";
 
     // TODO comentar la condicion date >= SYSDATE()
     // Lista de querys

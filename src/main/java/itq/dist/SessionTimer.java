@@ -9,12 +9,14 @@ public class SessionTimer extends TimerThread
 
     private int sessionId;
     private SessionControl sessionControl;
+    private Flag stopFlag;
 
     SessionTimer(int timeout, int sessionId, SessionControl sessionControl)
     {
         super(timeout);
         this.sessionId = sessionId;
         this.sessionControl = sessionControl;
+        stopFlag = new Flag(false);
     }
 
     @Override
@@ -29,7 +31,7 @@ public class SessionTimer extends TimerThread
                 update.setState(elapsedTime < timeout);
             }
             sessionControl.releaseSessionId(sessionId);
-            LOG.debug("Session timer [" + sessionId + "]");
+            LOG.debug("Session timer finished [" + sessionId + "]");
         }
         catch (InterruptedException e)
         {
@@ -43,6 +45,6 @@ public class SessionTimer extends TimerThread
 
     public void stopTimer()
     {
-        update.unset();
+        stopFlag.unset();
     }
 }

@@ -17,6 +17,8 @@ import itq.dist.ConversationException.ERROR;
 
 public class SocketThread extends Thread
 {
+
+    // TODO liberar boletos si el cliente manda una solicitud de reserva con 0 ids
     private static final Logger LOG = LogManager.getLogger(SocketThread.class);
     private static final int MAX_MSG_LENGTH = 1024;
     private static final int PERMIT_TICKETS = 4;
