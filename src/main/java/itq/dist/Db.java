@@ -24,15 +24,14 @@ public class Db
     private static final String PASSWD = "contrapass";
     private static final String URL = "jdbc:mysql://127.0.0.1:3306/Boletazo?useLegacyDatetimeCode=false&serverTimezone=UTC";
     private static final LocalDate TODAY = LocalDate.now();
-
     // Lista de querys
-
     /**
      * En un PreparedStatement se pueden reemplazar valores en el query usando el
      * metodo setTIPO(int position, TIPO valor) donde position es la posicion del
      * (?) dentro del query iniciando con 1, TIPO depende de lo que se va a
      * reemplazar, y valor es..... supongo que el valor que se va a poner ahi
      */
+    private static final 
     private static final String SELECT_EVENT_AT_DATE = "SELECT *"
             + "FROM Event"
             + "WHERE date BETWEEN ?" // aqui se reemplaza el (?) con una fecha usando setDate(1, date)
@@ -392,12 +391,53 @@ public class Db
         return events;
     }
 
-    public Event[] search(String eventName, String venueName, LocalDate eventDate, int hour, float cost,
-            String sectionName)
+    public EventInfo[] searchEvents(String eventName, String venueName, LocalDate eventDate, int hour, float cost,
+            String sectionName) throws DbException
     {
-        HashMap<Integer, Event> events = new HashMap<Integer, Event>();
-        Event[] results = se
-        return new Event[0];
+        HashMap<Integer, EventInfo> events = new HashMap<Integer, EventInfo>();
+        EventInfo[] results = new EventInfo[0];
+        results = searchEventsByName(eventName);
+        for (EventInfo ev : results)
+        {
+            if (!events.containsKey(ev.getIdEvent()))
+            {
+                events.put(new Integer(ev.getIdEvent()), ev);
+            }
+        }
+        results = searchEventsByVenueName(venueName);
+        for (EventInfo ev : results)
+        {
+            if (!events.containsKey(ev.getIdEvent()))
+            {
+                events.put(new Integer(ev.getIdEvent()), ev);
+            }
+        }
+        results = getEventsAtHour(hour);
+        for (EventInfo ev : results)
+        {
+            if (!events.containsKey(ev.getIdEvent()))
+            {
+                events.put(new Integer(ev.getIdEvent()), ev);
+            }
+        }
+        results = searchEventsByCost(cost);
+        for (EventInfo ev : results)
+        {
+            if (!events.containsKey(ev.getIdEvent()))
+            {
+                events.put(new Integer(ev.getIdEvent()), ev);
+            }
+        }
+        results = searchEventsBySectionName(sectionName);
+
+        results = new EventInfo[events.values().size()];
+        int i = 0;
+        for (EventInfo ev : events.values())
+        {
+            results[i] = ev;
+            i++;
+        }
+        return results;
     }
 
     /**
