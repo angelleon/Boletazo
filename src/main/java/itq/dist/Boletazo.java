@@ -23,29 +23,22 @@ public class Boletazo
     private static final int PROF_PORT = 5000;
     private static final int TEAM_NUM = 3;
     private static final int ANONYMOUS_SESSION_TIMEOUT = 5000;
-    private static final int SESSION_TIMEOUT = 3000;
+    private static final int SESSION_TIMEOUT = 8000;
 
     public static void main(String[] args)
     {
-        Db db = new Db();
-        if (db.getConnected())
-        {
-            db.preLoad();
-            // initialConnection();
-            
-        }
-        else
-        {
-            LOG.error("Can not connect to DataBase");
-        }
-        LOG.info("Exiting...");
-        
         /*
+         * Db db = new Db(); if (db.getConnected()) { db.preLoad(); //
+         * initialConnection();
+         * 
+         * } else { LOG.error("Can not connect to DataBase"); } LOG.info("Exiting...");
+         */
+
         LOG.info("Boletazo server started at " + LocalDateTime.now().toString());
         boolean alive = true;
         ServerSocket serverSocket;
-        SessionControl anonymousSc = new SessionControl(0, 10, SESSION_TIMEOUT);
-        SessionControl sessionControl = new SessionControl(10, 10, ANONYMOUS_SESSION_TIMEOUT);
+        SessionControl anonymousSc = new SessionControl(0, 10, ANONYMOUS_SESSION_TIMEOUT);
+        SessionControl sessionControl = new SessionControl(10, 10, SESSION_TIMEOUT);
         Db db = new Db();
         if (db.getConnected())
         {
@@ -74,8 +67,7 @@ public class Boletazo
         }
         LOG.info("Exiting...");
     }
-*/
-}
+
     /**
      * Connects to professor server to send IP and port of this service
      * 

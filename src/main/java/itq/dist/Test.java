@@ -17,7 +17,7 @@ public class Test
         Random r = new Random();
         System.out.println(InetAddress.getLocalHost().getHostAddress().toString());
 
-        SessionControl sc = new SessionControl(0, 200);
+        SessionControl sc = new SessionControl();
         int[] sessionId = new int[200];
         int releasedCount = 0;
         int obtainedConunt = 0;
