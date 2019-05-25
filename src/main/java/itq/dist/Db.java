@@ -24,16 +24,16 @@ public class Db
     private static final String PASSWD = "contrapass";
     private static final String URL = "jdbc:mysql://127.0.0.1:3306/Boletazo?useLegacyDatetimeCode=false&serverTimezone=UTC";
 
-    // TODO comentar la condicion date >= SYSDATE()
+    // TODO comentar la condicion date >= SYSDATE();
     // Lista de querys
-
     /**
      * En un PreparedStatement se pueden reemplazar valores en el query usando el
      * metodo setTIPO(int position, TIPO valor) donde position es la posicion del
      * (?) dentro del query iniciando con 1, TIPO depende de lo que se va a
      * reemplazar, y valor es..... supongo que el valor que se va a poner ahi
      */
- // ResultSet result = null;
+
+    // ResultSet result = null;
     private static final String UPDATE_USR_INFO = "insert into UserInfo "
                                                 + "(email,estado) values (?,?) ";
     private static final String UPDATE_LOG_INFO = "INSERT INTO LoginInfo " 
