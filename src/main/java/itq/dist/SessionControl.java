@@ -128,9 +128,16 @@ public class SessionControl
         int index = sessionIdToIndex(sessionId);
         LOG.debug("index:" + index);
         LOG.debug("timer: " + sessionTimers[index]);
-        LOG.debug("available sessionId [" + sessionId + "]: [" + avalilableSessionIDs[index] + "]\nalive timer ["
-                + sessionTimers[index] != null ? sessionTimers[index].isAlive() : null + "]");
-        return !avalilableSessionIDs[index] && sessionTimers[index].isAlive();
+        LOG.debug("available sessionId [" + sessionId + "]: [" + avalilableSessionIDs[index] + "]");
+        if (sessionTimers[index] != null)
+            LOG.debug(
+                    "alive timer ["
+                            + sessionTimers[index].isAlive() + "]");
+        boolean b = true;
+        b = b && !avalilableSessionIDs[index];
+        if (!b)
+            return false;
+        return sessionTimers[index].isAlive();
     }
 
     public int getMaxSessions()
