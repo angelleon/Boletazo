@@ -102,7 +102,12 @@ public class SessionControl
 
     public synchronized boolean isValid(int sessionId)
     {
-        return isInRange(sessionId) && isActive(sessionId);
+        LOG.debug(isInRange(sessionId));
+        boolean b = true;
+        b = b && isInRange(sessionId);
+        if (!b)
+            return false;
+        return isActive(sessionId);
     }
 
     /**
@@ -121,8 +126,10 @@ public class SessionControl
     private synchronized boolean isActive(int sessionId)
     {
         int index = sessionIdToIndex(sessionId);
-        LOG.debug("available sessionId [" + sessionId + "]: [l" + avalilableSessionIDs[index] + "]\nalive timer ["
-                + sessionTimers[index].isAlive() + "]");
+        LOG.debug("index:" + index);
+        LOG.debug("timer: " + sessionTimers[index]);
+        LOG.debug("available sessionId [" + sessionId + "]: [" + avalilableSessionIDs[index] + "]\nalive timer ["
+                + sessionTimers[index] != null ? sessionTimers[index].isAlive() : null + "]");
         return !avalilableSessionIDs[index] && sessionTimers[index].isAlive();
     }
 
@@ -131,7 +138,7 @@ public class SessionControl
         return maxSessions;
     }
 
-    public void updateSessionTimer(int sessionId) // throws NullPointerException
+    public synchronized void resetSessionTimer(int sessionId) // throws NullPointerException
     {
         sessionTimers[sessionIdToIndex(sessionId)].reset();
     }
@@ -145,6 +152,8 @@ public class SessionControl
      */
     private int sessionIdToIndex(int sessionId)
     {
+        LOG.debug("sessionId [" + sessionId + "]");
+        LOG.debug("startID [ " + startId + "]");
         return sessionId - startId;
     }
 }

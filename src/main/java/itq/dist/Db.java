@@ -22,7 +22,7 @@ public class Db
     // Informacion necesaria para conectarse a mysql
     private static final String USR = "boletazodev";
     private static final String PASSWD = "contrapass";
-    private static final String URL = "jdbc:mysql://172.16.9.203:3306/Boletazo?useLegacyDatetimeCode=false&serverTimezone=UTC";
+    private static final String URL = "jdbc:mysql://25.7.251.120:3306/Boletazo?useLegacyDatetimeCode=false&serverTimezone=UTC";
 
     // TODO comentar la condicion date >= SYSDATE()
     // Lista de querys
@@ -192,7 +192,7 @@ public class Db
                 idStatus = result.getInt("idStatus");
                 idSection = result.getInt("idSection");
                 idEvent = result.getInt("idEvent");
-               // LOG.debug(idTicket+"-"+idEvent+"-"+idStatus+"-"+idSection);
+                // LOG.debug(idTicket+"-"+idEvent+"-"+idStatus+"-"+idSection);
                 if (!availableTickets.containsKey(idTicket))
                 {
                     seatNumber = result.getString("seatNumber");
@@ -418,7 +418,7 @@ public class Db
             ps = conn.prepareStatement(UPDATE_LOG_INFO);
             ps.setString(1, user);
             ps.setString(2, passwd);
-            ps.executeUpdate(updateLoginInfo);
+            // ps.executeUpdate(updateLoginInfo);
             ps.close();
             return true;
         }
@@ -592,7 +592,8 @@ public class Db
     {
         Integer idT = Integer.valueOf(idTicket);
         if (availableTickets
-                .containsKey(idT)) { return availableTickets.get(idT).getIdStatus(); }
+                .containsKey(idT))
+        { return availableTickets.get(idT).getIdStatus(); }
         return 3;
     }
 

@@ -26,7 +26,7 @@ public class SocketThread extends Thread
     private static final int PERMIT_TICKETS = 4;
     private static final int PAYMENT_TIMEOUT = 6000;
     private static final int EMAIL_PORT = 2020;
-    private static final String EMAIL_IP = "localhost";
+    private static final String EMAIL_IP = "25.7.186.37";
 
     private Socket socket;
     private Db db;
@@ -290,6 +290,7 @@ public class SocketThread extends Thread
         msgOut.append(STATE.S_START_SESSION.ordinal());
         msgOut.append(",");
         msgOut.append(sessionId);
+        LOG.debug(msgOut.toString());
         dataOut.writeUTF(msgOut.toString());
         return true;
     }
@@ -308,6 +309,8 @@ public class SocketThread extends Thread
         // String rawMsg = dataIn.readUTF();
         // String[] rawTokensIn = rawMsg.split(",");
         checkSessionId(rawTokensIn[1]);
+        sessionId = Integer.parseInt(rawTokensIn[1]);
+        resetSession(sessionId);
         String eventName = rawTokensIn[2];
         String venueName = rawTokensIn[3];
         String rawDate = rawTokensIn[4];
@@ -377,6 +380,8 @@ public class SocketThread extends Thread
     {
         currentConversationState = STATE.GET_EVENT_INFO;
         checkSessionId(rawTokensIn[1]);
+        sessionId = Integer.parseInt(rawTokensIn[1]);
+        resetSession(sessionId);
         String[] rawTokensIn = rawMsg.split(",");
         reqIdEvent = Integer.parseInt(rawTokensIn[2]);
         selectedEvent = db.getEventInfoByIdEvent(reqIdEvent);
@@ -448,6 +453,8 @@ public class SocketThread extends Thread
     {
         currentConversationState = STATE.GET_AVAILABLE_SEATS;
         checkSessionId(rawTokensIn[1]);
+        sessionId = Integer.parseInt(rawTokensIn[1]);
+        resetSession(sessionId);
         reqIdEvent = Integer.parseInt(rawTokensIn[2]);
         return false;
     }
@@ -481,6 +488,8 @@ public class SocketThread extends Thread
     {
         currentConversationState = STATE.REQUEST_RESERVE_TICKETS;
         checkSessionId(rawTokensIn[1]);
+        sessionId = Integer.parseInt(rawTokensIn[1]);
+        resetSession(sessionId);
         // String rawMsg = dataIn.readUTF();
         // String[] parts = rawMsg.split(",");
         // int opcode = Integer.parseInt(parts[0]);
@@ -567,6 +576,8 @@ public class SocketThread extends Thread
     {
         currentConversationState = STATE.SINGUP;
         checkSessionId(rawTokensIn[1]);
+        sessionId = Integer.parseInt(rawTokensIn[1]);
+        resetSession(sessionId);
         String rawMsg = dataIn.readUTF();
         String[] parts = rawMsg.split(",");
         // int opcode = Integer.parseInt(parts[0]);
@@ -624,11 +635,14 @@ public class SocketThread extends Thread
     {
         currentConversationState = STATE.LOGIN_CHECK;
         checkSessionId(rawTokensIn[1]);
+        sessionId = Integer.parseInt(rawTokensIn[1]);
+        resetSession(sessionId);
         String[] parts = rawMsg.split(",");
         sessionId = Integer.parseInt(parts[1]);
         usr = parts[2];
         pass = parts[3];
-        if (db.login(usr, pass)) { return true; }
+        if (db.login(usr, pass))
+        { return true; }
         LOG.debug(" something is written wrong U_U " + rawMsg);
         return false;
     }
@@ -670,6 +684,8 @@ public class SocketThread extends Thread
     {
         currentConversationState = STATE.POST_PAYMENT_INFO;
         checkSessionId(rawTokensIn[1]);
+        sessionId = Integer.parseInt(rawTokensIn[1]);
+        resetSession(sessionId);
         String rawMsg = dataIn.readUTF();
         String[] parts = rawMsg.split(",");
         sessionId = Integer.parseInt(parts[1]);
@@ -788,7 +804,8 @@ public class SocketThread extends Thread
                         correct = correct && checkArgument(rawTokensIn[contFirst], TYPES.INT);
                         contFirst++;
                     }
-                    if (contFirst < valuesLen) { throw new ConversationException(ERROR.NOT_ENOUGH_ARGUMENTS,
+                    if (contFirst < valuesLen)
+                    { throw new ConversationException(ERROR.NOT_ENOUGH_ARGUMENTS,
                             currentConversationState); }
                     break;
                 default:
@@ -1017,7 +1034,7 @@ public class SocketThread extends Thread
      * @param rawSessionId
      * @throws SessionException
      */
-    private void checkSessionId(String rawSessionId) throws SessionException
+    private boolean checkSessionId(String rawSessionId) throws SessionException
     {
         int sessionId = Integer.parseInt(rawSessionId);
         switch (currentConversationState)
@@ -1031,9 +1048,41 @@ public class SocketThread extends Thread
         case LOGIN_CHECK:
             if (!anonymousSc.isValid(sessionId))
                 throw new SessionException(SessionException.ERROR.INVALID_SESSION_ID);
+            return true;
         case POST_PAYMENT_INFO:
             if (!sessionControl.isValid(sessionId))
                 throw new SessionException(SessionException.ERROR.INVALID_SESSION_ID);
+            return true;
+        case C_START_SESSION:
+        case LOGIN_STATUS:
+        case POST_AVAILABLE_SEATS:
+        case POST_EVENT_INFO:
+        case POST_EVENT_LIST:
+        case PUCHARASE_COMPLETED:
+        case SINGUP_STATUS:
+        case S_START_SESSION:
+            return false;
+        default:
+            return false;
+        }
+    }
+
+    private void resetSession(int sessionId)
+    {
+        switch (currentConversationState)
+        {
+        case GET_EVENT_LIST:
+        case GET_EVENT_INFO:
+        case GET_AVAILABLE_SEATS:
+        case CONFIRM_RESERVE_TICKETS:
+        case REQUEST_RESERVE_TICKETS:
+        case SINGUP:
+        case LOGIN_CHECK:
+            anonymousSc.resetSessionTimer(sessionId);
+            break;
+        case POST_PAYMENT_INFO:
+            sessionControl.resetSessionTimer(sessionId);
+            break;
         case C_START_SESSION:
         case LOGIN_STATUS:
         case POST_AVAILABLE_SEATS:
