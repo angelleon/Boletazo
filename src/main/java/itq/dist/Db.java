@@ -26,7 +26,6 @@ public class Db
 
     // TODO comentar la condicion date >= SYSDATE()
     // Lista de querys
-
     /**
      * En un PreparedStatement se pueden reemplazar valores en el query usando el
      * metodo setTIPO(int position, TIPO valor) donde position es la posicion del
