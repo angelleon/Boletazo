@@ -1107,6 +1107,7 @@ public class SocketThread extends Thread
 
     private void emailSender() throws UnknownHostException, IOException
     {
+        LOG.debug("enviando email");
         Socket emailSocket = null;
         for (int i = 0; i < reqTicketIds.length; i++)
         {
