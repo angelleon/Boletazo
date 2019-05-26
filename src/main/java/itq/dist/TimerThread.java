@@ -20,6 +20,11 @@ public class TimerThread extends Thread
      * tickets control
      * 
      * @param timeout
+     *            ======= private int time;
+     * 
+     *            /**
+     * @param time
+     *            >>>>>>> 1ef30e5e705246659d6316f33cb0d28e1aea8ad6
      */
 
     public TimerThread()
@@ -43,10 +48,9 @@ public class TimerThread extends Thread
     }
 
     /**
-     * Set a time to wait for this thread
      * 
      * @param time
-     * @return the time to set
+     *            the time to set
      */
     public void setTime(int time)
     {

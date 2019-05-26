@@ -2,40 +2,43 @@ package itq.dist;
 
 import java.time.LocalDate;
 
-public class EventInfo extends Event
+public class EventInfo
 {
-    private Participant[] participants;
+    private int idEvent;
+    String name;
+    LocalDate[] dates;
+    int idVenue;
+    Participant[] participants;
 
     EventInfo()
     {
-        this(0, "", "", LocalDate.now(), 0, new Participant[0]);
+
     }
 
-    EventInfo(int idEvent, String name, String description, LocalDate date, int idVenue, Participant[] participants)
+    EventInfo(int idEvent, String name, LocalDate[] dates, int idVenue, Participant[] participants)
     {
-        super(idEvent, name, description, date, idVenue);
+        this.idEvent = idEvent;
+        this.name = name;
+        this.dates = dates;
+        this.idVenue = idVenue;
         this.participants = participants;
     }
 
-    @Override
     public int getIdEvent()
     {
         return idEvent;
     }
 
-    @Override
     public String getName()
     {
         return name;
     }
 
-    @Override
-    public LocalDate getDate()
+    public LocalDate[] getDates()
     {
-        return date;
+        return dates;
     }
 
-    @Override
     public int getIdVenue()
     {
         return idVenue;

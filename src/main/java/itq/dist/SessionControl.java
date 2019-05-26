@@ -91,7 +91,7 @@ public class SessionControl
 
     public synchronized void releaseSessionId(int sessionId) throws SessionException
     {
-        if (!isValid(sessionId))
+        if (!isValid(sessionId) || !isActive(sessionId))
             throw new SessionException();
         int index = sessionIdToIndex(sessionId);
         avalilableSessionIDs[index] = true;
@@ -106,19 +106,17 @@ public class SessionControl
     }
 
     /**
-     * Check if the session ID is in the range.
      * 
      * @param sessionId
-     * @return true if session on the range(sessionIs is occuped), false otherwise
+     * @return true if session is active (sessionIs is occuped), false otherwise
      */
-
-    private boolean isInRange(int sessionId)
+    private boolean isValid(int sessionId)
     {
         return sessionId >= startId && sessionId <= lastId;
     }
 
     // ToDo: decidir si esto es synchronized o no
-    private synchronized boolean isActive(int sessionId)
+    private boolean isActive(int sessionId)
     {
         int index = sessionIdToIndex(sessionId);
         LOG.debug("available sessionId [" + sessionId + "]: [l" + avalilableSessionIDs[index] + "]\nalive timer ["

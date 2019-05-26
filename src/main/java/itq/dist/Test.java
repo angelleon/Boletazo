@@ -16,22 +16,19 @@ public class Test
     {
         Random r = new Random();
         System.out.println(InetAddress.getLocalHost().getHostAddress().toString());
-
-        SessionControl sc = new SessionControl(0, 200);
-        int[] sessionId = new int[200];
+        SessionControl sc = new SessionControl(0, 40);
+        int sessionId;
         int releasedCount = 0;
         int obtainedConunt = 0;
         Db data = new Db();//
         for (int i = 0; i < 100; i++)
         {
-            sessionId[i] = sc.getNewSessionId();
-            log.info("sessionId: [" + sessionId[i] + "]");
-            // sc.sessionTimer(sessionId[i]);
-            SocketTest myTestThread = new SocketTest(sessionId[i], sc);
-            myTestThread.start();
-            try
+            sessionId = sc.getNewSessionId();
+            log.info("sessionId: [" + sessionId + "]");
+            if (sessionId > 0)
             {
-                if (i == 99)
+                obtainedConunt++;
+                if (r.nextBoolean())
                 {
                     try
                     {
@@ -49,11 +46,6 @@ public class Test
                         log.error(e.getMessage());
                     }
                 }
-            }
-            catch (InterruptedException e)
-            {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
             }
         }
         log.info("Obtained [" + obtainedConunt + "] sessionIds");

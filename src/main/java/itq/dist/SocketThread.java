@@ -7,7 +7,6 @@ import java.io.OutputStream;
 //import java.io.InputStream;
 //import java.io.OutputStream;
 import java.net.Socket;
-import java.net.UnknownHostException;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
@@ -51,7 +50,7 @@ public class SocketThread extends Thread
     private EventInfo[] searchResult;
     private EventInfo selectedEvent;
     private Ticket[] reservedTickets;
-    private TimerThread ticketTimer;
+    private TimerThread timer;
 
     /**
      * create an association between variable and its value
@@ -163,9 +162,8 @@ public class SocketThread extends Thread
 
     /**
      * This method create the sequence of the conversation between the server-client
-     * 
-     * @throws IOException
      */
+
     public STATE targetState() throws ConversationException, IOException
     {
         targetConversationState = parseRawState(rawTokensIn[0]);
@@ -403,23 +401,17 @@ public class SocketThread extends Thread
         msgOut.append(",");
         msgOut.append(selectedEvent.getName());
         msgOut.append(",");
-        // LocalDate[] dates = selectedEvent.getDates();
-        msgOut.append("1,");
-        // for (LocalDate d : dates)
-        // {
-        // msgOut.append(",");
-        // msgOut.append(d.getDayOfMonth());
-        // msgOut.append("-");
-        // msgOut.append(d.getMonthValue());
-        // msgOut.append("-");
-        // msgOut.append(d.getYear());
-        // }
-        LocalDate date = selectedEvent.getDate();
-        msgOut.append(date.getDayOfMonth());
-        msgOut.append("-");
-        msgOut.append(date.getMonthValue());
-        msgOut.append("-");
-        msgOut.append(date.getYear());
+        LocalDate[] dates = selectedEvent.getDates();
+        msgOut.append(dates.length);
+        for (LocalDate d : dates)
+        {
+            msgOut.append(",");
+            msgOut.append(d.getDayOfMonth());
+            msgOut.append("-");
+            msgOut.append(d.getMonthValue());
+            msgOut.append("-");
+            msgOut.append(d.getYear());
+        }
         Participant[] participants = selectedEvent.getParticipants();
         msgOut.append(participants.length);
         for (Participant p : participants)
@@ -506,6 +498,7 @@ public class SocketThread extends Thread
         ticketTimer = new TimerThread(PAYMENT_TIMEOUT);
         ticketTimer.run();
         return true;
+
     }
 
     /**
@@ -638,7 +631,7 @@ public class SocketThread extends Thread
      * @throws ConversationException
      * @throws IOException
      */
-    private boolean loginStatus() throws ConversationException, DbException, IOException
+    private boolean loginStatus() throws ConversationException, IOException
     {
         currentConversationState = STATE.LOGIN_STATUS;
         msgOut.setLength(0);
@@ -699,7 +692,7 @@ public class SocketThread extends Thread
      * @throws IOException
      */
     private boolean pucharaseCompleted()
-            throws ConversationException, DbException, IOException
+            throws ConversationException, IOException
     {
         currentConversationState = STATE.PUCHARASE_COMPLETED;
         msgOut.setLength(0);
@@ -951,7 +944,7 @@ public class SocketThread extends Thread
     }
 
     /**
-     * Translate the String operation number into a STATE Enumeric
+     * <<<<<<< HEAD Translate the String operation number into a STATE Enumeric
      * 
      * @param rawState
      * @return enum STATE
@@ -1000,6 +993,7 @@ public class SocketThread extends Thread
     }
 
     /**
+     * ======= >>>>>>> 1ef30e5e705246659d6316f33cb0d28e1aea8ad6
      * 
      * @param rawConversationState
      * @throws ConversationException
