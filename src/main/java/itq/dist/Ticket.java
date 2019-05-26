@@ -1,7 +1,12 @@
 package itq.dist;
 
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+
 public class Ticket
 {
+    private static final Logger LOG = LogManager.getLogger(Ticket.class);
+
     public static enum STATUS {
         NULL, // DB does not define an id with value 0
         AVAILABLE,
@@ -44,6 +49,7 @@ public class Ticket
      */
     public int getIdTicket()
     {
+        LOG.debug(idTicket);
         return idTicket;
     }
 
