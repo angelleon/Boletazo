@@ -23,7 +23,7 @@ public class SocketThread extends Thread
     // TODO liberar boletos si el cliente manda una solicitud de reserva con 0 ids
     private static final Logger LOG = LogManager.getLogger(SocketThread.class);
     private static final int MAX_MSG_LENGTH = 1024;
-    private static final int PERMIT_TICKETS = 4;
+    public static final int PERMITED_TICKETS = 4;
     private static final int PAYMENT_TIMEOUT = 6000;
     private static final int EMAIL_PORT = 2020;
     private static final String EMAIL_IP = "25.7.186.37";
@@ -497,7 +497,7 @@ public class SocketThread extends Thread
         reqIdEvent = Integer.parseInt(rawTokensIn[2]);
         nRequestedTickets = Integer.parseInt(rawTokensIn[3]);
         // see if the nRequestedTickets is equal or less than permit_Ticket
-        if (nRequestedTickets <= PERMIT_TICKETS)
+        if (nRequestedTickets <= PERMITED_TICKETS)
         {
             reservedTickets = new Ticket[nRequestedTickets];
             reqTicketIds = new int[nRequestedTickets];
@@ -560,6 +560,8 @@ public class SocketThread extends Thread
             // sacar por aca un arreglo de cada ticket con su detalle?, #nunca se usa
             // despues
         }
+        anonymousSc.setReservedTickets(reservedTickets, sessionId);
+        // sessionControl.setReservedTickets(reservedTickets, sessionId);
         dataOut.writeUTF(msgOut.toString());
         return true;
     }
@@ -659,16 +661,20 @@ public class SocketThread extends Thread
         msgOut.setLength(0);
         msgOut.append(targetConversationState);
         msgOut.append(",");
-        sessionId = sessionControl.getNewSessionId();
-        msgOut.append(sessionId);
-        msgOut.append(",");
         if (db.login(usr, pass))
         {
+            int oldSessionId = sessionId;
+            sessionId = sessionControl.getNewSessionId();
+            msgOut.append(sessionId);
+            msgOut.append(",");
             msgOut.append("0");
             dataOut.writeUTF(msgOut.toString());
+            LOG.debug(msgOut.toString());
+            sessionControl.setReservedTickets(anonymousSc.getReservedTickets(oldSessionId), sessionId);
             return true;
         }
         msgOut.append("1");
+        LOG.debug(msgOut.toString());
         dataOut.writeUTF(msgOut.toString());
         return false;
     }
@@ -686,15 +692,18 @@ public class SocketThread extends Thread
         checkSessionId(rawTokensIn[1]);
         sessionId = Integer.parseInt(rawTokensIn[1]);
         resetSession(sessionId);
-        String rawMsg = dataIn.readUTF();
-        String[] parts = rawMsg.split(",");
-        sessionId = Integer.parseInt(parts[1]);
-        String numberCard = parts[2];
-        if (numberCard.length() == 20)
+        /*
+         * String rawMsg = dataIn.readUTF(); String[] parts = rawMsg.split(",");
+         * sessionId = Integer.parseInt(parts[1]);
+         */
+        String numberCard = rawTokensIn[2];
+
+        LOG.debug(numberCard + " " + numberCard.length());
+        if (numberCard.length() == 19)
         {
-            String date = parts[3];
-            String cvv = parts[4];
-            String type = parts[5];
+            String date = rawTokensIn[3];
+            String cvv = rawTokensIn[4];
+            String type = rawTokensIn[5];
             if (type.equals("VISA") || type.equals("MASTERCARD"))
             {
                 LOG.info("Compra por :" + numberCard + "," + date + "," + cvv + "," + type);
@@ -729,18 +738,30 @@ public class SocketThread extends Thread
         msgOut.append("el arreglo de los tickets....");
         // TODO completar condicion
         boolean success = true;
-        for (int i = 0; i < reqTicketIds.length; i++)
+        reservedTickets = sessionControl.getReservedTickets(sessionId);
+        LOG.debug(reservedTickets);
+        if (reservedTickets == null)
         {
-            if (db.updateTicketStatus(reqTicketIds[i], "vendido")) // && reservedTickets[i].)
-            {
-                msgOut.append("0");
-            }
-            else
-            {
-                success = false;
-            }
+            success = false;
+            msgOut.append("null");
         }
-        msgOut.append("1");
+        else
+        {
+
+            for (int i = 0; i < reservedTickets.length; i++)
+            {
+                LOG.debug(i);
+                if (db.updateTicketStatus(reservedTickets[i].getIdTicket(), "vendido")) // && reservedTickets[i].)
+                {
+                    msgOut.append("0");
+                }
+                else
+                {
+                    success = false;
+                }
+            }
+            msgOut.append("1");
+        }
         dataOut.writeUTF(msgOut.toString());
         emailSender(); // encargado de hacer la solicitud al servidor de Email
         return success;
@@ -1109,7 +1130,9 @@ public class SocketThread extends Thread
     {
         LOG.debug("enviando email");
         Socket emailSocket = null;
-        for (int i = 0; i < reqTicketIds.length; i++)
+        reservedTickets = sessionControl.getReservedTickets(sessionId);
+        reservedTickets[0].getIdEvent();
+        for (int i = 0; i < reservedTickets.length; i++)
         {
             emailSocket = new Socket(EMAIL_IP, EMAIL_PORT);
             OutputStream outStream = emailSocket.getOutputStream();
@@ -1117,7 +1140,8 @@ public class SocketThread extends Thread
             flowOut.writeUTF(email + ","
                     + usr + ","
                     + selectedEvent.getName() + ","
-                    + reqTicketIds[i] + ","
+                    + reservedTickets[i].getIdTicket() + ","
+
                     + selectedEvent.getDate() + ","
                     + "0");
         }
