@@ -17,6 +17,8 @@ public class SessionControl
     private int maxSessions;
     private int lastAssignedIndex;
 
+    private Ticket[][] reservedTickets;
+
     private SessionTimer[] sessionTimers;
 
     /**
@@ -38,10 +40,13 @@ public class SessionControl
         sessionTimers = new SessionTimer[maxSessions];
         availableCount = maxSessions;
         lastAssignedIndex = 0;
+        reservedTickets = new Ticket[maxSessions][];
         for (int i = 0; i < avalilableSessionIDs.length; i++)
         {
             avalilableSessionIDs[i] = true;
+            reservedTickets[i] = new Ticket[SocketThread.PERMITED_TICKETS];
         }
+
     }
 
     SessionControl()
@@ -103,8 +108,7 @@ public class SessionControl
     public synchronized boolean isValid(int sessionId)
     {
         LOG.debug(isInRange(sessionId));
-        boolean b = true;
-        b = b && isInRange(sessionId);
+        boolean b = isInRange(sessionId);
         if (!b)
             return false;
         return isActive(sessionId);
@@ -130,11 +134,8 @@ public class SessionControl
         LOG.debug("timer: " + sessionTimers[index]);
         LOG.debug("available sessionId [" + sessionId + "]: [" + avalilableSessionIDs[index] + "]");
         if (sessionTimers[index] != null)
-            LOG.debug(
-                    "alive timer ["
-                            + sessionTimers[index].isAlive() + "]");
-        boolean b = true;
-        b = b && !avalilableSessionIDs[index];
+            LOG.debug("alive timer [" + sessionTimers[index].isAlive() + "]");
+        boolean b = !avalilableSessionIDs[index];
         if (!b)
             return false;
         return sessionTimers[index].isAlive();
@@ -162,5 +163,16 @@ public class SessionControl
         LOG.debug("sessionId [" + sessionId + "]");
         LOG.debug("startID [ " + startId + "]");
         return sessionId - startId;
+    }
+
+    public synchronized void setReservedTickets(Ticket[] t, int sessionId)
+    {
+        LOG.debug("Setting reserved tickets for session: [" + sessionId + "] [" + t.length + "] tickets");
+        reservedTickets[sessionIdToIndex(sessionId)] = t;
+    }
+
+    public synchronized Ticket[] getReservedTickets(int sessionId)
+    {
+        return reservedTickets[sessionIdToIndex(sessionId)];
     }
 }
