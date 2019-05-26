@@ -33,9 +33,21 @@ public class Test
             {
                 if (i == 99)
                 {
-                    // sc.releaseSessionId(sessionId[i]);
-                    i = 0;
-                    Thread.sleep(1000);
+                    try
+                    {
+                        sc.releaseSessionId(sessionId);
+                        log.info("Released sessionId: [" + sessionId + "]");
+                        releasedCount++;
+                        data.preLoad();/*
+                                        * data.toRegister("@gmail", "lol", "lol", "colorado"); data.singup("@gmail",
+                                        * "lol", "lol"); data.singup("lol", "lol", "lol"); data.login("lol", "lol");
+                                        */
+                        data.toRegister("@gmail", "lol", "lol", "colorado");
+                    }
+                    catch (SessionException e)
+                    {
+                        log.error(e.getMessage());
+                    }
                 }
             }
             catch (InterruptedException e)

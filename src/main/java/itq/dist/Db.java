@@ -30,7 +30,6 @@ public class Db
 
     // TODO comentar la condicion date >= SYSDATE()
     // Lista de querys
-
     /**
      * En un PreparedStatement se pueden reemplazar valores en el query usando el
      * metodo setTIPO(int position, TIPO valor) donde position es la posicion del
@@ -421,6 +420,12 @@ public class Db
      */
     public boolean toRegister(String user, String passwd, String email, String residence) throws DbException
     {
+        // ResultSet result = null;
+        String updateUsrInfo = "insert into UserInfo "
+                + "(email,estado) values (?,?) ";
+        String updateLoginInfo = "INSERT INTO LoginInfo " +
+                "(username,password) values (?,?) ";
+
         try
         {
             PreparedStatement ps = conn.prepareStatement(UPDATE_USR_INFO);
@@ -432,7 +437,7 @@ public class Db
             ps = conn.prepareStatement(UPDATE_LOG_INFO);
             ps.setString(1, user);
             ps.setString(2, passwd);
-            // ps.executeUpdate(updateLoginInfo);
+            ps.executeUpdate(updateLoginInfo);
             ps.close();
             return true;
         }
@@ -604,10 +609,8 @@ public class Db
 
     public int consultTicketStatus(int idTicket)
     {
-        Integer idT = Integer.valueOf(idTicket);
-        if (availableTickets
-                .containsKey(idT))
-        { return availableTickets.get(idT).getIdStatus(); }
+        if (availableTickets.containsKey(idTicket))
+        { return availableTickets.get(idTicket).getIdStatus(); }
         return 3;
     }
 
