@@ -9,6 +9,7 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
 import java.net.UnknownHostException;
+import java.sql.SQLException;
 import java.util.Enumeration;
 import java.time.LocalDateTime;
 
@@ -25,7 +26,7 @@ public class Boletazo
     private static final int ANONYMOUS_SESSION_TIMEOUT = 5000;
     private static final int SESSION_TIMEOUT = 8000;
 
-    public static void main(String[] args)
+    public static void main(String[] args) throws SQLException
     {
         /*
          * Db db = new Db(); if (db.getConnected()) { db.preLoad(); //
@@ -52,6 +53,9 @@ public class Boletazo
                     Socket socket = serverSocket.accept();
                     SocketThread thread = new SocketThread(socket, db, sessionControl, anonymousSc);
                     thread.start();
+                    //I'm not sure if this goes here...
+                    Report rep = new Report();
+                    rep.sendReport();
                 }
                 serverSocket.close();
             }
@@ -67,7 +71,6 @@ public class Boletazo
         }
         LOG.info("Exiting...");
     }
-
     /**
      * Connects to professor server to send IP and port of this service
      * 
