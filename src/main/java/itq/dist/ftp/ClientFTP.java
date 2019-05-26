@@ -15,7 +15,6 @@ import itq.dist.Report;
 
 public class ClientFTP
 {
-
     private static final Logger LOG = LogManager.getLogger(ClientFTP.class);
 
     public static void main(String[] args) 
@@ -23,8 +22,8 @@ public class ClientFTP
 
         FTPClient client = new FTPClient();
 
-        // info to conect to  service FTP
-        String ftp = "192.168.1.107"; 
+        // info to conect service FTP
+        String ftp = "192.168.1.107";
         String user = "userboletazo";
         String password = "1614";
 
