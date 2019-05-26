@@ -644,7 +644,10 @@ public class SocketThread extends Thread
         usr = parts[2];
         pass = parts[3];
         if (db.login(usr, pass))
-        { return true; }
+        {
+            email = db.getEmailByUsername(usr);
+            return true;
+        }
         LOG.debug(" something is written wrong U_U " + rawMsg);
         return false;
     }
@@ -655,7 +658,7 @@ public class SocketThread extends Thread
      * @throws ConversationException
      * @throws IOException
      */
-    private boolean loginStatus() throws ConversationException, DbException, IOException
+    private boolean loginStatus() throws ConversationException, DbException, SessionException, IOException
     {
         currentConversationState = STATE.LOGIN_STATUS;
         msgOut.setLength(0);
@@ -664,6 +667,7 @@ public class SocketThread extends Thread
         if (db.login(usr, pass))
         {
             int oldSessionId = sessionId;
+            anonymousSc.releaseSessionId(oldSessionId);
             sessionId = sessionControl.getNewSessionId();
             msgOut.append(sessionId);
             msgOut.append(",");
@@ -671,6 +675,8 @@ public class SocketThread extends Thread
             dataOut.writeUTF(msgOut.toString());
             LOG.debug(msgOut.toString());
             sessionControl.setReservedTickets(anonymousSc.getReservedTickets(oldSessionId), sessionId);
+            sessionControl.setEmail(email, sessionId);
+            sessionControl.setUser(usr, sessionId);
             return true;
         }
         msgOut.append("1");
@@ -739,7 +745,7 @@ public class SocketThread extends Thread
         // TODO completar condicion
         boolean success = true;
         reservedTickets = sessionControl.getReservedTickets(sessionId);
-        LOG.debug(reservedTickets);
+        LOG.debug("" + reservedTickets + " " + reservedTickets.length + " " + sessionId);
         if (reservedTickets == null)
         {
             success = false;
@@ -1126,24 +1132,30 @@ public class SocketThread extends Thread
         // dataOut = new DataOutputStream(socket.getOutputStream());
     }
 
-    private void emailSender() throws UnknownHostException, IOException
+    private void emailSender() throws UnknownHostException, IOException, DbException
     {
         LOG.debug("enviando email");
         Socket emailSocket = null;
         reservedTickets = sessionControl.getReservedTickets(sessionId);
-        reservedTickets[0].getIdEvent();
+        EventInfo ev = db.getEventInfoByIdEvent(reservedTickets[0].getIdEvent());
+        LOG.debug("tickets " + reservedTickets);
         for (int i = 0; i < reservedTickets.length; i++)
         {
             emailSocket = new Socket(EMAIL_IP, EMAIL_PORT);
             OutputStream outStream = emailSocket.getOutputStream();
             DataOutputStream flowOut = new DataOutputStream(outStream);
-            flowOut.writeUTF(email + ","
+            email = sessionControl.getEmail(sessionId);
+            usr = sessionControl.getUser(sessionId);
+            String msg = email + ","
                     + usr + ","
-                    + selectedEvent.getName() + ","
+                    // + selectedEvent.getName() + ","
+                    + ev.getName() + ","
                     + reservedTickets[i].getIdTicket() + ","
-
-                    + selectedEvent.getDate() + ","
-                    + "0");
+                    // + selectedEvent.getDate() + ","
+                    + ev.getDate() + ","
+                    + "0";
+            LOG.debug(msg);
+            flowOut.writeUTF(msg);
         }
         emailSocket.close();
     }

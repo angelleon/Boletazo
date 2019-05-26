@@ -18,6 +18,8 @@ public class SessionControl
     private int lastAssignedIndex;
 
     private Ticket[][] reservedTickets;
+    private String[] email;
+    private String[] user;
 
     private SessionTimer[] sessionTimers;
 
@@ -41,6 +43,8 @@ public class SessionControl
         availableCount = maxSessions;
         lastAssignedIndex = 0;
         reservedTickets = new Ticket[maxSessions][];
+        email = new String[maxSessions];
+        user = new String[maxSessions];
         for (int i = 0; i < avalilableSessionIDs.length; i++)
         {
             avalilableSessionIDs[i] = true;
@@ -174,5 +178,25 @@ public class SessionControl
     public synchronized Ticket[] getReservedTickets(int sessionId)
     {
         return reservedTickets[sessionIdToIndex(sessionId)];
+    }
+
+    public synchronized void setEmail(String email, int sessionId)
+    {
+        this.email[sessionIdToIndex(sessionId)] = email;
+    }
+
+    public synchronized String getEmail(int sessionId)
+    {
+        return email[sessionIdToIndex(sessionId)];
+    }
+
+    public synchronized void setUser(String user, int sessionId)
+    {
+        this.user[sessionIdToIndex(sessionId)] = user;
+    }
+
+    public synchronized String getUser(int sessionId)
+    {
+        return user[sessionIdToIndex(sessionId)];
     }
 }

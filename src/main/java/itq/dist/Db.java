@@ -10,8 +10,12 @@ import java.sql.Statement;
 import java.time.LocalDate;
 import java.util.HashMap;
 
+import javax.naming.spi.ResolveResult;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+
+import com.mysql.cj.protocol.Resultset;
 
 import itq.dist.DbException.ERROR;
 
@@ -34,6 +38,10 @@ public class Db
      * reemplazar, y valor es..... supongo que el valor que se va a poner ahi
      */
     // ResultSet result = null;
+    private static final String UPDATE_TICKET_RESET_IDSTATUS = "UPDATE Ticket "
+            + "SET idStatus = 1 "
+            + "WHERE idStatus != 1";
+
     private static final String UPDATE_USR_INFO = "insert into UserInfo "
             + "(email,estado) values (?,?) ";
     private static final String UPDATE_LOG_INFO = "INSERT INTO LoginInfo "
@@ -122,6 +130,11 @@ public class Db
             // + "AND E.date >= SYSDATE() "
             + "";
 
+    private static final String SELECT_USERINFO_BY_USERNAME = "SELECT U.* "
+            + "FROM UserInfo U, LoginInfo L "
+            + "WHERE L.idLogin = U.idLogin "
+            + "AND L.username = ? ";
+
     @SuppressWarnings("unused")
     private static char mander = 'c';
 
@@ -178,6 +191,7 @@ public class Db
         try
         {
             Statement st = conn.createStatement();
+            st.execute(UPDATE_TICKET_RESET_IDSTATUS);
             ResultSet result = st.executeQuery(SELECT_AVAILABLE_TICKETS);
 
             Integer idTicket;
@@ -712,5 +726,34 @@ public class Db
             throw new DbException();
         }
         return events;
+    }
+
+    public String getEmailByUsername(String username) throws DbException
+    {
+        String email = "boletazo.mail+error+" + username + "@gmail.com";
+        try
+        {
+            PreparedStatement ps = conn.prepareStatement(SELECT_USERINFO_BY_USERNAME);
+            ps.setString(1, username);
+            ResultSet result = ps.executeQuery();
+
+            int nRows = result.last() ? result.getRow() : 0;
+            if (nRows > 1)
+                throw new DbException();
+
+            result.first();
+            email = result.getString("email");
+        }
+        catch (SQLException ex)
+        {
+            for (StackTraceElement ste : ex.getStackTrace())
+            {
+                LOG.debug(ste.toString());
+            }
+
+            LOG.debug(ex);
+            throw new DbException();
+        }
+        return email;
     }
 }
