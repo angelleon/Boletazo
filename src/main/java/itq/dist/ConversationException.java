@@ -1,12 +1,13 @@
 package itq.dist;
 
+import itq.dist.SocketThread.STATE;
+
 public class ConversationException extends BoletazoException
 {
-
     /**
      * 
      */
-    private static final long SERIAL_VERSION_UID = 1L;
+    private static final long serialVersionUID = 1L;
 
     public static enum ERROR {
         GENERIC_ERROR,
@@ -19,16 +20,20 @@ public class ConversationException extends BoletazoException
     }
 
     private ERROR error;
+    private STATE state;
 
-    ConversationException(ERROR error)
+    ConversationException(ERROR error, STATE conversationState)
     {
-        super();
+        super(BoletazoException.ERROR.SPECIFIC_ERROR);
         this.error = error;
+        this.state = conversationState;
     }
 
     ConversationException()
     {
-        this(ERROR.GENERIC_ERROR);
+        super();
+        this.error = ERROR.GENERIC_ERROR;
+        this.state = STATE.C_START_SESSION;
     }
 
     /**
@@ -38,7 +43,16 @@ public class ConversationException extends BoletazoException
     @Override
     public String getMessage()
     {
-        return super.getMessage() + errorToStr(error);
+        String msg = "";
+        msg += super.getMessage();
+        msg += msg.length() == 0 ? "" : "\n";
+        StackTraceElement[] st = this.getStackTrace();
+        for (StackTraceElement ste : st)
+        {
+            msg += ste.toString() + "\n";
+        }
+        msg += errorToStr(error) + " in step " + state;
+        return msg;
     }
 
     /**

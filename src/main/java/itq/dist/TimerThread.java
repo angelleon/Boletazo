@@ -3,54 +3,91 @@
  */
 package itq.dist;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 public class TimerThread extends Thread
 {
-    private int time;
+    private static final Logger LOG = LogManager.getLogger(TimerThread.class);
+    protected static final int updateTime = 250;
+    protected int elapsedTime;
+
+    protected int timeout;
+    protected Flag update;
 
     /**
-     * @param time
+     * Default timer with a timer defined in 10 seconds and used by the reserved
+     * tickets control
+     * 
+     * @param timeout
      */
 
     public TimerThread()
     {
-        this(6000);
-    }
-
-    public TimerThread(int time)
-    {
-        this.time = time;
+        this(5000);
     }
 
     /**
+     * Timer used for reserved tickets control whit a time defined by the user
      * 
      * @param time
-     *            the time to set
+     * @param sessionId
+     * @param operationType
+     */
+    public TimerThread(int timeout)
+    {
+        super();
+        this.timeout = timeout;
+        update = new Flag(true);
+        elapsedTime = 0;
+    }
+
+    /**
+     * Set a time to wait for this thread
+     * 
+     * @param time
+     * @return the time to set
      */
     public void setTime(int time)
     {
-        this.time = time;
+        this.timeout = time;
+    }
+
+    /**
+     * set update control
+     * 
+     * @param update
+     */
+    public void setUpdate(boolean update)
+    {
+        this.update.setState(update);
     }
 
     @Override
     public void run()
     {
-        time();
-    }
-
-    /**
-     * this method tries to create a counter to control the process of choose and
-     * buy a ticket by a client
-     */
-    public void time()
-    {
         try
         {
-            Thread.sleep(time); // Tiempo de espera para la compra
+            while (update.isSet())
+            {
+                Thread.sleep(updateTime);
+                addElapsed(updateTime);
+                update.setState(elapsedTime >= timeout);
+            }
         }
         catch (InterruptedException e)
         {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
+            LOG.error(e.getMessage());
         }
+    }
+
+    protected synchronized void addElapsed(int msecs)
+    {
+        elapsedTime += msecs;
+    }
+
+    public synchronized void reset()
+    {
+        elapsedTime = 0;
     }
 }
