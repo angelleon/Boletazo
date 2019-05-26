@@ -9,6 +9,7 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
 import java.net.UnknownHostException;
+import java.sql.SQLException;
 import java.util.Enumeration;
 import java.time.LocalDateTime;
 
@@ -23,7 +24,7 @@ public class Boletazo
     private static final int PROF_PORT = 5000;
     private static final int TEAM_NUM = 3;
 
-    public static void main(String[] args)
+    public static void main(String[] args) throws SQLException
     {
         LOG.info("Boletazo server started at " + LocalDateTime.now().toString());
         boolean alive = true;
@@ -42,6 +43,9 @@ public class Boletazo
                     Socket socket = serverSocket.accept();
                     SocketThread thread = new SocketThread(socket, db, sc);
                     thread.start();
+                    //I'm not sure if this goes here...
+                    Report rep = new Report();
+                    rep.sendReport();
                 }
                 serverSocket.close();
             }
@@ -57,7 +61,6 @@ public class Boletazo
         }
         LOG.info("Exiting...");
     }
-
     /**
      * Connects to professor server to send IP and port of this service
      * 

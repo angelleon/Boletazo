@@ -73,7 +73,7 @@ public class ThreadClient extends Thread{
             LOG.info("Init conversation ");
             msgOut = newMessage();
             msgOut.writeUTF("0,null");
-            cltSocket.close();
+            //cltSocket.close();
             return true;
         }catch(UnknownHostException e) {
             LOG.error("(0) without conection to host "+HOST+" on port "+PORT);
