@@ -48,15 +48,13 @@ public class Boletazo
             try
             {
                 serverSocket = new ServerSocket(PORT);
-                Report rep = new Report(alive, db); // Este objeto debe se unico, no estar inicializado cada vez que se
-                // ejecut el loop principal
+                Report rep = new Report(alive, db);
                 rep.start();
                 while (alive.isSet())
                 {
                     Socket socket = serverSocket.accept();
                     SocketThread thread = new SocketThread(socket, db, sessionControl, anonymousSc);
                     thread.start();
-                    // I'm not sure if this goes here...
                 }
                 serverSocket.close();
             }

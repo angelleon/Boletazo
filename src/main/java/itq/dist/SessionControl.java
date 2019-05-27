@@ -17,6 +17,7 @@ public class SessionControl
     private int maxSessions;
     private int lastAssignedIndex;
 
+    
     private Ticket[][] reservedTickets;
     private String[] email;
     private String[] user;
@@ -111,6 +112,7 @@ public class SessionControl
 
     public synchronized boolean isValid(int sessionId)
     {
+
         LOG.debug(isInRange(sessionId));
         boolean b = isInRange(sessionId);
         if (!b)

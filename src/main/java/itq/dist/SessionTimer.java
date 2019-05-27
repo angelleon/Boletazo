@@ -17,6 +17,7 @@ public class SessionTimer extends TimerThread
         this.sessionId = sessionId;
         this.sessionControl = sessionControl;
         stopFlag = new Flag(false);
+
     }
 
     @Override

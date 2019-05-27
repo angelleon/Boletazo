@@ -1,5 +1,4 @@
 package itq.dist;
-
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
@@ -100,10 +99,8 @@ public class Report extends TimerThread
             LOG.error(ex.getMessage());
         }
     }
-
     /***
-     * Generate de report of last day
-     * 
+     * Generate the report of last day
      * @return
      * @throws SQLException
      * @throws IOException
