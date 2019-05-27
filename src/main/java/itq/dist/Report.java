@@ -61,7 +61,7 @@ public class Report extends TimerThread
 
         LocalDateTime now = LocalDateTime.now();
         LocalDateTime next = LocalDateTime.of(now.getYear(), now.getMonth(), now.getDayOfMonth(),
-                BoletazoConstants.REPORT_HOUR, BoletazoConstants.REPORT_MINUTE);
+                BoletazoConf.REPORT_HOUR, BoletazoConf.REPORT_MINUTE);
         if (now.isAfter(next))
         {
             next = next.plusDays(1);

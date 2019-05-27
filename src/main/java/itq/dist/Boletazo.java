@@ -19,12 +19,12 @@ import org.apache.logging.log4j.Logger;
 public class Boletazo
 {
     private static final Logger LOG = LogManager.getLogger();
-    private static final int PORT = BoletazoConstants.PORT;
-    private static final String PROF_HOST = BoletazoConstants.PROF_HOST;
-    private static final int PROF_PORT = BoletazoConstants.PROF_PORT;
-    private static final int TEAM_NUM = BoletazoConstants.TEAM_NUM;
-    private static final int ANONYMOUS_SESSION_TIMEOUT = BoletazoConstants.ANONYMOUS_SESSION_TIMEOUT;
-    private static final int SESSION_TIMEOUT = BoletazoConstants.SESSION_TIMEOUT;
+    private static final int PORT = BoletazoConf.PORT;
+    private static final String PROF_HOST = BoletazoConf.PROF_HOST;
+    private static final int PROF_PORT = BoletazoConf.PROF_PORT;
+    private static final int TEAM_NUM = BoletazoConf.TEAM_NUM;
+    private static final int ANONYMOUS_SESSION_TIMEOUT = BoletazoConf.ANONYMOUS_SESSION_TIMEOUT;
+    private static final int SESSION_TIMEOUT = BoletazoConf.SESSION_TIMEOUT;
 
     public static void main(String[] args) throws SQLException
     {

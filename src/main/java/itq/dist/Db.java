@@ -20,9 +20,9 @@ public class Db
     private static final Logger LOG = LogManager.getLogger(Db.class);
 
     // Informacion necesaria para conectarse a mysql
-    private static final String USR = BoletazoConstants.DB_USR;
-    private static final String PASSWD = BoletazoConstants.DB_PASSWD;
-    private static final String URL = "jdbc:mysql://" + BoletazoConstants.DB_HOST
+    private static final String USR = BoletazoConf.DB_USR;
+    private static final String PASSWD = BoletazoConf.DB_PASSWD;
+    private static final String URL = "jdbc:mysql://" + BoletazoConf.DB_HOST
             + ":3306/Boletazo?useLegacyDatetimeCode=false&serverTimezone=UTC";
 
     // TODO comentar la condicion date >= SYSDATE();
