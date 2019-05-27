@@ -1,6 +1,6 @@
 package itq.dist;
 
-public final class BoletazoConstants
+public final class BoletazoConf
 {
     public static final int PORT = 2000;
     public static final String PROF_HOST = "localhost";
