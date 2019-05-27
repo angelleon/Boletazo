@@ -17,14 +17,13 @@ import org.apache.logging.log4j.Logger;
 
 import itq.dist.ConversationException.ERROR;
 
-public class SocketThread extends Thread
+public class BoletazoThread extends Thread
 {
 
     // TODO liberar boletos si el cliente manda una solicitud de reserva con 0 ids
-    private static final Logger LOG = LogManager.getLogger(SocketThread.class);
+    private static final Logger LOG = LogManager.getLogger(BoletazoThread.class);
     private static final int MAX_MSG_LENGTH = BoletazoConf.MAX_MSG_LENGTH;
     public static final int PERMITED_TICKETS = BoletazoConf.PERMITED_TICKETS;
-    private static final int PAYMENT_TIMEOUT = BoletazoConf.PAYMENT_TIMEOUT;
     private static final int EMAIL_PORT = BoletazoConf.EMAIL_PORT;
     private static final String EMAIL_IP = BoletazoConf.EMAIL_IP;
 
@@ -50,14 +49,13 @@ public class SocketThread extends Thread
     private String email;
     private String numberCard;
     private int idusr;
-    
+
     private String stateResidence;
 
     private EventInfo[] searchResult;
     private EventInfo selectedEvent;
     private Ticket[] reservedTickets;
-    private int[] soldTickets; 
-    private TimerThread ticketTimer;
+    private int[] soldTickets;
 
     /**
      * create an association between variable and its value
@@ -146,7 +144,7 @@ public class SocketThread extends Thread
      *            Socket is the socket, db is the data base already loaded and sc is
      *            the control of the session client
      */
-    SocketThread(Socket socket, Db db, SessionControl sessionControl, SessionControl anonymousSc)
+    BoletazoThread(Socket socket, Db db, SessionControl sessionControl, SessionControl anonymousSc)
     {
         this.socket = socket;
         this.db = db;
@@ -503,23 +501,29 @@ public class SocketThread extends Thread
         // see if the nRequestedTickets is equal or less than permit_Ticket
         if (nRequestedTickets <= PERMITED_TICKETS)
         {
-            reservedTickets = new Ticket[nRequestedTickets];
+
             reqTicketIds = new int[nRequestedTickets];
             // desde la posicion de nRequestedTicked + nRequestTicked
             int numPart = 4;
             // array with the request idtickets
             for (int i = 0; i < nRequestedTickets; i++)
             {
-                ticketTimer = new TimerThread();
                 LOG.debug(" posicion en mensaje " + numPart + " posicion-numero de ticket " + i);
                 reqTicketIds[i] = Integer.parseInt(rawTokensIn[numPart]);
-                reservedTickets[i] = db.getAvailableTicketById(reqTicketIds[i]);
                 numPart++;
+            }
+            if (db.consultTicketStatus(reqTicketIds))
+            {
+                reservedTickets = new Ticket[nRequestedTickets];
+                for (int i = 0; i < reqTicketIds.length; i++)
+                {
+                    reservedTickets[i] = db.getAvailableTicketById(reqTicketIds[i]);
+                    LOG.debug(reservedTickets[i]);
+                }
+                anonymousSc.setReservedTickets(reservedTickets, sessionId);
             }
         }
         // Starting time for pay reserved tickets
-        ticketTimer = new PaymentTimer(PAYMENT_TIMEOUT);
-        ticketTimer.start();
         return true;
     }
 
@@ -541,33 +545,48 @@ public class SocketThread extends Thread
         msgOut.append(sessionId);
         // todo los tickets fueron rerservados
         msgOut.append(",");
-        for (int i = 0; i < reqTicketIds.length; i++)
+        // TODO: Arreglar esto
+
+        if (db.consultTicketStatus(reqTicketIds))
         {
-            if (db.consultTicketStatus(reqTicketIds[i]) == 1)
-            { // ver si puede ser reservado ....y reservarlo :V
+            for (int i = 0; i < reqTicketIds.length; i++)
+            {
                 db.updateTicketStatus(reqTicketIds[i], "reservado");
                 cost = cost + db.getTicketCostById(reqTicketIds[i]);
             }
-            else
-            {
-                LOG.info("Requested ticket [" + reqTicketIds[i] + "] is not available");
-            }
-        }
-        msgOut.append(cost);
-        msgOut.append(",");
-        msgOut.append(nRequestedTickets);
-        // details of each ticket
-        for (int i = 0; i < reqTicketIds.length; i++)
-        {
+            msgOut.append(cost);
             msgOut.append(",");
-            msgOut.append(reqTicketIds[i]);
-            // sacar por aca un arreglo de cada ticket con su detalle?, #nunca se usa
-            // despues
+            msgOut.append(nRequestedTickets);
+            // details of each ticket
+            for (int i = 0; i < reqTicketIds.length; i++)
+            {
+                msgOut.append(",");
+                msgOut.append(reqTicketIds[i]);
+                // sacar por aca un arreglo de cada ticket con su detalle?, #nunca se usa
+                // despues
+            }
+            anonymousSc.setReservedTickets(reservedTickets, sessionId);
+            // sessionControl.setReservedTickets(reservedTickets, sessionId);
+            dataOut.writeUTF(msgOut.toString());
+            return true;
         }
-        anonymousSc.setReservedTickets(reservedTickets, sessionId);
-        // sessionControl.setReservedTickets(reservedTickets, sessionId);
-        dataOut.writeUTF(msgOut.toString());
-        return true;
+        else
+        {
+            LOG.info("Requested tickets are not available");
+            msgOut.append(0);
+            msgOut.append("," + 0 + ",null");
+            // details of each ticket
+            /*
+             * for (int i = 0; i < reqTicketIds.length; i++) { msgOut.append(",");
+             * msgOut.append(reqTicketIds[i]); // sacar por aca un arreglo de cada ticket
+             * con su detalle?, #nunca se usa // despues }
+             */
+            // anonymousSc.setReservedTickets(reservedTickets, sessionId);
+            // sessionControl.setReservedTickets(reservedTickets, sessionId);
+            dataOut.writeUTF(msgOut.toString());
+            return false;
+        }
+
     }
 
     /**
@@ -692,6 +711,7 @@ public class SocketThread extends Thread
 
     /**
      * Client confirm that he wants the tickets
+     * 
      * @return
      * @throws ConversationException
      * @throws IOException
@@ -717,7 +737,7 @@ public class SocketThread extends Thread
             if (type.equals("VISA") || type.equals("MASTERCARD"))
             {
                 LOG.info("Compra por :" + numberCard + "," + date + "," + cvv + "," + type);
-                return true;     
+                return true;
             }
             LOG.error("tipo tarjeta incorrecta ");
         }
@@ -748,35 +768,38 @@ public class SocketThread extends Thread
         msgOut.append("el arreglo de los tickets....");
         // TODO completar condicion
         boolean success = true;
-        reservedTickets = sessionControl.getReservedTickets(sessionId);
-        LOG.debug("" + reservedTickets + " " + reservedTickets.length + " " + sessionId);
-        if (reservedTickets == null)
+        if (reservedTickets != null && sessionControl.confirmTickets(sessionId))
         {
-            success = false;
-            msgOut.append("null");
-        }
-        else
-        {
-
+            reservedTickets = sessionControl.getReservedTickets(sessionId);
+            LOG.debug(reservedTickets);
+            soldTickets = new int[reservedTickets.length];
+            LOG.debug("" + reservedTickets + " " + reservedTickets.length + " " + sessionId);
             for (int i = 0; i < reservedTickets.length; i++)
-	    {
+            {
                 LOG.debug(i);
+                LOG.debug(reservedTickets[i]);
                 if (db.updateTicketStatus(reservedTickets[i].getIdTicket(), "vendido")) // && reservedTickets[i].)
-                {   
+                {
                     soldTickets[i] = reservedTickets[i].getIdTicket();
-                    msgOut.append("0");
+                    msgOut.append("" + soldTickets[i]);
                 }
                 else
                 {
                     success = false;
                 }
             }
+            success = true;
             msgOut.append("1");
+            dataOut.writeUTF(msgOut.toString());
+            db.updateTicketSold(numberCard, idusr, soldTickets);
+            emailSender(); // It is responsible for sending the request to the mail server
         }
-        dataOut.writeUTF(msgOut.toString());
-        // sold_tickets
-        db.updateTicketSold(numberCard, idusr, soldTickets);
-        emailSender(); // It is responsible for sending the request to the mail server        
+        else
+        {
+            success = false;
+            msgOut.append("null");
+            dataOut.writeUTF(msgOut.toString());
+        }
         return success;
     }
 
@@ -840,7 +863,7 @@ public class SocketThread extends Thread
                     }
                     if (contFirst < valuesLen)
                     { throw new ConversationException(ERROR.NOT_ENOUGH_ARGUMENTS,
-				    currentConversationState); }
+                            currentConversationState); }
                     break;
                 default:
                     throw new ConversationException(ERROR.INCORRECT_CONVERSATION_STATE, currentConversationState);
@@ -1137,7 +1160,7 @@ public class SocketThread extends Thread
         rawTokensIn = rawMsg.split(",");
         // dataOut = new DataOutputStream(socket.getOutputStream());
     }
-    
+
     private void emailSender() throws UnknownHostException, IOException, DbException
     {
         LOG.debug("enviando email");

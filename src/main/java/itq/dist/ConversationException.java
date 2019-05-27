@@ -1,6 +1,6 @@
 package itq.dist;
 
-import itq.dist.SocketThread.STATE;
+import itq.dist.BoletazoThread.STATE;
 
 public class ConversationException extends BoletazoException
 {

@@ -1,4 +1,5 @@
 package itq.dist;
+
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
@@ -18,21 +19,8 @@ import org.apache.logging.log4j.Logger;
 
 public class Report extends TimerThread
 {
-    private Connection conn;
     private static final Logger LOG = LogManager.getLogger(Report.class);
-    private static final String RUTE_REPORT = "/opt/Boletazo/Reports/";
-    private static final String SOLD_TODAY = "SELECT E.name event, V.name place, "
-            + "SE.cost, Ticket.idStatus, ST.idCard, ST.idUser "
-            + "FROM Ticket T, Event E, Venue V, Section SE, Sold_Tickets ST"
-            + "WHERE ticket.idstatus > 1 "
-            + "AND E.idEvent = Ticket.idEvent "
-            + "AND E.idVenue = V.idVenue "
-            + "AND T.idSection = SE.idSection "
-            + "AND T.idTicket = ST.idTicket "
-            + "AND DATE_FORMAT(ST.dateSale, '%H:%i:%s') > '00:00:00' "
-            + "AND DATE_FORMAT(ST.datesale, '%H:%i:%s') < '23:59:59' "
-            + "AND DATE_FORMAT(ST.datesale, '%d-%m-%Y') = DATE_FORMAT(CURDATE()-1,'%d-%m-%Y') "
-            + "ORDER BY SE.cost, ST.idCard ";
+    private static final String PATH_REPORT_DIR = "/opt/Boletazo/Reports/";
 
     private static FileWriter newfile;
     private static BufferedWriter bw;
@@ -45,6 +33,9 @@ public class Report extends TimerThread
     private int initialSleep;
     private Db db;
 
+    private LocalDateTime now;
+    private LocalDateTime next;
+
     public Report(Flag alive, Db db) throws IOException
     {
         super();
@@ -52,15 +43,8 @@ public class Report extends TimerThread
         this.alive = alive;
         this.db = db;
 
-        date = new Date();
-        dateMask = new SimpleDateFormat("dd-MM-yyyy");
-        LOG.debug(RUTE_REPORT + dateMask.format(date) + ".txt");
-        File file = new File(RUTE_REPORT + dateMask.format(date) + ".txt");
-        file.createNewFile();
-        newfile = new FileWriter(file);
-
-        LocalDateTime now = LocalDateTime.now();
-        LocalDateTime next = LocalDateTime.of(now.getYear(), now.getMonth(), now.getDayOfMonth(),
+        now = LocalDateTime.now();
+        next = LocalDateTime.of(now.getYear(), now.getMonth(), now.getDayOfMonth(),
                 BoletazoConf.REPORT_HOUR, BoletazoConf.REPORT_MINUTE);
         if (now.isAfter(next))
         {
@@ -77,17 +61,21 @@ public class Report extends TimerThread
     @Override
     public void run()
     {
-        timeout = initialSleep;
+        // timeout = initialSleep;
+        timeout = 4000;
         updateTime = 5000;
         try
         {
             super.run();
             reportDay();
-            timeout = MSECONDS_IN_A_DAY;
+
+            timeout = calcNextSleepInterval();
             while (alive.isSet())
             {
                 super.run();
+                LOG.debug("exec");
                 reportDay();
+                timeout = calcNextSleepInterval();
             }
         }
         catch (SQLException ex)
@@ -99,37 +87,65 @@ public class Report extends TimerThread
             LOG.error(ex.getMessage());
         }
     }
+
     /***
      * Generate the report of last day
+     * 
      * @return
      * @throws SQLException
      * @throws IOException
      */
     public String reportDay() throws SQLException, IOException
     {
+        date = new Date();
+        dateMask = new SimpleDateFormat("dd-MM-yyyy");
+        String report_path = PATH_REPORT_DIR + dateMask.format(date) + ".txt";
+        LOG.debug(report_path);
+        File file = new File(report_path);
+        file.createNewFile();
+        newfile = new FileWriter(file);
         bw = new BufferedWriter(newfile);
         bw.newLine();
-        bw.append("event          |\t venue      |\t cost     |\t statusticket      |\t card number      |");
+        bw.append(
+                "|    event          |     venue      |     cost     |     statusticket      |     card number      |");
         bw.newLine();
-        bw.append("*******************************************************************************");
+        bw.append(
+                "***************************************************************************************************");
 
-        PreparedStatement ps = conn.prepareStatement(SOLD_TODAY);
-        ResultSet resp = ps.executeQuery();
-        while (resp.next())
+        String reportRow = "";
+        try
         {
-            String eventName = resp.getString("event");
-            String site = resp.getString("place");
-            double cost = resp.getDouble("cost");
-            int status = resp.getInt("idStatus");
-            int card = resp.getInt("card");
-            bw.newLine();
-            bw.append(eventName + "|\t" + site + "|\t" + cost + "|\t" + status + "|\t" + card);
+            for (ReportInfo repInf : db.getReportInfo())
+            {
+                bw.newLine();
+                reportRow = "|    " + repInf.getEventName() + "    |    " + repInf.getSite() + "    |    "
+                        + repInf.getCost()
+                        + "    |    " + repInf.getStatus() + "    |    " + repInf.getCard();
+                LOG.debug("Writing to report \n" + reportRow);
+                bw.append(reportRow);
+            }
         }
+        catch (DbException ex)
+        {
+            LOG.error(ex.getMessage());
+            bw.newLine();
+            bw.append("Can not retrive information from DB !!!!!");
+        }
+
         bw.newLine();
 
-        bw.append("*******************************************************************************");
-        LOG.debug("Check report on : " + RUTE_REPORT + dateMask.format(date) + ".txt");
+        bw.append(
+                "***************************************************************************************************");
+        LOG.info("Check report on : " + report_path);
         bw.close();
-        return RUTE_REPORT + dateMask.format(date) + ".txt";
+        return report_path;
+    }
+
+    private int calcNextSleepInterval()
+    {
+        now = LocalDateTime.now();
+        next = LocalDateTime.of(now.getYear(), now.getMonth(), now.getDayOfMonth(),
+                BoletazoConf.REPORT_HOUR, BoletazoConf.REPORT_MINUTE).plusDays(1);
+        return 1000 * (int) (next.toEpochSecond(ZoneOffset.UTC) - now.toEpochSecond(ZoneOffset.UTC));
     }
 }

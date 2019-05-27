@@ -1,6 +1,6 @@
 USE Boletazo;
 
-DROP TABLE IF EXISTS Sold_tickets
+DROP TABLE IF EXISTS Sold_tickets;
 
 -- this table save the information relative to sold tickets
 CREATE TABLE Sold_tickets
@@ -18,10 +18,11 @@ CREATE TABLE Sold_tickets
 -- CREATE FUNCTION SELECT_DAILY_REPORT ()
 --      RETURN DR_RECORD_T
 -- BEGIN
---     SELECT E.name event, V.name place, SE.cost, Ticket.idStatus, ST.idCard, ST.idUser 
---     FROM Ticket T, Event E, Venue V, Section SE, Sold_Tickets ST
---     WHERE ticket.idstatus > 1 
---     AND E.idEvent = Ticket.idEvent 
+--     SELECT E.name event, V.name place, SE.cost, T.idStatus status,
+--            ST.idCard card, ST.idUser user
+--     FROM Ticket T, Event E, Venue V, Section SE, Sold_tickets ST
+--     WHERE T.idStatus = 2 
+--     AND E.idEvent = T.idEvent 
 --     AND E.idVenue = V.idVenue 
 --     AND T.idSection = SE.idSection 
 --     AND T.idTicket = ST.idTicket 
@@ -42,8 +43,34 @@ DROP PROCEDURE IF EXISTS ResetBoletazo;
 DELIMITER //
 CREATE PROCEDURE ResetBoletazo()
 BEGIN
+    DELETE FROM Sold_tickets;
     UPDATE Ticket 
     SET idStatus = 1
     WHERE idStatus != 1;
 END //
 DELIMITER ;
+
+DROP PROCEDURE IF EXISTS Sell_tickets;
+
+DELIMITER //
+
+CREATE PROCEDURE Sell_tickets (n_tickets INTEGER)
+L_selll_tickets:
+BEGIN 
+    DECLARE i INT DEFAULT 1;
+    IF n_tickets > (SELECT COUNT(*) FROM Ticket) OR n_tickets <= 0 THEN 
+        LEAVE L_selll_tickets;
+    END IF;
+    UPDATE Ticket
+    SET idStatus = 3
+    WHERE idTicket <= n_tickets;
+    
+    WHILE i <= n_tickets DO
+        INSERT INTO Sold_tickets
+               VALUES (i, 1234567890 + i * 10, 1, CURRENT_TIMESTAMP);
+        SET i = i + 1;
+    END WHILE;
+END //
+
+DELIMITER ;
+

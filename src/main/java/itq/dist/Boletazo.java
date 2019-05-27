@@ -53,7 +53,7 @@ public class Boletazo
                 while (alive.isSet())
                 {
                     Socket socket = serverSocket.accept();
-                    SocketThread thread = new SocketThread(socket, db, sessionControl, anonymousSc);
+                    BoletazoThread thread = new BoletazoThread(socket, db, sessionControl, anonymousSc);
                     thread.start();
                 }
                 serverSocket.close();
