@@ -19,6 +19,8 @@ CREATE SCHEMA IF NOT EXISTS `Boletazo` DEFAULT CHARACTER SET utf8 ;
 SHOW WARNINGS;
 USE `Boletazo` ;
 
+SOURCE create_boletazodev.sql
+
 -- -----------------------------------------------------
 -- Table `Boletazo`.`Status`
 -- -----------------------------------------------------
@@ -212,3 +214,7 @@ SHOW WARNINGS;
 SET SQL_MODE=@OLD_SQL_MODE;
 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS;
 SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS;
+
+SOURCE InitialDataLoad.sql
+SOURCE CREATE_LOGINFO_USERINFO.sql
+SOURCE sold_tickets_Boletazo.sql
