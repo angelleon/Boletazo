@@ -10,12 +10,8 @@ import java.sql.Statement;
 import java.time.LocalDate;
 import java.util.HashMap;
 
-import javax.naming.spi.ResolveResult;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-
-import com.mysql.cj.protocol.Resultset;
 
 import itq.dist.DbException.ERROR;
 
@@ -24,9 +20,10 @@ public class Db
     private static final Logger LOG = LogManager.getLogger(Db.class);
 
     // Informacion necesaria para conectarse a mysql
-    private static final String USR = "boletazodev";
-    private static final String PASSWD = "contrapass";
-    private static final String URL = "jdbc:mysql://25.7.251.120:3306/Boletazo?useLegacyDatetimeCode=false&serverTimezone=UTC";
+    private static final String USR = BoletazoConstants.DB_USR;
+    private static final String PASSWD = BoletazoConstants.DB_PASSWD;
+    private static final String URL = "jdbc:mysql://" + BoletazoConstants.DB_HOST
+            + ":3306/Boletazo?useLegacyDatetimeCode=false&serverTimezone=UTC";
 
     // TODO comentar la condicion date >= SYSDATE()
     // Lista de querys
@@ -420,12 +417,6 @@ public class Db
      */
     public boolean toRegister(String user, String passwd, String email, String residence) throws DbException
     {
-        // ResultSet result = null;
-        String updateUsrInfo = "insert into UserInfo "
-                + "(email,estado) values (?,?) ";
-        String updateLoginInfo = "INSERT INTO LoginInfo " +
-                "(username,password) values (?,?) ";
-
         try
         {
             PreparedStatement ps = conn.prepareStatement(UPDATE_USR_INFO);
@@ -437,7 +428,6 @@ public class Db
             ps = conn.prepareStatement(UPDATE_LOG_INFO);
             ps.setString(1, user);
             ps.setString(2, passwd);
-            ps.executeUpdate(updateLoginInfo);
             ps.close();
             return true;
         }
