@@ -9,7 +9,7 @@ import org.apache.logging.log4j.Logger;
 public class TimerThread extends Thread
 {
     private static final Logger LOG = LogManager.getLogger(TimerThread.class);
-    protected static final int updateTime = 500;
+    protected static final int updateTime = 250;
     protected int elapsedTime;
 
     protected int timeout;
@@ -71,7 +71,7 @@ public class TimerThread extends Thread
             while (update.isSet())
             {
                 Thread.sleep(updateTime);
-                elapsedTime += updateTime;
+                addElapsed(updateTime);
                 update.setState(elapsedTime >= timeout);
             }
         }
@@ -81,7 +81,12 @@ public class TimerThread extends Thread
         }
     }
 
-    public void reset()
+    protected synchronized void addElapsed(int msecs)
+    {
+        elapsedTime += msecs;
+    }
+
+    public synchronized void reset()
     {
         elapsedTime = 0;
     }

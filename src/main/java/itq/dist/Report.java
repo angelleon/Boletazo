@@ -18,25 +18,25 @@ import org.apache.logging.log4j.Logger;
 public class Report
 {
     private Connection conn;
-    private static final Logger LOG = LogManager.getLogger(); 
-    private static final String RUTE_REPORT = "C:/opt/eclipse/Espacio/PROYECTO/Reports/"; 
-    private static final String SOLD_TODAY = 
-             " select event.name Event,venue.name Place,section.cost,ticket.idstatus, sold_tickets.idcard, sold_tickets.iduser "
-           + " from ticket,event,venue,section,sold_tickets "
-           + " where ticket.idstatus > 1 "
-           + " and event.idevent = ticket.idevent "
-           + " and event.idvenue = venue.idvenue "
-           + " and ticket.idsection = section.idsection "
-           + " and ticket.idticket = sold_tickets.idticket "
-           + " and date_format(sold_tickets.datesale, '%H:%i:%s') > '00:00:00' "  
-           + " and date_format(sold_tickets.datesale, '%H:%i:%s') < '23:59:59' "
-           + " and date_format(sold_tickets.datesale, '%d-%m-%Y') == date_format(curdate()-1,'%d-%m-%Y') "
-           + " order by section.cost,sold_tickets.idcard ";
+    private static final Logger LOG = LogManager.getLogger();
+    private static final String RUTE_REPORT = "C:/opt/eclipse/Espacio/PROYECTO/Reports/";
+    private static final String SOLD_TODAY = " select event.name Event,venue.name Place,section.cost,ticket.idstatus, sold_tickets.idcard, sold_tickets.iduser "
+            + " from ticket,event,venue,section,sold_tickets "
+            + " where ticket.idstatus > 1 "
+            + " and event.idevent = ticket.idevent "
+            + " and event.idvenue = venue.idvenue "
+            + " and ticket.idsection = section.idsection "
+            + " and ticket.idticket = sold_tickets.idticket "
+            + " and date_format(sold_tickets.datesale, '%H:%i:%s') > '00:00:00' "
+            + " and date_format(sold_tickets.datesale, '%H:%i:%s') < '23:59:59' "
+            + " and date_format(sold_tickets.datesale, '%d-%m-%Y') == date_format(curdate()-1,'%d-%m-%Y') "
+            + " order by section.cost,sold_tickets.idcard ";
 
     private static FileWriter newfile;
     private static BufferedWriter bw;
     private static Date date;
     private static SimpleDateFormat dateMask;
+
     public Report() throws IOException{       
         date = new Date();
         dateMask = new SimpleDateFormat("dd-MM-yyyy");
@@ -64,12 +64,13 @@ public class Report
         }
     }
     /***
-     * Generate de report of last day
+     * Generate the report of last day
      * @return
      * @throws SQLException
      * @throws IOException
      */
-    public String reportDay() throws SQLException, IOException{
+    public String reportDay() throws SQLException, IOException
+    {
         bw = new BufferedWriter(newfile);
         bw.newLine();
         bw.append("Event          |\t Venue      |\t Cost     |\t statusticket      |\t numero tarjeta      |");

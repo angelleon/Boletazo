@@ -17,6 +17,11 @@ public class SessionControl
     private int maxSessions;
     private int lastAssignedIndex;
 
+    
+    private Ticket[][] reservedTickets;
+    private String[] email;
+    private String[] user;
+
     private SessionTimer[] sessionTimers;
 
     /**
@@ -38,10 +43,15 @@ public class SessionControl
         sessionTimers = new SessionTimer[maxSessions];
         availableCount = maxSessions;
         lastAssignedIndex = 0;
+        reservedTickets = new Ticket[maxSessions][];
+        email = new String[maxSessions];
+        user = new String[maxSessions];
         for (int i = 0; i < avalilableSessionIDs.length; i++)
         {
             avalilableSessionIDs[i] = true;
+            reservedTickets[i] = new Ticket[SocketThread.PERMITED_TICKETS];
         }
+
     }
 
     SessionControl()
@@ -102,7 +112,12 @@ public class SessionControl
 
     public synchronized boolean isValid(int sessionId)
     {
-        return isInRange(sessionId) && isActive(sessionId);
+
+        LOG.debug(isInRange(sessionId));
+        boolean b = isInRange(sessionId);
+        if (!b)
+            return false;
+        return isActive(sessionId);
     }
 
     /**
@@ -111,8 +126,6 @@ public class SessionControl
      * @param sessionId
      * @return true if session on the range(sessionIs is occuped), false otherwise
      */
-
-
 
     private boolean isInRange(int sessionId)
     {
@@ -123,9 +136,15 @@ public class SessionControl
     private synchronized boolean isActive(int sessionId)
     {
         int index = sessionIdToIndex(sessionId);
-        LOG.debug("available sessionId [" + sessionId + "]: [l" + avalilableSessionIDs[index] + "]\nalive timer ["
-                + sessionTimers[index].isAlive() + "]");
-        return !avalilableSessionIDs[index] && sessionTimers[index].isAlive();
+        LOG.debug("index:" + index);
+        LOG.debug("timer: " + sessionTimers[index]);
+        LOG.debug("available sessionId [" + sessionId + "]: [" + avalilableSessionIDs[index] + "]");
+        if (sessionTimers[index] != null)
+            LOG.debug("alive timer [" + sessionTimers[index].isAlive() + "]");
+        boolean b = !avalilableSessionIDs[index];
+        if (!b)
+            return false;
+        return sessionTimers[index].isAlive();
     }
 
     public int getMaxSessions()
@@ -133,7 +152,7 @@ public class SessionControl
         return maxSessions;
     }
 
-    public void updateSessionTimer(int sessionId) // throws NullPointerException
+    public synchronized void resetSessionTimer(int sessionId) // throws NullPointerException
     {
         sessionTimers[sessionIdToIndex(sessionId)].reset();
     }
@@ -147,6 +166,39 @@ public class SessionControl
      */
     private int sessionIdToIndex(int sessionId)
     {
+        LOG.debug("sessionId [" + sessionId + "]");
+        LOG.debug("startID [ " + startId + "]");
         return sessionId - startId;
+    }
+
+    public synchronized void setReservedTickets(Ticket[] t, int sessionId)
+    {
+        LOG.debug("Setting reserved tickets for session: [" + sessionId + "] [" + t.length + "] tickets");
+        reservedTickets[sessionIdToIndex(sessionId)] = t;
+    }
+
+    public synchronized Ticket[] getReservedTickets(int sessionId)
+    {
+        return reservedTickets[sessionIdToIndex(sessionId)];
+    }
+
+    public synchronized void setEmail(String email, int sessionId)
+    {
+        this.email[sessionIdToIndex(sessionId)] = email;
+    }
+
+    public synchronized String getEmail(int sessionId)
+    {
+        return email[sessionIdToIndex(sessionId)];
+    }
+
+    public synchronized void setUser(String user, int sessionId)
+    {
+        this.user[sessionIdToIndex(sessionId)] = user;
+    }
+
+    public synchronized String getUser(int sessionId)
+    {
+        return user[sessionIdToIndex(sessionId)];
     }
 }
