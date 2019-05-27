@@ -56,7 +56,7 @@ public class Boletazo
                     //I'm not sure if this goes here...
                     Report rep = new Report();
                     rep.sendReport();
-                }
+              	} 
                 serverSocket.close();
             }
             catch (IOException e)

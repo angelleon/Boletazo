@@ -26,9 +26,10 @@ public class Db
     // Informacion necesaria para conectarse a mysql
     private static final String USR = "boletazodev";
     private static final String PASSWD = "contrapass";
+
     private static final String URL = "jdbc:mysql://25.7.251.120:3306/Boletazo?useLegacyDatetimeCode=false&serverTimezone=UTC";
 
-    // TODO comentar la condicion date >= SYSDATE()
+    // TODO comentar la condicion date >= SYSDATE();
     // Lista de querys
     /**
      * En un PreparedStatement se pueden reemplazar valores en el query usando el
@@ -63,7 +64,7 @@ public class Db
             + "AND T.idStatus = (SELECT idStatus "
             + "                  FROM Status "
             + "                  WHERE status = 'DISPONIBLE') "
-            // + "AND E.date >= SYSDATE() "
+            // + "AND E.date >= SYSDATE()"
             + "ORDER BY T.idTicket";
 
     // TODO Verificar columnas seleccionadas
@@ -133,14 +134,20 @@ public class Db
             + "FROM UserInfo U, LoginInfo L "
             + "WHERE L.idLogin = U.idLogin "
             + "AND L.username = ? ";
-
+   
+    private static final String INSERT_SOLD_TICKETS = "INSERT INTO sold_tickets "
+            + "(idticket,idcard,iduser) "
+            + " VALUES "
+            + "( ? , ? , ?)";
+            
     @SuppressWarnings("unused")
     private static char mander = 'c';
 
     private Connection conn;
     private boolean connected;
 
-    // Estructuras para almacenamiento temporal de informaciï¿½n
+    // Estructuras para almacenamiento temporal de información
+
     protected HashMap<Integer, Ticket> availableTickets;
 
     Db()
@@ -205,7 +212,8 @@ public class Db
                 idStatus = result.getInt("idStatus");
                 idSection = result.getInt("idSection");
                 idEvent = result.getInt("idEvent");
-                // LOG.debug(idTicket+"-"+idEvent+"-"+idStatus+"-"+idSection);
+
+               // LOG.debug(idTicket+"-"+idEvent+"-"+idStatus+"-"+idSection);
                 if (!availableTickets.containsKey(idTicket))
                 {
                     seatNumber = result.getString("seatNumber");
@@ -425,7 +433,6 @@ public class Db
                 + "(email,estado) values (?,?) ";
         String updateLoginInfo = "INSERT INTO LoginInfo " +
                 "(username,password) values (?,?) ";
-
         try
         {
             PreparedStatement ps = conn.prepareStatement(UPDATE_USR_INFO);
@@ -758,5 +765,43 @@ public class Db
             throw new DbException();
         }
         return email;
+    }
+    
+    public int getIdUser(String email) {
+        int iduser = 0;
+        String searchIdUser =" Select iduser"
+                +" from userinfo "
+                +" where email = ? ";
+        try {           
+            PreparedStatement ps = conn.prepareStatement(searchIdUser);
+            ps.setString(1,email);
+            ResultSet result = ps.executeQuery();
+            while(result.next()) {
+                iduser = result.getInt("iduser");
+            }
+        }catch (SQLException e){
+            LOG.debug(e.getMessage());
+        }
+       return iduser;
+    }
+    /**
+     * Insert into a sold_tickets, necessary to reports!
+     * @param card : number of card that bought tickets
+     * @param iduser : user that bought tickets
+     * @param tickets : ...
+     */
+    public void updateTicketSold(String card,int iduser,int [] tickets) {
+        try {           
+            for(int i = 0;i<tickets.length;i++) {
+                PreparedStatement ps = conn.prepareStatement(INSERT_SOLD_TICKETS);
+                ps.setString(1,Integer.toString(iduser));
+                ps.setString(2,card);
+                ps.setString(3,Integer.toString(tickets[i]));
+                ps.executeUpdate();
+                ps.close();
+            }
+        }catch (SQLException e){
+            LOG.debug(e.getMessage());
+        }        
     }
 }

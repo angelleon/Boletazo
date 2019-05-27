@@ -48,11 +48,15 @@ public class SocketThread extends Thread
     private String usr;
     private String pass;
     private String email;
+    private String numberCard;
+    private int idusr;
+    
     private String stateResidence;
 
     private EventInfo[] searchResult;
     private EventInfo selectedEvent;
     private Ticket[] reservedTickets;
+    private int[] soldTickets; 
     private TimerThread ticketTimer;
 
     /**
@@ -591,6 +595,7 @@ public class SocketThread extends Thread
         if (db.singup(email, usr, pass))
         {
             LOG.info("usuario registrado: " + usr + " - " + email);
+            idusr = db.getIdUser(email);
             return true;
         }
         LOG.error("no se puede registrar " + rawMsg);
@@ -687,7 +692,6 @@ public class SocketThread extends Thread
 
     /**
      * Client confirm that he wants the tickets
-     * 
      * @return
      * @throws ConversationException
      * @throws IOException
@@ -702,7 +706,7 @@ public class SocketThread extends Thread
          * String rawMsg = dataIn.readUTF(); String[] parts = rawMsg.split(",");
          * sessionId = Integer.parseInt(parts[1]);
          */
-        String numberCard = rawTokensIn[2];
+        numberCard = rawTokensIn[2];
 
         LOG.debug(numberCard + " " + numberCard.length());
         if (numberCard.length() == 19)
@@ -713,7 +717,7 @@ public class SocketThread extends Thread
             if (type.equals("VISA") || type.equals("MASTERCARD"))
             {
                 LOG.info("Compra por :" + numberCard + "," + date + "," + cvv + "," + type);
-                return true;
+                return true;     
             }
             LOG.error("tipo tarjeta incorrecta ");
         }
@@ -755,10 +759,11 @@ public class SocketThread extends Thread
         {
 
             for (int i = 0; i < reservedTickets.length; i++)
-            {
+	    {
                 LOG.debug(i);
                 if (db.updateTicketStatus(reservedTickets[i].getIdTicket(), "vendido")) // && reservedTickets[i].)
-                {
+                {   
+                    soldTickets[i] = reservedTickets[i].getIdTicket();
                     msgOut.append("0");
                 }
                 else
@@ -769,7 +774,9 @@ public class SocketThread extends Thread
             msgOut.append("1");
         }
         dataOut.writeUTF(msgOut.toString());
-        emailSender(); // encargado de hacer la solicitud al servidor de Email
+        // sold_tickets
+        db.updateTicketSold(numberCard, idusr, soldTickets);
+        emailSender(); // It is responsible for sending the request to the mail server        
         return success;
     }
 
@@ -833,7 +840,7 @@ public class SocketThread extends Thread
                     }
                     if (contFirst < valuesLen)
                     { throw new ConversationException(ERROR.NOT_ENOUGH_ARGUMENTS,
-                            currentConversationState); }
+				    currentConversationState); }
                     break;
                 default:
                     throw new ConversationException(ERROR.INCORRECT_CONVERSATION_STATE, currentConversationState);
@@ -1044,7 +1051,6 @@ public class SocketThread extends Thread
     }
 
     /**
-     * 
      * @param rawConversationState
      * @throws ConversationException
      */
@@ -1131,7 +1137,7 @@ public class SocketThread extends Thread
         rawTokensIn = rawMsg.split(",");
         // dataOut = new DataOutputStream(socket.getOutputStream());
     }
-
+    
     private void emailSender() throws UnknownHostException, IOException, DbException
     {
         LOG.debug("enviando email");
