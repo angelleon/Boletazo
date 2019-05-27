@@ -2,11 +2,10 @@ package itq.dist;
 
 import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
+import java.net.InetAddress;
 import java.sql.SQLException;
 import java.util.Date;
 import java.text.SimpleDateFormat;
@@ -16,6 +15,10 @@ import java.time.ZoneOffset;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+
+import org.apache.commons.net.ftp.FTP;
+import org.apache.commons.net.ftp.FTPClient;
+import org.apache.commons.net.ftp.FTPReply;
 
 public class Report extends TimerThread
 {
@@ -32,6 +35,11 @@ public class Report extends TimerThread
     private Flag alive;
     private int initialSleep;
     private Db db;
+
+    private static final String ftp = BoletazoConf.FTP;
+    private static final String user = BoletazoConf.USR_FTP;
+    private static final String password = BoletazoConf.PASSWD_FTP;
+    private static final int FTP_PORT = BoletazoConf.FTP_PORT;
 
     private LocalDateTime now;
     private LocalDateTime next;
@@ -138,6 +146,61 @@ public class Report extends TimerThread
                 "***************************************************************************************************");
         LOG.info("Check report on : " + report_path);
         bw.close();
+        FTPClient client = new FTPClient();
+
+        // info to conect service FTP
+
+        try
+        {
+            // connecting to service
+            client.connect(InetAddress.getByName(ftp), FTP_PORT);
+            LOG.info("start conexion with FTP ip:" + ftp);
+            // Logueado un usuario (true = pudo conectarse, false = no pudo
+            // conectarse)
+            boolean estado = client.login(user, password);
+            if (estado)
+            {
+                if (FTPReply.isPositiveCompletion(client.getReplyCode()))
+                {
+                    // Report newReport = new Report();
+                    // newReport.reportDay();
+                    // File file = new File(report_path); // direc del documento en el dispositi
+                    // local que se desea subir al ftp
+                    FileInputStream input = new FileInputStream(file);
+                    client.setFileType(FTP.BINARY_FILE_TYPE);
+                    client.enterLocalActiveMode();
+
+                    LOG.info("Succesfull upload ");
+                    if (!client.storeFile(file.getName(), input))
+                    {
+
+                        LOG.info("Failed upload!");
+                    }
+                    input.close();
+                }
+                else
+                {
+
+                    LOG.error("Error,you can't connect whit this session or user");
+                }
+
+                // Close sesion
+                client.logout();
+
+                // Disconect
+                client.disconnect();
+            }
+            else
+            {
+                LOG.error("Error, you can't connect whit this session");
+            }
+        }
+        catch (IOException ioe)
+        {
+            LOG.error(ioe.getMessage());
+
+            LOG.error("Error conexion con el server,cant upload the file");
+        }
         return report_path;
     }
 

@@ -48,8 +48,8 @@ public class Boletazo
             try
             {
                 serverSocket = new ServerSocket(PORT);
-                Report rep = new Report(alive, db);
-                rep.start();
+                // Report rep = new Report(alive, db);
+                // rep.start();
                 while (alive.isSet())
                 {
                     Socket socket = serverSocket.accept();
