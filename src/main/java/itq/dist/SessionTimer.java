@@ -25,11 +25,11 @@ public class SessionTimer extends TimerThread
     {
         try
         {
-            while (update.isSet())
+            while (alive.isSet())
             {
                 Thread.sleep(updateTime);
                 addElapsed(updateTime);
-                update.setState(elapsedTime >= timeout);
+                alive.setState(elapsedTime >= timeout);
             }
             sessionControl.releaseSessionId(sessionId);
             LOG.debug("Session timer finished [" + sessionId + "]");

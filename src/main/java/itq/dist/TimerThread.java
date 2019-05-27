@@ -9,11 +9,11 @@ import org.apache.logging.log4j.Logger;
 public class TimerThread extends Thread
 {
     private static final Logger LOG = LogManager.getLogger(TimerThread.class);
-    protected static final int updateTime = 250;
+    protected int updateTime = 250;
     protected int elapsedTime;
 
     protected int timeout;
-    protected Flag update;
+    protected Flag alive;
 
     /**
      * Default timer with a timer defined in 10 seconds and used by the reserved
@@ -27,6 +27,11 @@ public class TimerThread extends Thread
         this(5000);
     }
 
+    public TimerThread(int timeout)
+    {
+        this(timeout, 250);
+    }
+
     /**
      * Timer used for reserved tickets control whit a time defined by the user
      * 
@@ -34,12 +39,18 @@ public class TimerThread extends Thread
      * @param sessionId
      * @param operationType
      */
-    public TimerThread(int timeout)
+    public TimerThread(int timeout, int updateTime)
+    {
+        this(timeout, updateTime, new Flag(true));
+    }
+
+    public TimerThread(int timeout, int updateTime, Flag alive)
     {
         super();
         this.timeout = timeout;
-        update = new Flag(true);
         elapsedTime = 0;
+        this.updateTime = updateTime;
+        this.alive = alive;
     }
 
     /**
@@ -60,7 +71,7 @@ public class TimerThread extends Thread
      */
     public void setUpdate(boolean update)
     {
-        this.update.setState(update);
+        this.alive.setState(update);
     }
 
     @Override
@@ -68,11 +79,11 @@ public class TimerThread extends Thread
     {
         try
         {
-            while (update.isSet())
+            while (alive.isSet())
             {
                 Thread.sleep(updateTime);
                 addElapsed(updateTime);
-                update.setState(elapsedTime >= timeout);
+                alive.setState(elapsedTime >= timeout);
             }
         }
         catch (InterruptedException e)

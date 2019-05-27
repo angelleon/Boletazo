@@ -22,11 +22,11 @@ public class SocketThread extends Thread
 
     // TODO liberar boletos si el cliente manda una solicitud de reserva con 0 ids
     private static final Logger LOG = LogManager.getLogger(SocketThread.class);
-    private static final int MAX_MSG_LENGTH = 1024;
-    public static final int PERMITED_TICKETS = 4;
-    private static final int PAYMENT_TIMEOUT = 6000;
-    private static final int EMAIL_PORT = 2020;
-    private static final String EMAIL_IP = "25.7.186.37";
+    private static final int MAX_MSG_LENGTH = BoletazoConstants.MAX_MSG_LENGTH;
+    public static final int PERMITED_TICKETS = BoletazoConstants.PERMITED_TICKETS;
+    private static final int PAYMENT_TIMEOUT = BoletazoConstants.PAYMENT_TIMEOUT;
+    private static final int EMAIL_PORT = BoletazoConstants.EMAIL_PORT;
+    private static final String EMAIL_IP = BoletazoConstants.EMAIL_IP;
 
     private Socket socket;
     private Db db;
@@ -518,8 +518,8 @@ public class SocketThread extends Thread
             }
         }
         // Starting time for pay reserved tickets
-        ticketTimer = new TimerThread(PAYMENT_TIMEOUT);
-        ticketTimer.run();
+        ticketTimer = new PaymentTimer(PAYMENT_TIMEOUT);
+        ticketTimer.start();
         return true;
     }
 

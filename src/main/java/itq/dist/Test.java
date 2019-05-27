@@ -34,7 +34,7 @@ public class Test
                 {
                     try
                     {
-                        sc.releaseSessionId(sessionId);
+                        sc.releaseSessionId(sessionId[i]);
                         log.info("Released sessionId: [" + sessionId + "]");
                         releasedCount++;
                         data.preLoad();/*
@@ -49,7 +49,7 @@ public class Test
                     }
                 }
             }
-            catch (InterruptedException e)
+            catch (DbException e)
             {
                 // TODO Auto-generated catch block
                 e.printStackTrace();

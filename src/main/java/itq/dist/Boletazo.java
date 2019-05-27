@@ -19,12 +19,12 @@ import org.apache.logging.log4j.Logger;
 public class Boletazo
 {
     private static final Logger LOG = LogManager.getLogger();
-    private static final int PORT = 2000;
-    private static final String PROF_HOST = "localhost";
-    private static final int PROF_PORT = 5000;
-    private static final int TEAM_NUM = 3;
-    private static final int ANONYMOUS_SESSION_TIMEOUT = 5000;
-    private static final int SESSION_TIMEOUT = 8000;
+    private static final int PORT = BoletazoConstants.PORT;
+    private static final String PROF_HOST = BoletazoConstants.PROF_HOST;
+    private static final int PROF_PORT = BoletazoConstants.PROF_PORT;
+    private static final int TEAM_NUM = BoletazoConstants.TEAM_NUM;
+    private static final int ANONYMOUS_SESSION_TIMEOUT = BoletazoConstants.ANONYMOUS_SESSION_TIMEOUT;
+    private static final int SESSION_TIMEOUT = BoletazoConstants.SESSION_TIMEOUT;
 
     public static void main(String[] args) throws SQLException
     {
@@ -36,7 +36,7 @@ public class Boletazo
          */
 
         LOG.info("Boletazo server started at " + LocalDateTime.now().toString());
-        boolean alive = true;
+        Flag alive = new Flag(true);
         ServerSocket serverSocket;
         SessionControl anonymousSc = new SessionControl(0, 10, ANONYMOUS_SESSION_TIMEOUT);
         SessionControl sessionControl = new SessionControl(10, 10, SESSION_TIMEOUT);
@@ -48,15 +48,14 @@ public class Boletazo
             try
             {
                 serverSocket = new ServerSocket(PORT);
-                while (alive)
+                Report rep = new Report(alive, db);
+                rep.start();
+                while (alive.isSet())
                 {
                     Socket socket = serverSocket.accept();
                     SocketThread thread = new SocketThread(socket, db, sessionControl, anonymousSc);
                     thread.start();
-                    //I'm not sure if this goes here...
-                    Report rep = new Report();
-                    rep.sendReport();
-              	} 
+                }
                 serverSocket.close();
             }
             catch (IOException e)
@@ -71,6 +70,7 @@ public class Boletazo
         }
         LOG.info("Exiting...");
     }
+
     /**
      * Connects to professor server to send IP and port of this service
      * 

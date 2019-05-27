@@ -8,59 +8,95 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Date;
-import java.util.GregorianCalendar;
 import java.text.SimpleDateFormat;
-import java.util.Calendar;
+
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-public class Report
+public class Report extends TimerThread
 {
     private Connection conn;
-    private static final Logger LOG = LogManager.getLogger();
-    private static final String RUTE_REPORT = "C:/opt/eclipse/Espacio/PROYECTO/Reports/";
-    private static final String SOLD_TODAY = " select event.name Event,venue.name Place,section.cost,ticket.idstatus, sold_tickets.idcard, sold_tickets.iduser "
-            + " from ticket,event,venue,section,sold_tickets "
-            + " where ticket.idstatus > 1 "
-            + " and event.idevent = ticket.idevent "
-            + " and event.idvenue = venue.idvenue "
-            + " and ticket.idsection = section.idsection "
-            + " and ticket.idticket = sold_tickets.idticket "
-            + " and date_format(sold_tickets.datesale, '%H:%i:%s') > '00:00:00' "
-            + " and date_format(sold_tickets.datesale, '%H:%i:%s') < '23:59:59' "
-            + " and date_format(sold_tickets.datesale, '%d-%m-%Y') == date_format(curdate()-1,'%d-%m-%Y') "
-            + " order by section.cost,sold_tickets.idcard ";
+    private static final Logger LOG = LogManager.getLogger(Report.class);
+    private static final String RUTE_REPORT = "/opt/Boletazo/Reports/";
+    private static final String SOLD_TODAY = "SELECT E.name event, V.name place, "
+            + "SE.cost, Ticket.idStatus, ST.idCard, ST.idUser "
+            + "FROM Ticket T, Event E, Venue V, Section SE, Sold_Tickets ST"
+            + "WHERE ticket.idstatus > 1 "
+            + "AND E.idEvent = Ticket.idEvent "
+            + "AND E.idVenue = V.idVenue "
+            + "AND T.idSection = SE.idSection "
+            + "AND T.idTicket = ST.idTicket "
+            + "AND DATE_FORMAT(ST.dateSale, '%H:%i:%s') > '00:00:00' "
+            + "AND DATE_FORMAT(ST.datesale, '%H:%i:%s') < '23:59:59' "
+            + "AND DATE_FORMAT(ST.datesale, '%d-%m-%Y') = DATE_FORMAT(CURDATE()-1,'%d-%m-%Y') "
+            + "ORDER BY SE.cost, ST.idCard ";
 
     private static FileWriter newfile;
     private static BufferedWriter bw;
     private static Date date;
     private static SimpleDateFormat dateMask;
 
-    public Report() throws IOException{       
+    private static final int MSECONDS_IN_A_DAY = 60 * 60 * 24 * 1000;
+
+    private Flag alive;
+    private int initialSleep;
+    private Db db;
+
+    public Report(Flag alive, Db db) throws IOException
+    {
+        super();
+
+        this.alive = alive;
+        this.db = db;
+
         date = new Date();
         dateMask = new SimpleDateFormat("dd-MM-yyyy");
-        File file = new File(RUTE_REPORT+dateMask.format(date)+".txt");
+        LOG.debug(RUTE_REPORT + dateMask.format(date) + ".txt");
+        File file = new File(RUTE_REPORT + dateMask.format(date) + ".txt");
         file.createNewFile();
         newfile = new FileWriter(file);
+
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime next = LocalDateTime.of(now.getYear(), now.getMonth(), now.getDayOfMonth(),
+                BoletazoConstants.REPORT_HOUR, BoletazoConstants.REPORT_MINUTE);
+        if (now.isAfter(next))
+        {
+            next = next.plusDays(1);
+        }
+        initialSleep = 1000 * (int) (next.toEpochSecond(ZoneOffset.UTC) - now.toEpochSecond(ZoneOffset.UTC));
+
+        // LOG.debug(alive.equals(super.alive));
+        LOG.debug("Server hour: [" + now + "]");
+        LOG.debug("Next report hour: [" + next + "]");
+        LOG.debug("Waiting [" + initialSleep + "] mseconds until next report");
     }
-    
-    /**
-     * check the hour to make a report
-     * @throws SQLException
-     * @throws IOException
-     */
-    public void sendReport() throws SQLException, IOException {
-        Calendar calendar = new GregorianCalendar();
-        Date today = new Date();
-        calendar.setTime(today);
-        
-        int hr = calendar.get(Calendar.HOUR_OF_DAY);//format 24
-        int minute = calendar.get(Calendar.MINUTE); // 0 - 59 
-        
-        if(hr == 3 && minute == 0) {
-            LOG.info("Time to report!");
+
+    @Override
+    public void run()
+    {
+        timeout = initialSleep;
+        updateTime = 5000;
+        try
+        {
+            super.run();
             reportDay();
+            timeout = MSECONDS_IN_A_DAY;
+            while (alive.isSet())
+            {
+                super.run();
+                reportDay();
+            }
+        }
+        catch (SQLException ex)
+        {
+            LOG.error(ex.getMessage());
+        }
+        catch (IOException ex)
+        {
+            LOG.error(ex.getMessage());
         }
     }
     /***
@@ -73,34 +109,27 @@ public class Report
     {
         bw = new BufferedWriter(newfile);
         bw.newLine();
-        bw.append("Event          |\t Venue      |\t Cost     |\t statusticket      |\t numero tarjeta      |");
+        bw.append("event          |\t venue      |\t cost     |\t statusticket      |\t card number      |");
         bw.newLine();
         bw.append("*******************************************************************************");
-        
-       try {
-           PreparedStatement ps = conn.prepareStatement(SOLD_TODAY);
-           ResultSet resp = ps.executeQuery();
-           while(resp.next()) {
-               String eventName = resp.getString("Event");
-               String site = resp.getString("Place");
-               double cost = resp.getDouble("cost");
-               int status = resp.getInt("idStatus");
-               int card = resp.getInt("Card");
-               bw.newLine();
-               bw.append(eventName+"|\t"+site+"|\t"+cost+"|\t"+status+"|\t"+card);
-           }           
-           bw.newLine();
-           bw.append("*******************************************************************************");
-           LOG.debug("Check report on : "+RUTE_REPORT+dateMask.format(date)+".txt");
-           bw.close();
-           
-       }catch(SQLException e) {
-           LOG.error("Error on BD ,you can't finish the report");
-           e.printStackTrace();
-       }catch(IOException e) {
-           LOG.error("You can´t write report document");
-           e.printStackTrace();
-       }
-       return RUTE_REPORT+dateMask.format(date)+".txt";
-    }   
+
+        PreparedStatement ps = conn.prepareStatement(SOLD_TODAY);
+        ResultSet resp = ps.executeQuery();
+        while (resp.next())
+        {
+            String eventName = resp.getString("event");
+            String site = resp.getString("place");
+            double cost = resp.getDouble("cost");
+            int status = resp.getInt("idStatus");
+            int card = resp.getInt("card");
+            bw.newLine();
+            bw.append(eventName + "|\t" + site + "|\t" + cost + "|\t" + status + "|\t" + card);
+        }
+        bw.newLine();
+
+        bw.append("*******************************************************************************");
+        LOG.debug("Check report on : " + RUTE_REPORT + dateMask.format(date) + ".txt");
+        bw.close();
+        return RUTE_REPORT + dateMask.format(date) + ".txt";
+    }
 }
