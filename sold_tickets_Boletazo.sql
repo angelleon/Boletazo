@@ -1,36 +1,49 @@
+USE Boletazo;
+
+DROP TABLE IF EXISTS Sold_tickets
+
 -- this table save the information relative to sold tickets
-reate table sold_tickets
+CREATE TABLE Sold_tickets
 (
-    idticket bigint(10) not null,
-    idcard int not null,
-    iduser int(11) not null,
-    datesale timestamp not null default current_timestamp, 
-    foreign key (iduser) references userinfo(iduser),
-    foreign key (idticket) references ticket(idticket) 
+    idTicket BIGINT(10) NOT NULL,
+    idCard int NOT NULL,
+    idUser int(11) NOT NULL,
+    dateSale timestamp NOT NULL DEFAULT current_timestamp, 
+    FOREIGN KEY (idUser) REFERENCES UserInfo(idUser),
+    FOREIGN KEY (idTicket) REFERENCES Ticket(idTicket) 
 );
 
--- select for daily report 
-select event.name Event,venue.name Place,section.cost,ticket.idstatus,sold_tickets.idcard, sold_tickets.iduser 
-from ticket,event,venue,section,sold_tickets
-where ticket.idstatus > 1
-and event.idevent = ticket.idevent
-and event.idvenue = venue.idvenue
-and ticket.idsection = section.idsection
-and ticket.idticket = sold_tickets.idticket
-and date_format(sold_tickets.datesale,'%H:%i:%s') > '00:00:00'
-and date_format(sold_tickets.datesale,'%H:%i:%s') < '23:59:59'
-and date_format(sold_tickets.datesale,'%d-%m-%Y') == date_format(curdate()-1,'%d-%m-%Y')
-order by section.cost,sold_tickets.idcard; 
+-- TODO: Crear un tipo record para completar la funcion
+-- 
+-- CREATE FUNCTION SELECT_DAILY_REPORT ()
+--      RETURN DR_RECORD_T
+-- BEGIN
+--     SELECT E.name event, V.name place, SE.cost, Ticket.idStatus, ST.idCard, ST.idUser 
+--     FROM Ticket T, Event E, Venue V, Section SE, Sold_Tickets ST
+--     WHERE ticket.idstatus > 1 
+--     AND E.idEvent = Ticket.idEvent 
+--     AND E.idVenue = V.idVenue 
+--     AND T.idSection = SE.idSection 
+--     AND T.idTicket = ST.idTicket 
+--     AND DATE_FORMAT(ST.dateSale, '%H:%i:%s') > '00:00:00' 
+--     AND DATE_FORMAT(ST.datesale, '%H:%i:%s') < '23:59:59' 
+--     AND DATE_FORMAT(ST.datesale, '%d-%m-%Y') = DATE_FORMAT(CURDATE()-1,'%d-%m-%Y') 
+--     ORDER BY SE.cost, ST.idCard;
+-- END;
 
--- update tickets sold
-update ticket set idstatus = 1 where idstatus !=1 ;
+-- UPDATE tickets sold
+-- UPDATE ticket SET idstatus = 1 WHERE idstatus !=1 ;
 
 -- how many tickets are sold
-select count(idstatus) from ticket where idstatus != 1;
+-- SELECT count(idstatus) FROM ticket WHERE idstatus != 1;
 
-create procedure 'restoreticket'()
-begin
-    update ticket 
-    set idstatus = 1
-    where idstatus > 1;
-end
+DROP PROCEDURE IF EXISTS ResetBoletazo;
+
+DELIMITER //
+CREATE PROCEDURE ResetBoletazo()
+BEGIN
+    UPDATE Ticket 
+    SET idStatus = 1
+    WHERE idStatus != 1;
+END //
+DELIMITER ;
