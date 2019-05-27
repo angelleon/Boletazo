@@ -10,11 +10,6 @@ import java.sql.Statement;
 import java.time.LocalDate;
 import java.util.HashMap;
 
-<<<<<<< HEAD
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
-=======
 import javax.naming.spi.ResolveResult;
 
 import org.apache.logging.log4j.LogManager;
@@ -22,7 +17,6 @@ import org.apache.logging.log4j.Logger;
 
 import com.mysql.cj.protocol.Resultset;
 
->>>>>>> 1746fadcdc3757da043af9c7055c64c9d64a2a31
 import itq.dist.DbException.ERROR;
 
 public class Db
@@ -32,11 +26,8 @@ public class Db
     // Informacion necesaria para conectarse a mysql
     private static final String USR = "boletazodev";
     private static final String PASSWD = "contrapass";
-<<<<<<< HEAD
-    private static final String URL = "jdbc:mysql://127.0.0.1:3306/Boletazo?useLegacyDatetimeCode=false&serverTimezone=UTC";
-=======
+
     private static final String URL = "jdbc:mysql://25.7.251.120:3306/Boletazo?useLegacyDatetimeCode=false&serverTimezone=UTC";
->>>>>>> 1746fadcdc3757da043af9c7055c64c9d64a2a31
 
     // TODO comentar la condicion date >= SYSDATE();
     // Lista de querys
@@ -46,14 +37,6 @@ public class Db
      * (?) dentro del query iniciando con 1, TIPO depende de lo que se va a
      * reemplazar, y valor es..... supongo que el valor que se va a poner ahi
      */
-<<<<<<< HEAD
-
-    // ResultSet result = null;
-    private static final String UPDATE_USR_INFO = "insert into UserInfo "
-                                                + "(email,estado) values (?,?) ";
-    private static final String UPDATE_LOG_INFO = "INSERT INTO LoginInfo " 
-                                                + "(username,password) values (?,?) ";
-=======
     // ResultSet result = null;
     private static final String UPDATE_TICKET_RESET_IDSTATUS = "UPDATE Ticket "
             + "SET idStatus = 1 "
@@ -63,7 +46,6 @@ public class Db
             + "(email,estado) values (?,?) ";
     private static final String UPDATE_LOG_INFO = "INSERT INTO LoginInfo "
             + "(username,password) values (?,?) ";
->>>>>>> 1746fadcdc3757da043af9c7055c64c9d64a2a31
     private static final String SEARCH_EVENT_BY_DATE = "SELECT * "
             + "FROM Event "
             + "WHERE date >= ? " // aqui se reemplaza el (?) con una fecha usando setDate(1, date)
@@ -82,11 +64,7 @@ public class Db
             + "AND T.idStatus = (SELECT idStatus "
             + "                  FROM Status "
             + "                  WHERE status = 'DISPONIBLE') "
-<<<<<<< HEAD
             // + "AND E.date >= SYSDATE()"
-=======
-            // + "AND E.date >= SYSDATE() "
->>>>>>> 1746fadcdc3757da043af9c7055c64c9d64a2a31
             + "ORDER BY T.idTicket";
 
     // TODO Verificar columnas seleccionadas
@@ -152,25 +130,24 @@ public class Db
             // + "AND E.date >= SYSDATE() "
             + "";
 
-<<<<<<< HEAD
-=======
     private static final String SELECT_USERINFO_BY_USERNAME = "SELECT U.* "
             + "FROM UserInfo U, LoginInfo L "
             + "WHERE L.idLogin = U.idLogin "
             + "AND L.username = ? ";
-
->>>>>>> 1746fadcdc3757da043af9c7055c64c9d64a2a31
+   
+    private static final String INSERT_SOLD_TICKETS = "INSERT INTO sold_tickets "
+            + "(idticket,idcard,iduser) "
+            + " VALUES "
+            + "( ? , ? , ?)";
+            
     @SuppressWarnings("unused")
     private static char mander = 'c';
 
     private Connection conn;
     private boolean connected;
 
-<<<<<<< HEAD
     // Estructuras para almacenamiento temporal de información
-=======
-    // Estructuras para almacenamiento temporal de informaciï¿½n
->>>>>>> 1746fadcdc3757da043af9c7055c64c9d64a2a31
+
     protected HashMap<Integer, Ticket> availableTickets;
 
     Db()
@@ -235,11 +212,8 @@ public class Db
                 idStatus = result.getInt("idStatus");
                 idSection = result.getInt("idSection");
                 idEvent = result.getInt("idEvent");
-<<<<<<< HEAD
+
                // LOG.debug(idTicket+"-"+idEvent+"-"+idStatus+"-"+idSection);
-=======
-                // LOG.debug(idTicket+"-"+idEvent+"-"+idStatus+"-"+idSection);
->>>>>>> 1746fadcdc3757da043af9c7055c64c9d64a2a31
                 if (!availableTickets.containsKey(idTicket))
                 {
                     seatNumber = result.getString("seatNumber");
@@ -459,10 +433,6 @@ public class Db
                 + "(email,estado) values (?,?) ";
         String updateLoginInfo = "INSERT INTO LoginInfo " +
                 "(username,password) values (?,?) ";
-<<<<<<< HEAD
-=======
-
->>>>>>> 1746fadcdc3757da043af9c7055c64c9d64a2a31
         try
         {
             PreparedStatement ps = conn.prepareStatement(UPDATE_USR_INFO);
@@ -795,5 +765,43 @@ public class Db
             throw new DbException();
         }
         return email;
+    }
+    
+    public int getIdUser(String email) {
+        int iduser = 0;
+        String searchIdUser =" Select iduser"
+                +" from userinfo "
+                +" where email = ? ";
+        try {           
+            PreparedStatement ps = conn.prepareStatement(searchIdUser);
+            ps.setString(1,email);
+            ResultSet result = ps.executeQuery();
+            while(result.next()) {
+                iduser = result.getInt("iduser");
+            }
+        }catch (SQLException e){
+            LOG.debug(e.getMessage());
+        }
+       return iduser;
+    }
+    /**
+     * Insert into a sold_tickets, necessary to reports!
+     * @param card : number of card that bought tickets
+     * @param iduser : user that bought tickets
+     * @param tickets : ...
+     */
+    public void updateTicketSold(String card,int iduser,int [] tickets) {
+        try {           
+            for(int i = 0;i<tickets.length;i++) {
+                PreparedStatement ps = conn.prepareStatement(INSERT_SOLD_TICKETS);
+                ps.setString(1,Integer.toString(iduser));
+                ps.setString(2,card);
+                ps.setString(3,Integer.toString(tickets[i]));
+                ps.executeUpdate();
+                ps.close();
+            }
+        }catch (SQLException e){
+            LOG.debug(e.getMessage());
+        }        
     }
 }

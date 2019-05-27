@@ -19,11 +19,7 @@ public class SocketTest extends Thread
     @Override
     public void run()
     {
-<<<<<<< HEAD
-        sc.sessionTimer(sessionId);
-=======
-        // sc.sessionTimer(sessionId);
->>>>>>> 1746fadcdc3757da043af9c7055c64c9d64a2a31
+       // sc.sessionTimer(sessionId);
         connectionTimed();
     }
 
@@ -34,13 +30,8 @@ public class SocketTest extends Thread
             try
             {
                 Thread.sleep(5000);
-<<<<<<< HEAD
-                sc.updateSessionTimer(sessionId);
-                log.info("Out of Time, expired sessionId, GETTING NEWS ID´S");
-=======
                 sc.resetSessionTimer(sessionId);
                 log.info("Out of Time, expired sessionId, GETTING NEWS IDï¿½S");
->>>>>>> 1746fadcdc3757da043af9c7055c64c9d64a2a31
             }
             catch (InterruptedException e)
             {
