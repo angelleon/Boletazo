@@ -50,7 +50,7 @@ public class SessionControl
         payTimers = new PaymentTimer[maxSessions];
         for (int i = 0; i < avalilableSessionIDs.length; i++)
         {
-            avalilableSessionIDs[i] = true;
+            avalilableSessionIDs[i] = false;
             reservedTickets[i] = new Ticket[BoletazoThread.PERMITED_TICKETS];
         }
 

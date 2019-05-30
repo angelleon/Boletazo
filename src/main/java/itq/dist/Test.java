@@ -16,46 +16,13 @@ public class Test
     {
         Random r = new Random();
         System.out.println(InetAddress.getLocalHost().getHostAddress().toString());
-        SessionControl sc = new SessionControl();
-        int[] sessionId = new int[200];
-        int releasedCount = 0;
-        int obtainedConunt = 0;
+        /*
+         * SessionControl sc = new SessionControl(); int[] sessionId = new int[200]; int
+         * releasedCount = 0; int obtainedConunt = 0;
+         */
         Db data = new Db();//
-        for (int i = 0; i < 100; i++)
-        {
-            sessionId[i] = sc.getNewSessionId();
-            log.info("sessionId: [" + sessionId[i] + "]");
-            // sc.sessionTimer(sessionId[i]);
-            SocketTest myTestThread = new SocketTest(sessionId[i], sc);
-            myTestThread.start();
-            try
-            {
-                if (i == 99)
-                {
-                    try
-                    {
-                        sc.releaseSessionId(sessionId[i]);
-                        log.info("Released sessionId: [" + sessionId + "]");
-                        releasedCount++;
-                        data.preLoad();/*
-                                        * data.toRegister("@gmail", "lol", "lol", "colorado"); data.singup("@gmail",
-                                        * "lol", "lol"); data.singup("lol", "lol", "lol"); data.login("lol", "lol");
-                                        */
-                        data.toRegister("@gmail", "lol", "lol", "colorado");
-                    }
-                    catch (SessionException e)
-                    {
-                        log.error(e.getMessage());
-                    }
-                }
-            }
-            catch (DbException e)
-            {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
-            }
-        }
-        log.info("Obtained [" + obtainedConunt + "] sessionIds");
-        log.info("Released [" + releasedCount + "] sessionIds");
+        data.preLoad();
+        int[] tickets = {3, 7, 9, 12};
+        data.updateTicketSold(tickets, "1234567890", 1);
     }
 }

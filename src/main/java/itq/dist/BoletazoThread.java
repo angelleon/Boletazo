@@ -791,7 +791,7 @@ public class BoletazoThread extends Thread
             success = true;
             msgOut.append("1");
             dataOut.writeUTF(msgOut.toString());
-            db.updateTicketSold(numberCard, idusr, soldTickets);
+            db.updateTicketSold(soldTickets, numberCard, idusr);
             emailSender(); // It is responsible for sending the request to the mail server
         }
         else
@@ -1104,6 +1104,7 @@ public class BoletazoThread extends Thread
         case LOGIN_CHECK:
             if (!anonymousSc.isValid(sessionId))
                 throw new SessionException(SessionException.ERROR.INVALID_SESSION_ID);
+            // return true;
             return true;
         case POST_PAYMENT_INFO:
             if (!sessionControl.isValid(sessionId))
