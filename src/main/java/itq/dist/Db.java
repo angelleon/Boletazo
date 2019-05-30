@@ -130,12 +130,24 @@ public class Db
             + "FROM UserInfo U, LoginInfo L "
             + "WHERE L.idLogin = U.idLogin "
             + "AND L.username = ? ";
-   
-    private static final String INSERT_SOLD_TICKETS = "INSERT INTO sold_tickets "
-            + "(idticket,idcard,iduser) "
-            + " VALUES "
-            + "( ? , ? , ?)";
-            
+
+    private static final String INSERT_SOLD_TICKETS = "INSERT INTO Sold_tickets "
+            + "(idTicket, idCard, idUser) "
+            + "VALUES ( ? , ? , ?)";
+
+    private static final String SELECT_TICKETS_SOLD_TODAY = "SELECT E.name event, V.name place, "
+            + "SE.cost, T.idStatus status, ST.idCard card, ST.idUser user "
+            + "FROM Ticket T, Event E, Venue V, Section SE, Sold_tickets ST "
+            + "WHERE T.idStatus = 3 "
+            + "AND E.idEvent = T.idEvent "
+            + "AND E.idVenue = V.idVenue "
+            + "AND T.idSection = SE.idSection "
+            + "AND T.idTicket = ST.idTicket "
+            + "AND DATE_FORMAT(ST.dateSale, '%H:%i:%s') > '00:00:00' "
+            + "AND DATE_FORMAT(ST.datesale, '%H:%i:%s') < '23:59:59' "
+            + "AND DATE_FORMAT(ST.datesale, '%d-%m-%Y') = DATE_FORMAT(CURDATE(),'%d-%m-%Y') "
+            + "ORDER BY SE.cost, ST.idCard ";
+
     @SuppressWarnings("unused")
     private static char mander = 'c';
 
@@ -193,8 +205,9 @@ public class Db
         try
         {
             Statement st = conn.createStatement();
-            st.execute(UPDATE_TICKET_RESET_IDSTATUS);
+            // st.execute(UPDATE_TICKET_RESET_IDSTATUS);
             ResultSet result = st.executeQuery(SELECT_AVAILABLE_TICKETS);
+            LOG.debug(SELECT_AVAILABLE_TICKETS);
 
             Integer idTicket;
             String seatNumber;
@@ -209,7 +222,7 @@ public class Db
                 idSection = result.getInt("idSection");
                 idEvent = result.getInt("idEvent");
 
-               // LOG.debug(idTicket+"-"+idEvent+"-"+idStatus+"-"+idSection);
+                // LOG.debug(idTicket+"-"+idEvent+"-"+idStatus+"-"+idSection);
                 if (!availableTickets.containsKey(idTicket))
                 {
                     seatNumber = result.getString("seatNumber");
@@ -242,6 +255,7 @@ public class Db
         try
         {
             PreparedStatement ps = conn.prepareStatement(SEARCH_EVENT_BY_DATE);
+            LOG.debug(SEARCH_EVENT_BY_DATE);
             Date searchDate = Date.valueOf(date);
             ps.setDate(1, searchDate);
             ps.setDate(2, searchDate);
@@ -267,6 +281,7 @@ public class Db
         try
         {
             PreparedStatement ps = conn.prepareStatement(SEARCH_EVENTS_BY_HOUR);
+            LOG.debug(SEARCH_EVENTS_BY_HOUR);
             ps.setInt(1, hour);
             events = buildEventInfoArray(ps.executeQuery());
             ps.close();
@@ -292,6 +307,7 @@ public class Db
         try
         {
             PreparedStatement ps = conn.prepareStatement(SELECT_BY_IDTICKET);
+            LOG.debug(SELECT_BY_IDTICKET);
             ps.setInt(1, idticket);
             result = ps.executeQuery();
             cost = result.first() ? result.getFloat("cost") : 0f;
@@ -317,6 +333,7 @@ public class Db
         try
         {
             PreparedStatement ps = conn.prepareStatement(SEARCH_EVENT_BY_VENUE_NAME);
+            LOG.debug(SEARCH_EVENT_BY_VENUE_NAME);
             ps.setString(1, "%" + venueName + "%");
             events = buildEventInfoArray(ps.executeQuery());
             ps.close();
@@ -392,6 +409,7 @@ public class Db
         try
         {
             PreparedStatement ps = conn.prepareStatement(userRegistered);
+            LOG.debug(userRegistered);
             ps.setString(1, email);
             result = ps.executeQuery();
             result.next();
@@ -427,6 +445,7 @@ public class Db
         try
         {
             PreparedStatement ps = conn.prepareStatement(UPDATE_USR_INFO);
+            LOG.debug(UPDATE_USR_INFO);
             ps.setString(1, email);
             ps.setString(2, residence);
             ps.executeUpdate();
@@ -462,6 +481,7 @@ public class Db
         {
             ResultSet result = null;
             PreparedStatement ps = conn.prepareStatement(userExist);
+            LOG.debug(userExist);
             ps.setString(1, usr);
             ps.setString(2, pass);
             result = ps.executeQuery();
@@ -496,6 +516,7 @@ public class Db
         try
         {
             PreparedStatement ps = conn.prepareStatement(SEARCH_EVENT_BY_COST);
+            LOG.debug(SEARCH_EVENT_BY_COST);
             ps.setFloat(1, cost);
             events = buildEventInfoArray(ps.executeQuery());
             ps.close();
@@ -515,6 +536,7 @@ public class Db
         try
         {
             PreparedStatement ps = conn.prepareStatement(SEARCH_EVENT_BY_NAME);
+            LOG.debug(SEARCH_EVENT_BY_NAME);
             ps.setString(1, "%" + name + "%");
             events = buildEventInfoArray(ps.executeQuery());
             ps.close();
@@ -540,6 +562,7 @@ public class Db
         try
         {
             PreparedStatement ps = conn.prepareStatement(SELECT_EVENT_BY_EVENTID);
+            LOG.debug(SELECT_EVENT_BY_EVENTID);
             ps.setInt(1, idEvent);
             EventInfo[] ev = buildEventInfoArray(ps.executeQuery());
             evInfo = ev[0];
@@ -558,6 +581,7 @@ public class Db
         try
         {
             PreparedStatement ps = conn.prepareStatement(SELECT_AVAILABLE_SECTIONS_BY_IDEVENT);
+            LOG.debug(SELECT_AVAILABLE_SECTIONS_BY_IDEVENT);
             ResultSet result = ps.executeQuery();
 
             int nSections = result.last() ? result.getRow() : 0;
@@ -604,11 +628,14 @@ public class Db
     // para obtener cualquier status es necesario un query, de lo contrario eliminar
     // este ToDo
 
-    public int consultTicketStatus(int idTicket)
+    public boolean consultTicketStatus(int[] idTicket)
     {
-        if (availableTickets.containsKey(idTicket))
-        { return availableTickets.get(idTicket).getIdStatus(); }
-        return 3;
+        boolean b = true;
+        for (int i : idTicket)
+        {
+            b = b && availableTickets.containsKey(i) && availableTickets.get(i).getIdStatus() == 2;
+        }
+        return b;
     }
 
     public boolean updateTicketStatus(int idTicket, String status) throws DbException
@@ -618,11 +645,16 @@ public class Db
             try
             {
                 PreparedStatement ps = conn.prepareStatement(UPDATE_TICKET_STATUS);
+                LOG.debug(UPDATE_TICKET_STATUS);
                 ps.setString(1, status);
                 ps.setInt(2, idTicket);
                 ps.executeUpdate();
                 // tenemos q volver a la guia houston...
-                LOG.info("ticket : " + idTicket + " VENDIDO ");
+                LOG.info("ticket : " + idTicket + " " + status);
+                if (status.equals("vendido"))
+                {
+                    availableTickets.remove(idTicket);
+                }
                 ps.close();
                 return true;
             }
@@ -641,6 +673,7 @@ public class Db
         try
         {
             PreparedStatement ps = conn.prepareStatement(SELECT_EVENT_BY_SECTION_NAME);
+            LOG.debug(SELECT_EVENT_BY_SECTION_NAME);
             ps.setString(1, name);
             events = buildEventInfoArray(ps.executeQuery());
             ps.close();
@@ -659,6 +692,7 @@ public class Db
         try
         {
             PreparedStatement ps = conn.prepareStatement(SELECT_PARTICIPANT_BY_IDEVENT);
+            LOG.debug(SELECT_PARTICIPANT_BY_IDEVENT);
             ps.setInt(1, idEvent);
             ResultSet results = ps.executeQuery();
 
@@ -734,6 +768,7 @@ public class Db
         try
         {
             PreparedStatement ps = conn.prepareStatement(SELECT_USERINFO_BY_USERNAME);
+            LOG.debug(SELECT_USERINFO_BY_USERNAME);
             ps.setString(1, username);
             ResultSet result = ps.executeQuery();
 
@@ -756,42 +791,100 @@ public class Db
         }
         return email;
     }
-    
-    public int getIdUser(String email) {
+
+    public int getIdUser(String email)
+    {
         int iduser = 0;
-        String searchIdUser =" Select iduser"
-                +" from userinfo "
-                +" where email = ? ";
-        try {           
+        String searchIdUser = " Select idUser "
+                + " from UserInfo "
+                + " where Email = ? ";
+        try
+        {
             PreparedStatement ps = conn.prepareStatement(searchIdUser);
-            ps.setString(1,email);
+            LOG.debug(searchIdUser);
+            ps.setString(1, email);
             ResultSet result = ps.executeQuery();
-            while(result.next()) {
-                iduser = result.getInt("iduser");
+            while (result.next())
+            {
+                iduser = result.getInt("idUser");
             }
-        }catch (SQLException e){
+        }
+        catch (SQLException e)
+        {
             LOG.debug(e.getMessage());
         }
-       return iduser;
+        return iduser;
     }
+
     /**
      * Insert into a sold_tickets, necessary to reports!
-     * @param card : number of card that bought tickets
-     * @param iduser : user that bought tickets
-     * @param tickets : ...
+     * 
+     * @param card
+     *            : number of card that bought tickets
+     * @param iduser
+     *            : user that bought tickets
+     * @param tickets
+     *            : ...
      */
-    public void updateTicketSold(String card,int iduser,int [] tickets) {
-        try {           
-            for(int i = 0;i<tickets.length;i++) {
-                PreparedStatement ps = conn.prepareStatement(INSERT_SOLD_TICKETS);
-                ps.setString(1,Integer.toString(iduser));
-                ps.setString(2,card);
-                ps.setString(3,Integer.toString(tickets[i]));
-                ps.executeUpdate();
-                ps.close();
+    public void updateTicketSold(int[] tickets, String card, int iduser)
+    {
+        try
+        {
+            if (tickets != null)
+            {
+                for (int i = 0; i < tickets.length; i++)
+                {
+                    PreparedStatement ps = conn.prepareStatement(INSERT_SOLD_TICKETS);
+                    ps.setString(1, Integer.toString(tickets[i]));
+                    ps.setString(2, card);
+                    ps.setString(3, Integer.toString(iduser));
+                    ps.executeUpdate();
+                    ps.close();
+                }
             }
-        }catch (SQLException e){
+            else
+            {
+                return;
+            }
+        }
+        catch (SQLException e)
+        {
             LOG.debug(e.getMessage());
-        }        
+        }
+    }
+
+    public ReportInfo[] getReportInfo() throws DbException
+    {
+        ReportInfo[] repInf = null;
+        try
+        {
+            Statement st = conn.createStatement();
+            ResultSet resp = st.executeQuery(SELECT_TICKETS_SOLD_TODAY);
+            LOG.debug(SELECT_TICKETS_SOLD_TODAY);
+            int nResults = resp.last() ? resp.getRow() : 0;
+            LOG.debug("Retrived [" + resp.getRow() + "] from database");
+            repInf = new ReportInfo[nResults];
+            resp.beforeFirst();
+
+            int i = 0;
+            while (resp.next())
+            {
+                String eventName = resp.getString("event");
+                String site = resp.getString("place");
+                double cost = resp.getDouble("cost");
+                int status = resp.getInt("status");
+                int card = resp.getInt("card");
+
+                repInf[i] = new ReportInfo(eventName, site, cost, status, card);
+
+                i++;
+            }
+        }
+        catch (SQLException ex)
+        {
+            LOG.debug(ex.getMessage());
+            throw new DbException();
+        }
+        return repInf;
     }
 }

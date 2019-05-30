@@ -6,7 +6,7 @@ package itq.dist;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-public class TimerThread extends Thread
+public class TimerThread extends Thread implements TriggerAction
 {
     private static final Logger LOG = LogManager.getLogger(TimerThread.class);
     protected int updateTime = 250;
@@ -41,7 +41,7 @@ public class TimerThread extends Thread
      */
     public TimerThread(int timeout, int updateTime)
     {
-        this(timeout, updateTime, new Flag(true));
+        this(timeout, updateTime, new Flag(false));
     }
 
     public TimerThread(int timeout, int updateTime, Flag alive)
@@ -79,12 +79,16 @@ public class TimerThread extends Thread
     {
         try
         {
+            LOG.debug("timer for [ " + timeout + "] mseconds");
+            alive.set();
             while (alive.isSet())
             {
                 Thread.sleep(updateTime);
                 addElapsed(updateTime);
-                alive.setState(elapsedTime >= timeout);
+                // LOG.debug(elapsedTime < timeout);
+                alive.setState(alive.isSet() && elapsedTime < timeout);
             }
+            reset();
         }
         catch (InterruptedException e)
         {
@@ -100,5 +104,15 @@ public class TimerThread extends Thread
     public synchronized void reset()
     {
         elapsedTime = 0;
+    }
+
+    public synchronized void stopTimer()
+    {
+        alive.unset();
+    }
+
+    @Override
+    public void triggerAction()
+    {
     }
 }

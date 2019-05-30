@@ -17,10 +17,10 @@ public class SessionControl
     private int maxSessions;
     private int lastAssignedIndex;
 
-    
     private Ticket[][] reservedTickets;
     private String[] email;
     private String[] user;
+    private PaymentTimer[] payTimers;
 
     private SessionTimer[] sessionTimers;
 
@@ -38,6 +38,7 @@ public class SessionControl
     {
         this.startId = startId;
         this.maxSessions = maxSessions;
+        this.sessionTimeout = sessionTimeout;
         lastId = startId + maxSessions - 1;
         avalilableSessionIDs = new boolean[maxSessions];
         sessionTimers = new SessionTimer[maxSessions];
@@ -46,10 +47,11 @@ public class SessionControl
         reservedTickets = new Ticket[maxSessions][];
         email = new String[maxSessions];
         user = new String[maxSessions];
+        payTimers = new PaymentTimer[maxSessions];
         for (int i = 0; i < avalilableSessionIDs.length; i++)
         {
-            avalilableSessionIDs[i] = true;
-            reservedTickets[i] = new Ticket[SocketThread.PERMITED_TICKETS];
+            avalilableSessionIDs[i] = false;
+            reservedTickets[i] = new Ticket[BoletazoThread.PERMITED_TICKETS];
         }
 
     }
@@ -105,6 +107,7 @@ public class SessionControl
             throw new SessionException();
         int index = sessionIdToIndex(sessionId);
         avalilableSessionIDs[index] = true;
+        // sessionTimers[index]
         sessionTimers[index] = null;
         availableCount++;
         LOG.info("Released sessionId [" + sessionId + "]");
@@ -166,15 +169,17 @@ public class SessionControl
      */
     private int sessionIdToIndex(int sessionId)
     {
-        LOG.debug("sessionId [" + sessionId + "]");
-        LOG.debug("startID [ " + startId + "]");
+        // LOG.debug("sessionId [" + sessionId + "]");
+        // LOG.debug("startID [ " + startId + "]");
         return sessionId - startId;
     }
 
     public synchronized void setReservedTickets(Ticket[] t, int sessionId)
     {
         LOG.debug("Setting reserved tickets for session: [" + sessionId + "] [" + t.length + "] tickets");
-        reservedTickets[sessionIdToIndex(sessionId)] = t;
+        int index = sessionIdToIndex(sessionId);
+        reservedTickets[index] = t;
+        payTimers[index] = new PaymentTimer(BoletazoConf.PAYMENT_TIMEOUT, sessionId, this);
     }
 
     public synchronized Ticket[] getReservedTickets(int sessionId)
@@ -200,5 +205,17 @@ public class SessionControl
     public synchronized String getUser(int sessionId)
     {
         return user[sessionIdToIndex(sessionId)];
+    }
+
+    public synchronized boolean confirmTickets(int sessionId)
+    {
+        if (getReservedTickets(sessionId) != null)
+        {
+            int index = sessionIdToIndex(sessionId);
+            payTimers[index].confirm();
+            payTimers[index] = null;
+            return true;
+        }
+        return false;
     }
 }
