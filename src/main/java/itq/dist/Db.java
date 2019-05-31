@@ -628,14 +628,22 @@ public class Db
     // para obtener cualquier status es necesario un query, de lo contrario eliminar
     // este ToDo
 
-    public boolean consultTicketStatus(int[] idTicket)
+    public boolean consultTicketStatus(int[] idTickets)
     {
-        boolean b = true;
-        for (int i : idTicket)
+        boolean allAvailable = true;
+        for (int i : idTickets)
         {
-            b = b && availableTickets.containsKey(i) && availableTickets.get(i).getIdStatus() == 2;
+            if (allAvailable && availableTickets.containsKey(i))
+            {
+                allAvailable = availableTickets.get(i).getIdStatus() == 1;
+            }
+            else
+            {
+                allAvailable = false;
+                break;
+            }
         }
-        return b;
+        return allAvailable;
     }
 
     public boolean updateTicketStatus(int idTicket, String status) throws DbException
@@ -653,7 +661,13 @@ public class Db
                 LOG.info("ticket : " + idTicket + " " + status);
                 if (status.equals("vendido"))
                 {
+                    availableTickets.get(idTicket).setTicketStatus(Ticket.STATUS.SOLD);
                     availableTickets.remove(idTicket);
+                }
+                else if (status.equals("reservado"))
+                {
+                    availableTickets.get(idTicket).setTicketStatus(Ticket.STATUS.RESERVED);
+                    // availableTickets.remove(idTicket);
                 }
                 ps.close();
                 return true;

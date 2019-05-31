@@ -472,6 +472,7 @@ public class BoletazoThread extends Thread
         currentConversationState = STATE.POST_AVAILABLE_SEATS;
         msgOut.setLength(0);
         msgOut.append(targetConversationState.ordinal());
+        dataOut.writeUTF(msgOut.toString());
         return false;
     }
 
@@ -552,7 +553,7 @@ public class BoletazoThread extends Thread
             for (int i = 0; i < reqTicketIds.length; i++)
             {
                 db.updateTicketStatus(reqTicketIds[i], "reservado");
-                cost = cost + db.getTicketCostById(reqTicketIds[i]);
+                cost += db.getTicketCostById(reqTicketIds[i]);
             }
             msgOut.append(cost);
             msgOut.append(",");
@@ -768,7 +769,8 @@ public class BoletazoThread extends Thread
         msgOut.append("el arreglo de los tickets....");
         // TODO completar condicion
         boolean success = true;
-        if (reservedTickets != null && sessionControl.confirmTickets(sessionId))
+        if (reservedTickets != null
+                && sessionControl.confirmTickets(sessionId))
         {
             reservedTickets = sessionControl.getReservedTickets(sessionId);
             LOG.debug(reservedTickets);
