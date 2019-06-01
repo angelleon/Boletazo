@@ -50,7 +50,7 @@ public class SessionControl
         payTimers = new PaymentTimer[maxSessions];
         for (int i = 0; i < avalilableSessionIDs.length; i++)
         {
-            avalilableSessionIDs[i] = false;
+            avalilableSessionIDs[i] = true;
             reservedTickets[i] = new Ticket[BoletazoThread.PERMITED_TICKETS];
         }
 
@@ -132,7 +132,8 @@ public class SessionControl
 
     private boolean isInRange(int sessionId)
     {
-        return sessionId >= startId && sessionId <= lastId;
+        return sessionId >= startId
+                && sessionId <= lastId;
     }
 
     // ToDo: decidir si esto es synchronized o no
