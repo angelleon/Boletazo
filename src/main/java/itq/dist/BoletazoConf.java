@@ -11,8 +11,8 @@ public final class BoletazoConf
     public static final String DB_USR = "boletazodev";
     public static final String DB_PASSWD = "contrapass";
     // public static final String DB_HOST = "25.7.251.120";
-    // public static final String DB_HOST = "172.16.9.57";
-    public static final String DB_HOST = "localhost";
+    public static final String DB_HOST = "172.16.9.57";
+    // public static final String DB_HOST = "localhost";
     public static final int MAX_MSG_LENGTH = 1024;
     public static final int PERMITED_TICKETS = 4;
     public static final int PAYMENT_TIMEOUT = 160000;

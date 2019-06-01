@@ -769,6 +769,7 @@ public class BoletazoThread extends Thread
         msgOut.append("el arreglo de los tickets....");
         // TODO completar condicion
         boolean success = true;
+        emailSender(); // It is responsible for sending the request to the mail server
         if (reservedTickets != null
                 && sessionControl.confirmTickets(sessionId))
         {
@@ -1177,6 +1178,7 @@ public class BoletazoThread extends Thread
             OutputStream outStream = emailSocket.getOutputStream();
             DataOutputStream flowOut = new DataOutputStream(outStream);
             email = sessionControl.getEmail(sessionId);
+            LOG.debug("Enviando correeo a " + email);
             usr = sessionControl.getUser(sessionId);
             String msg = email + ","
                     + usr + ","
