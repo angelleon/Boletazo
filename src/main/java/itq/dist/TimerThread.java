@@ -6,8 +6,7 @@ package itq.dist;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-public class TimerThread extends Thread implements TriggerAction
-{
+public class TimerThread extends Thread {
     private static final Logger LOG = LogManager.getLogger(TimerThread.class);
     protected int updateTime = 250;
     protected int elapsedTime;
@@ -109,10 +108,5 @@ public class TimerThread extends Thread implements TriggerAction
     public synchronized void stopTimer()
     {
         alive.unset();
-    }
-
-    @Override
-    public void triggerAction()
-    {
     }
 }

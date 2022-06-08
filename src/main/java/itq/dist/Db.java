@@ -356,7 +356,7 @@ public class Db
         {
             if (!events.containsKey(ev.getIdEvent()))
             {
-                events.put(new Integer(ev.getIdEvent()), ev);
+                events.put(Integer.valueOf(ev.getIdEvent()), ev);
             }
         }
         results = searchEventsByVenueName(venueName);
@@ -364,7 +364,7 @@ public class Db
         {
             if (!events.containsKey(ev.getIdEvent()))
             {
-                events.put(new Integer(ev.getIdEvent()), ev);
+                events.put(Integer.valueOf(ev.getIdEvent()), ev);
             }
         }
         results = getEventsAtHour(hour);
@@ -372,7 +372,7 @@ public class Db
         {
             if (!events.containsKey(ev.getIdEvent()))
             {
-                events.put(new Integer(ev.getIdEvent()), ev);
+                events.put(Integer.valueOf(ev.getIdEvent()), ev);
             }
         }
         results = searchEventsByCost(cost);
@@ -380,7 +380,7 @@ public class Db
         {
             if (!events.containsKey(ev.getIdEvent()))
             {
-                events.put(new Integer(ev.getIdEvent()), ev);
+                events.put(Integer.valueOf(ev.getIdEvent()), ev);
             }
         }
         results = searchEventsBySectionName(sectionName);

@@ -44,6 +44,10 @@ public class Report extends TimerThread
     private LocalDateTime now;
     private LocalDateTime next;
 
+    public Report() {
+        super();
+    }
+
     public Report(Flag alive, Db db) throws IOException
     {
         super();
